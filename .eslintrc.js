@@ -2,7 +2,7 @@
 module.exports = {
   extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   parser: "@typescript-eslint/parser",
-  plugins: ["@typescript-eslint", "import", "modules-newlines"],
+  plugins: ["@typescript-eslint", "import", "modules-newlines", "@stylistic/eslint-plugin"],
   root: true,
   rules: {
     // turn on errors for missing imports
@@ -10,7 +10,9 @@ module.exports = {
     "import/no-namespace": "error",
     "modules-newlines/import-declaration-newline": "error",
     "modules-newlines/export-declaration-newline": "error",
-    "@typescript-eslint/explicit-function-return-type": "error"
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@stylistic/indent": ["error", 2],
+    "quotes": ["error", "double"]
   },
   settings: {
     "import/parsers": {
