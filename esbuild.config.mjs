@@ -4,9 +4,9 @@ import builtins from "builtin-modules";
 import { existsSync } from "fs";
 import {
   copyFile,
-  mkdir
+  mkdir,
+  readFile
 } from "fs/promises";
-import packageJson from "./package.json" assert { type: "json" };
 
 const banner =
   `/*
@@ -53,6 +53,7 @@ const context = await esbuild.context({
             return;
           }
 
+          const packageJson = JSON.parse(await readFile("./package.json"));
           const pluginName = packageJson.name;
           const pluginDir = `${process.env.OBSIDIAN_CONFIG_DIR}/plugins/${pluginName}/`;
           if (!existsSync(pluginDir)) {
