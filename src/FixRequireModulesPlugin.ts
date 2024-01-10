@@ -1,7 +1,7 @@
 import {
   Plugin,
 } from "obsidian";
-import * as Module from "module";
+import Module from "module";
 
 type TypeofModule = typeof Module;
 
@@ -31,7 +31,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     const pluginRequire = require;
     const nodeRequire = window.require;
     const pathCacheKeySuffix = ["", ...window.module.paths].join("\x00");
-    const ModuleEx = Module.Module as TypeofModuleEx;
+    const ModuleEx = Module as TypeofModuleEx;
 
     for (const builtInModuleName of builtInModuleNames) {
       const builtInModule = pluginRequire(builtInModuleName);
