@@ -4,23 +4,32 @@
   "description": "Fixes `require()` calls for the built-in modules",
   "main": "main.js",
   "scripts": {
-    "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "version": "node version-bump.mjs && git add manifest.json versions.json",
-    "lint": "eslint . --ext .ts --fix"
+    "dev": "node esbuild.config.mjs",
+    "lint": "eslint src --ext .ts --fix",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "keywords": [],
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^16.11.6",
+    "@types/node": "latest",
     "@types/obsidian-typings": "github:Fevol/obsidian-typings",
-    "@typescript-eslint/eslint-plugin": "5.29.0",
-    "@typescript-eslint/parser": "5.29.0",
-    "builtin-modules": "3.3.0",
-    "esbuild": "0.17.3",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "builtin-modules": "latest",
+    "esbuild": "latest",
+    "eslint-config-prettier": "latest",
+    "eslint-config-standard-with-typescript": "latest",
+    "eslint-import-resolver-typescript": "latest",
+    "eslint-plugin-import": "latest",
+    "eslint-plugin-modules-newlines": "latest",
+    "eslint-plugin-n": "latest",
+    "eslint-plugin-promise": "latest",
+    "eslint": "latest",
     "obsidian": "latest",
-    "tslib": "2.4.0",
-    "typescript": "4.7.4"
+    "prettier": "latest",
+    "tslib": "latest",
+    "typescript": "latest"
   }
 }
