@@ -3,9 +3,10 @@ import process from "process";
 import builtins from "builtin-modules";
 import { existsSync } from "fs";
 import {
-  copyFile,
+  cp,
   mkdir,
-  readFile
+  readFile,
+  rm
 } from "fs/promises";
 
 const banner =
@@ -15,7 +16,27 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const prod = (process.argv[2] === "production");
+const isProductionBuild = (process.argv[2] === "production");
+
+const distDir = isProductionBuild ? "dist/build" : "dist/dev";
+if (existsSync(distDir)) {
+  await rm(distDir, { recursive: true });
+}
+await mkdir(distDir, { recursive: true });
+
+const distFileNames = ["manifest.json", "styles.css"];
+if (!isProductionBuild) {
+  distFileNames.push(".hotreload");
+}
+
+for (const fileName of distFileNames) {
+  const localFile = `./${fileName}`;
+  const distFile = `${distDir}/${fileName}`;
+
+  if (existsSync(localFile)) {
+    await cp(localFile, distFile);
+  }
+}
 
 const context = await esbuild.context({
   banner: {
@@ -41,42 +62,33 @@ const context = await esbuild.context({
   format: "cjs",
   target: "es2018",
   logLevel: "info",
-  sourcemap: prod ? false : "inline",
+  sourcemap: isProductionBuild ? false : "inline",
   treeShaking: true,
-  outfile: "main.js",
+  outfile: `${distDir}/main.js`,
   plugins: [
     {
       name: "copy-to-obsidian-plugins-folder",
       setup: (build) => {
         build.onEnd(async () => {
-          if (prod || !process.env.OBSIDIAN_CONFIG_DIR) {
+          if (isProductionBuild || !process.env.OBSIDIAN_CONFIG_DIR) {
             return;
           }
 
           const packageJson = JSON.parse(await readFile("./package.json"));
           const pluginName = packageJson.name;
-          const pluginDir = `${process.env.OBSIDIAN_CONFIG_DIR}/plugins/${pluginName}/`;
+          const pluginDir = `${process.env.OBSIDIAN_CONFIG_DIR}/plugins/${pluginName}`;
           if (!existsSync(pluginDir)) {
             await mkdir(pluginDir);
           }
 
-          const fileNames = [".hotreload", "styles.css", "manifest.json", "main.js"];
-
-          for (const fileName of fileNames) {
-            const localFile = `./${fileName}`;
-            const targetFile = `${pluginDir}/${fileName}`;
-
-            if (existsSync(localFile)) {
-              await copyFile(localFile, targetFile);
-            }
-          }
+          await cp(distDir, pluginDir, { recursive: true });
         });
       }
     }
   ]
 });
 
-if (prod) {
+if (isProductionBuild) {
   await context.rebuild();
   process.exit(0);
 } else {
