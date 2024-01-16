@@ -37,7 +37,9 @@ export default [
       "@typescript-eslint/explicit-function-return-type": "error",
       "@stylistic/indent": ["error", 2],
       "@stylistic/quotes": ["error", "double"],
-      semi: "error"
+      semi: "error",
+      "no-extra-semi": "error",
+      "@typescript-eslint/explicit-member-accessibility": "error"
     },
     settings: {
       "import/resolver": {

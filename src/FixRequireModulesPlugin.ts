@@ -27,7 +27,7 @@ const builtInModuleNames = [
 ];
 
 export default class FixRequireModulesPlugin extends Plugin {
-  async onload(): Promise<void> {
+  public async onload(): Promise<void> {
     const pluginRequire = require;
     const nodeRequire = window.require;
     const pathCacheKeySuffix = ["", ...window.module.paths].join("\x00");
