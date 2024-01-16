@@ -4,7 +4,12 @@ import {
 } from "fs/promises";
 import process from "process";
 
-const targetVersion = process.env.npm_package_version!;
+const targetVersion = process.env.npm_package_version;
+
+if (!targetVersion) {
+  throw new Error("package.json version is not set");
+}
+
 const indentSize = 2;
 
 // read minAppVersion from manifest.json and bump version to target version
