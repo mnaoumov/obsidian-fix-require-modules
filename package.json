@@ -22,17 +22,11 @@
     "esbuild": "latest",
     "eslint": "latest",
     "eslint-config-prettier": "latest",
-    "eslint-config-standard-with-typescript": "latest",
-    "eslint-import-resolver-typescript": "latest",
     "eslint-plugin-import": "latest",
     "eslint-plugin-modules-newlines": "latest",
-    "eslint-plugin-n": "latest",
-    "eslint-plugin-promise": "latest",
+    "globals": "^13.24.0",
     "obsidian": "latest",
-    "prettier": "latest",
-    "tslib": "latest",
-    "tsx": "latest",
-    "typescript": "latest"
+    "tsx": "latest"
   },
   "type": "module"
 }
