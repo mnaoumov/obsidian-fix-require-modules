@@ -27,13 +27,5 @@ module.exports = {
   env: {
     browser: true,
     node: true
-  },
-  overrides: [{
-      files: ["*.mjs", "*.js"],
-      rules: {
-        "@typescript-eslint/explicit-function-return-type": "off",
-        "@typescript-eslint/no-unused-vars": "off"
-      }
-    }
-  ]
+  }
 };

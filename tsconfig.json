@@ -21,7 +21,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "ES6",
+    "target": "ESNext",
   },
   "include": [
     "**/*.ts"

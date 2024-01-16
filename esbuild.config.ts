@@ -68,13 +68,13 @@ const context = await esbuild.context({
   plugins: [
     {
       name: "copy-to-obsidian-plugins-folder",
-      setup: (build) => {
+      setup: (build): void => {
         build.onEnd(async () => {
           if (isProductionBuild || !process.env.OBSIDIAN_CONFIG_DIR) {
             return;
           }
 
-          const packageJson = JSON.parse(await readFile("./package.json"));
+          const packageJson = JSON.parse(await readFile("./package.json", "utf8"));
           const pluginName = packageJson.name;
           const pluginDir = `${process.env.OBSIDIAN_CONFIG_DIR}/plugins/${pluginName}`;
           if (!existsSync(pluginDir)) {
