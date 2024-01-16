@@ -13,9 +13,7 @@
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "latest",
-    "@stylistic/eslint-plugin": "^1.5.3",
-    "@stylistic/eslint-plugin-ts": "latest",
+    "@stylistic/eslint-plugin": "latest",
     "@types/node": "latest",
     "@types/obsidian-typings": "github:Fevol/obsidian-typings",
     "@typescript-eslint/eslint-plugin": "latest",
