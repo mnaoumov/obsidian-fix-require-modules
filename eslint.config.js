@@ -5,6 +5,7 @@ import stylisticEslintPlugin from "@stylistic/eslint-plugin";
 import eslintPluginImport from "eslint-plugin-import";
 import eslintPluginModulesNewlines from "eslint-plugin-modules-newlines";
 import globals from "globals";
+import "eslint-import-resolver-typescript";
 
 /** @type {import("eslint").Linter.FlatConfig[]} */
 export default [

@@ -22,6 +22,7 @@
     "esbuild": "latest",
     "eslint": "latest",
     "eslint-config-prettier": "latest",
+    "eslint-import-resolver-typescript": "latest",
     "eslint-plugin-import": "latest",
     "eslint-plugin-modules-newlines": "latest",
     "globals": "^13.24.0",
