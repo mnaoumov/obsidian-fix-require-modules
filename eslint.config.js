@@ -35,7 +35,8 @@ export default [
       "modules-newlines/export-declaration-newline": "error",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@stylistic/indent": ["error", 2],
-      "@stylistic/quotes": ["error", "double"]
+      "@stylistic/quotes": ["error", "double"],
+      semi: "error"
     },
     settings: {
       "import/resolver": {
