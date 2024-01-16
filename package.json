@@ -6,14 +6,16 @@
   "scripts": {
     "build": "tsx esbuild.config.ts production",
     "dev": "tsx esbuild.config.ts",
-    "lint": "eslint src --ext .ts --fix",
+    "lint": "eslint . --fix",
     "version": "tsx version-bump.ts && git add manifest.json versions.json"
   },
   "keywords": [],
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@stylistic/eslint-plugin": "latest",
+    "@eslint/js": "latest",
+    "@stylistic/eslint-plugin": "^1.5.3",
+    "@stylistic/eslint-plugin-ts": "latest",
     "@types/node": "latest",
     "@types/obsidian-typings": "github:Fevol/obsidian-typings",
     "@typescript-eslint/eslint-plugin": "latest",
