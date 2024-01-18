@@ -3,9 +3,9 @@ import {
 } from "obsidian";
 import Module from "module";
 
-type TypeofModule = typeof Module;
+type ModuleConstructor = typeof Module;
 
-interface TypeofModuleEx extends TypeofModule {
+interface ModuleExConstructor extends ModuleConstructor {
   _pathCache: Record<string, string>;
   _cache: Record<string, Module>;
 }
@@ -30,8 +30,10 @@ export default class FixRequireModulesPlugin extends Plugin {
   public async onload(): Promise<void> {
     const pluginRequire = require;
     const nodeRequire = window.require;
-    const pathCacheKeySuffix = ["", ...window.module.paths].join("\x00");
-    const ModuleEx = Module as TypeofModuleEx;
+    const electronRendererModule = window.module;
+    const PATH_CACHE_SEPARATOR = "\x00";
+    const pathCacheKeySuffix = ["", ...electronRendererModule.paths].join(PATH_CACHE_SEPARATOR);
+    const ModuleEx = Module as ModuleExConstructor;
 
     for (const builtInModuleName of builtInModuleNames) {
       const builtInModule = pluginRequire(builtInModuleName);
