@@ -1,1 +1,1 @@
-export { default } from "./FixRequireModulesPlugin";
+export { default } from "./FixRequireModulesPlugin.ts";

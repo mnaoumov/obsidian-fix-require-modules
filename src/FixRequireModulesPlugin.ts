@@ -27,7 +27,7 @@ const builtInModuleNames = [
 ];
 
 export default class FixRequireModulesPlugin extends Plugin {
-  public async onload(): Promise<void> {
+  public override onload(): void {
     const pluginRequire = require;
     const nodeRequire = window.require;
     const electronRendererModule = window.module;
@@ -36,7 +36,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     const ModuleEx = Module as ModuleExConstructor;
 
     for (const builtInModuleName of builtInModuleNames) {
-      const builtInModule = pluginRequire(builtInModuleName);
+      const builtInModule: unknown = pluginRequire(builtInModuleName);
       const pathCacheKey = `${builtInModuleName}${pathCacheKeySuffix}`;
       const fakePath = `${FixRequireModulesPlugin.name}/${builtInModuleName}`;
       ModuleEx._pathCache[pathCacheKey] = fakePath;
