@@ -1,6 +1,6 @@
 {
   "name": "fix-require-modules",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fixes `require()` calls for the built-in modules",
   "main": "main.js",
   "scripts": {
