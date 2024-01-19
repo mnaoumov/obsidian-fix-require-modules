@@ -51,7 +51,9 @@ const configs: Linter.FlatConfig[] = [
     },
     settings: {
       "import/resolver": {
-        typescript: {}
+        typescript: {
+          alwaysTryTypes: true
+        }
       }
     }
   }
