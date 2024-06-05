@@ -17,6 +17,7 @@
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "target": "ESNext",
+    "verbatimModuleSyntax": true
   },
   "include": [
     "**/*.ts"

@@ -1,15 +1,11 @@
-// eslint-disable-next-line import/no-namespace
-import * as typescriptEslintParser from "@typescript-eslint/parser";
-// eslint-disable-next-line import/no-namespace
-import * as eslintPluginImport from "eslint-plugin-import";
-
+import typescriptEslintParser from "@typescript-eslint/parser";
+import eslintPluginImport from "eslint-plugin-import";
 import typescriptEslintPlugin from "@typescript-eslint/eslint-plugin";
 import stylisticEslintPlugin from "@stylistic/eslint-plugin";
 import eslintPluginModulesNewlines from "eslint-plugin-modules-newlines";
 import globals from "globals";
 import "eslint-import-resolver-typescript";
 import type {
-  ESLint,
   Linter
 } from "eslint";
 
@@ -18,7 +14,7 @@ const configs: Linter.FlatConfig[] = [
     files: ["**/*.ts"],
     ignores: ["dist/**"],
     languageOptions: {
-      parser: typescriptEslintParser as Linter.ParserModule,
+      parser: typescriptEslintParser,
       sourceType: "module",
       globals: {
         ...globals.browser,
@@ -32,7 +28,7 @@ const configs: Linter.FlatConfig[] = [
       "@typescript-eslint": typescriptEslintPlugin,
       "import": eslintPluginImport,
       "modules-newlines": eslintPluginModulesNewlines,
-      "@stylistic": stylisticEslintPlugin as ESLint.Plugin
+      "@stylistic": stylisticEslintPlugin
     },
     rules: {
       ...typescriptEslintPlugin.configs["eslint-recommended"]!.overrides[0]!.rules,
