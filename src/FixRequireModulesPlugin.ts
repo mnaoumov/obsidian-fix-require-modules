@@ -22,7 +22,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     const pluginRequire = require;
 
     const originalRequire = Module.prototype.require;
-    const newRequire = ((id: string): any => {
+    const newRequire = ((id: string): unknown => {
       if (this.builtInModuleNames.includes(id)) {
         return pluginRequire(id);
       }
