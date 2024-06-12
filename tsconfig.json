@@ -17,7 +17,11 @@
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "target": "ESNext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "types": [
+      "node",
+      "obsidian-typings"
+    ]
   },
   "include": [
     "**/*.ts"

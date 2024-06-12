@@ -82,6 +82,7 @@ if you want to view the source, please visit the github repository of this plugi
     sourcemap: isProductionBuild ? false : "inline",
     treeShaking: true,
     outfile: `${distDir}/main.js`,
+    platform: "node",
     plugins: [
       {
         name: "copy-to-obsidian-plugins-folder",

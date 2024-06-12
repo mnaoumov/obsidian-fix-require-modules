@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { Plugin } from "obsidian";
 import Module from "module";
 
@@ -23,9 +24,29 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     const originalRequire = Module.prototype.require;
     const newRequire = ((id: string): unknown => {
+      if (this.canResolveModule(id)) {
+        return originalRequire(id);
+      }
+
       if (this.builtInModuleNames.includes(id)) {
         return pluginRequire(id);
       }
+
+      if (!id.startsWith(".")) {
+        return originalRequire(id);
+      }
+
+      const activeFile = this.app.workspace.getActiveFile();
+      const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
+      const fullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+      const scriptPath = join(fullPath, id);
+
+      if (this.canResolveModule(scriptPath)) {
+        const resolvedPath = window.require.resolve(scriptPath);
+        delete window.require.cache[resolvedPath];
+        return originalRequire(scriptPath);
+      }
+
       return originalRequire(id);
     }) as NodeJS.Require;
 
@@ -36,5 +57,14 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.register(() => {
       Module.prototype.require = originalRequire;
     });
+  }
+
+  private canResolveModule(id: string): boolean {
+    try {
+      window.require.resolve(id);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
