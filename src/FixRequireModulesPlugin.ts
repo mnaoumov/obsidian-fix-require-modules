@@ -1,8 +1,3 @@
-import {
-  existsSync,
-  statSync
-} from "node:fs";
-import { join } from "node:path";
 import { Plugin } from "obsidian";
 import Module from "module";
 
@@ -23,59 +18,39 @@ export default class FixRequireModulesPlugin extends Plugin {
     "@lezer/highlight"
   ]);
   private pluginRequire!: NodeJS.Require;
-  private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
 
   public override onload(): void {
     this.pluginRequire = require;
-    this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
 
     this.patchModuleRequire();
   }
 
-  private canResolveModule(id: string): boolean {
-    try {
-      this.nodeRequire.resolve(id);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
   private patchModuleRequire(): void {
-    const patchedRequire = this.customRequire.bind(this) as NodeJS.Require;
     Object.assign(patchedRequire, this.moduleRequire);
-    Module.prototype.require = patchedRequire;
+    Module.prototype.require = patchedRequire as NodeJS.Require;
 
     this.register(() => {
       Module.prototype.require = this.moduleRequire;
     });
+
+    const plugin = this
+
+    function patchedRequire(this: Module, id: string): unknown {
+      return plugin.customRequire(id, this);
+    }
   }
 
-  public customRequire(id: string): unknown {
-    if (this.canResolveModule(id)) {
-      return this.moduleRequire(id);
-    }
-
+  public customRequire(id: string, module?: Module): unknown {
     if (this.builtInModuleNames.includes(id)) {
       return this.pluginRequire(id);
     }
 
-    if (!id.startsWith(".")) {
-      return this.moduleRequire(id);
+    if (!module) {
+      module = window.module;
     }
 
-    const activeFile = this.app.workspace.getActiveFile();
-    const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
-    const fullPath = this.app.vault.adapter.getFullPath(currentDir.path);
-    const scriptPath = join(fullPath, id);
-
-    if (existsSync(scriptPath)) {
-      const ctimeMs = statSync(scriptPath).ctimeMs;
-      return this.moduleRequire(`${scriptPath}?${ctimeMs}`);
-    }
-
-    return this.moduleRequire(id);
+    return this.moduleRequire.call(module, id);
   }
 }
