@@ -62,18 +62,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       module = window.module;
     }
 
-    if (!id.startsWith(".")) {
-      return this.moduleRequire.call(module, id);
-    }
-
     let currentDirFullPath: string;
 
-    if (module.filename) {
-      currentDirFullPath = dirname(module.filename);
+    if (id.startsWith(".")) {
+      if (module.filename) {
+        currentDirFullPath = dirname(module.filename);
+      } else {
+        const activeFile = this.app.workspace.getActiveFile();
+        const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
+        currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+      }
+    } else if (id.startsWith("/")) {
+      currentDirFullPath = this.app.vault.adapter.getBasePath();
     } else {
-      const activeFile = this.app.workspace.getActiveFile();
-      const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
-      currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+      return this.moduleRequire.call(module, id);
     }
 
     const scriptFullPath = join(currentDirFullPath, id);
