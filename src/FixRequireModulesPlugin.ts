@@ -2,6 +2,7 @@ import { Plugin } from "obsidian";
 import Module from "module";
 import {
   dirname,
+  isAbsolute,
   join
 } from "path";
 import {
@@ -86,6 +87,10 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private isCacheValid(scriptFullPath: string): boolean {
+    if (!isAbsolute(scriptFullPath)) {
+      return true;
+    }
+
     if (!existsSync(scriptFullPath)) {
       return false;
     }
