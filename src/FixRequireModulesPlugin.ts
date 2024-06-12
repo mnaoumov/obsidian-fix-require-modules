@@ -82,7 +82,11 @@ export default class FixRequireModulesPlugin extends Plugin {
     const scriptFullPath = join(currentDirFullPath, id);
     if (!this.isCacheValid(scriptFullPath)) {
       delete this.nodeRequire.cache[scriptFullPath];
+      if (existsSync(scriptFullPath)) {
+        this.moduleTimeStamps.set(scriptFullPath, statSync(scriptFullPath).mtimeMs);
+      }
     }
+
     return this.moduleRequire.call(module, scriptFullPath);
   }
 
