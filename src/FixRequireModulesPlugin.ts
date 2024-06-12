@@ -1,6 +1,9 @@
 import { Plugin } from "obsidian";
 import Module from "module";
-import { join } from "path";
+import {
+  dirname,
+  join
+} from "path";
 import {
   existsSync,
   statSync
@@ -59,13 +62,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       module = window.module;
     }
 
-    if (!id.startsWith(".") || module.filename) {
+    if (!id.startsWith(".")) {
       return this.moduleRequire.call(module, id);
     }
 
-    const activeFile = this.app.workspace.getActiveFile();
-    const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
-    const currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+    let currentDirFullPath: string;
+
+    if (module.filename) {
+      currentDirFullPath = dirname(module.filename);
+    } else {
+      const activeFile = this.app.workspace.getActiveFile();
+      const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
+      currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+    }
+
     const scriptFullPath = join(currentDirFullPath, id);
 
     if (existsSync(scriptFullPath)) {
