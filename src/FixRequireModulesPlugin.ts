@@ -18,53 +18,61 @@ export default class FixRequireModulesPlugin extends Plugin {
     "@lezer/lr",
     "@lezer/highlight"
   ]);
+  private pluginRequire!: NodeJS.Require;
+  private nodeRequire!: NodeJS.Require;
+  private moduleRequire!: NodeJS.Require;
 
   public override onload(): void {
-    const pluginRequire = require;
+    this.pluginRequire = require;
+    this.nodeRequire = window.require;
+    this.moduleRequire = Module.prototype.require;
 
-    const originalRequire = Module.prototype.require;
-    const newRequire = ((id: string): unknown => {
-      if (this.canResolveModule(id)) {
-        return originalRequire(id);
-      }
-
-      if (this.builtInModuleNames.includes(id)) {
-        return pluginRequire(id);
-      }
-
-      if (!id.startsWith(".")) {
-        return originalRequire(id);
-      }
-
-      const activeFile = this.app.workspace.getActiveFile();
-      const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
-      const fullPath = this.app.vault.adapter.getFullPath(currentDir.path);
-      const scriptPath = join(fullPath, id);
-
-      if (this.canResolveModule(scriptPath)) {
-        const resolvedPath = window.require.resolve(scriptPath);
-        delete window.require.cache[resolvedPath];
-        return originalRequire(scriptPath);
-      }
-
-      return originalRequire(id);
-    }) as NodeJS.Require;
-
-    Object.assign(newRequire, originalRequire);
-
-    Module.prototype.require = newRequire;
-
-    this.register(() => {
-      Module.prototype.require = originalRequire;
-    });
+    this.patchModuleRequire();
   }
 
   private canResolveModule(id: string): boolean {
     try {
-      window.require.resolve(id);
+      this.nodeRequire.resolve(id);
       return true;
     } catch {
       return false;
     }
+  }
+
+  private patchModuleRequire(): void {
+    const newRequire = this.customRequire as NodeJS.Require;
+    Object.assign(newRequire, this.moduleRequire);
+    Module.prototype.require = newRequire;
+
+    this.register(() => {
+      Module.prototype.require = this.moduleRequire;
+    });
+  }
+
+  private customRequire(id: string): unknown {
+    if (this.canResolveModule(id)) {
+      return this.moduleRequire(id);
+    }
+
+    if (this.builtInModuleNames.includes(id)) {
+      return this.pluginRequire(id);
+    }
+
+    if (!id.startsWith(".")) {
+      return this.moduleRequire(id);
+    }
+
+    const activeFile = this.app.workspace.getActiveFile();
+    const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
+    const fullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+    const scriptPath = join(fullPath, id);
+
+    if (this.canResolveModule(scriptPath)) {
+      const resolvedPath = this.nodeRequire.resolve(scriptPath);
+      delete window.require.cache[resolvedPath];
+      return this.moduleRequire(scriptPath);
+    }
+
+    return this.moduleRequire(id);
   }
 }
