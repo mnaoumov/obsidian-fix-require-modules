@@ -44,7 +44,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private patchModuleRequire(): void {
-    const patchedRequire = this.customRequire as NodeJS.Require;
+    const patchedRequire = this.customRequire.bind(this) as NodeJS.Require;
     Object.assign(patchedRequire, this.moduleRequire);
     Module.prototype.require = patchedRequire;
 
