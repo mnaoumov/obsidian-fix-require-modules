@@ -53,7 +53,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     });
   }
 
-  private customRequire(id: string): unknown {
+  public customRequire(id: string): unknown {
     if (this.canResolveModule(id)) {
       return this.moduleRequire(id);
     }
