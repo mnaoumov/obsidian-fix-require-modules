@@ -79,16 +79,34 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     const scriptFullPath = join(currentDirFullPath, id);
+    if (!this.isCacheValid(scriptFullPath)) {
+      delete this.nodeRequire.cache[scriptFullPath];
+    }
+    return this.moduleRequire.call(module, scriptFullPath);
+  }
 
-    if (existsSync(scriptFullPath)) {
-      const fileTimestamp = statSync(scriptFullPath).mtimeMs;
-      const savedTimestamp = this.moduleTimeStamps.get(scriptFullPath);
-      if (fileTimestamp !== savedTimestamp) {
-        this.moduleTimeStamps.set(scriptFullPath, fileTimestamp);
-        delete this.nodeRequire.cache[scriptFullPath];
+  private isCacheValid(scriptFullPath: string): boolean {
+    if (!existsSync(scriptFullPath)) {
+      return false;
+    }
+
+    const fileTimestamp = statSync(scriptFullPath).mtimeMs;
+    const savedTimestamp = this.moduleTimeStamps.get(scriptFullPath);
+    if (fileTimestamp !== savedTimestamp) {
+      return false;
+    }
+
+    const cachedModule = this.nodeRequire.cache[scriptFullPath];
+    if (!cachedModule) {
+      return true;
+    }
+
+    for (const childModule of cachedModule.children) {
+      if (!this.isCacheValid(childModule.filename)) {
+        return false;
       }
     }
 
-    return this.moduleRequire.call(module, scriptFullPath);
+    return true;
   }
 }
