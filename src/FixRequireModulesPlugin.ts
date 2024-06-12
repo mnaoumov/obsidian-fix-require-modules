@@ -1,6 +1,10 @@
 import { Plugin } from "obsidian";
 import Module from "module";
 import { join } from "path";
+import {
+  existsSync,
+  statSync
+} from "fs";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze([
@@ -19,10 +23,13 @@ export default class FixRequireModulesPlugin extends Plugin {
     "@lezer/highlight"
   ]);
   private pluginRequire!: NodeJS.Require;
+  private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
+  private moduleTimeStamps = new Map<string, number>();
 
   public override onload(): void {
     this.pluginRequire = require;
+    this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
 
     this.patchModuleRequire();
@@ -60,6 +67,16 @@ export default class FixRequireModulesPlugin extends Plugin {
     const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
     const currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
     const scriptFullPath = join(currentDirFullPath, id);
+
+    if (existsSync(scriptFullPath)) {
+      const fileTimestamp = statSync(scriptFullPath).mtimeMs;
+      const savedTimestamp = this.moduleTimeStamps.get(scriptFullPath);
+      if (fileTimestamp !== savedTimestamp) {
+        this.moduleTimeStamps.set(scriptFullPath, fileTimestamp);
+        delete this.nodeRequire.cache[scriptFullPath];
+      }
+    }
+
     return this.moduleRequire.call(module, scriptFullPath);
   }
 }
