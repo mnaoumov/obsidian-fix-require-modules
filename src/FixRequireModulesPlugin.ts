@@ -1,3 +1,7 @@
+import {
+  existsSync,
+  statSync
+} from "node:fs";
 import { join } from "node:path";
 import { Plugin } from "obsidian";
 import Module from "module";
@@ -67,10 +71,9 @@ export default class FixRequireModulesPlugin extends Plugin {
     const fullPath = this.app.vault.adapter.getFullPath(currentDir.path);
     const scriptPath = join(fullPath, id);
 
-    if (this.canResolveModule(scriptPath)) {
-      const resolvedPath = this.nodeRequire.resolve(scriptPath);
-      delete window.require.cache[resolvedPath];
-      return this.moduleRequire(scriptPath);
+    if (existsSync(scriptPath)) {
+      const ctimeMs = statSync(scriptPath).ctimeMs;
+      return this.moduleRequire(`${scriptPath}?${ctimeMs}`);
     }
 
     return this.moduleRequire(id);
