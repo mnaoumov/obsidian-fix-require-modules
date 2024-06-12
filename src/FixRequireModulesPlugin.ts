@@ -1,5 +1,6 @@
 import { Plugin } from "obsidian";
 import Module from "module";
+import { join } from "path";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze([
@@ -51,6 +52,14 @@ export default class FixRequireModulesPlugin extends Plugin {
       module = window.module;
     }
 
-    return this.moduleRequire.call(module, id);
+    if (!id.startsWith(".") || module.filename) {
+      return this.moduleRequire.call(module, id);
+    }
+
+    const activeFile = this.app.workspace.getActiveFile();
+    const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
+    const currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
+    const scriptFullPath = join(currentDirFullPath, id);
+    return this.moduleRequire.call(module, scriptFullPath);
   }
 }
