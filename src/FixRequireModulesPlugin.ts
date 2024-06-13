@@ -14,6 +14,14 @@ import {
   statSync
 } from "fs";
 
+import { require as tsxRequire } from "tsx/cjs/api";
+
+type ModuleConstructor = typeof Module;
+
+interface ModuleExConstructor extends ModuleConstructor {
+  _resolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string;
+}
+
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze([
     "obsidian",
@@ -33,29 +41,40 @@ export default class FixRequireModulesPlugin extends Plugin {
   private pluginRequire!: NodeJS.Require;
   private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
+  private patchedModuleRequire!: NodeJS.Require;
   private moduleTimestamps = new Map<string, number>();
   private updatedModuleTimestamps = new Map<string, number>();
+  private moduleResolveFileName!: (request: string, parent: Module, isMain: boolean, options?: { paths?: string[]; } | undefined) => string;
 
   public override onload(): void {
     this.pluginRequire = require;
     this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
+    const ModuleEx = Module as ModuleExConstructor;
+    this.moduleResolveFileName = ModuleEx._resolveFilename.bind(ModuleEx);
 
     this.patchModuleRequire();
   }
 
   private patchModuleRequire(): void {
-    Object.assign(patchedRequire, this.moduleRequire);
-    Module.prototype.require = patchedRequire as NodeJS.Require;
+    Object.assign(patchedModuleRequire, this.moduleRequire);
+    Module.prototype.require = patchedModuleRequire as NodeJS.Require;
+    this.patchedModuleRequire = Module.prototype.require;
 
     this.register(() => {
       Module.prototype.require = this.moduleRequire;
     });
 
+    const ModuleEx = Module as ModuleExConstructor;
+    ModuleEx._resolveFilename = this.customResolveFilename.bind(this);
+    this.register(() => {
+      ModuleEx._resolveFilename = this.moduleResolveFileName;
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const plugin = this;
 
-    function patchedRequire(this: Module, id: string): unknown {
+    function patchedModuleRequire(this: Module, id: string): unknown {
       return plugin.customRequire(id, undefined, this);
     }
   }
@@ -65,21 +84,44 @@ export default class FixRequireModulesPlugin extends Plugin {
       return this.pluginRequire(id);
     }
 
+    if (id === "esbuild") {
+      return this.moduleRequire(this.getEsbuildPath());
+    }
+
     if (!module) {
       module = window.module;
     }
 
+    let currentScriptFullPath = this.getFakeRootPath();
+
+    if (id.startsWith(".")) {
+      currentScriptFullPath = this.getCurrentScriptFullPath(currentScriptPath, module);
+    } else if (id.startsWith("/")) {
+      id = `.${id}`;
+    } else {
+      return this.moduleRequire.call(module, id);
+    }
+
     const isRootRequire = this.updatedModuleTimestamps.size === 0;
-    const convertedId = this.convertRequireId(id, currentScriptPath, module);
-    this.getRecursiveTimestampAndInvalidateCache(convertedId);
+    const currentDirFullPath = dirname(currentScriptFullPath);
+    const scriptFullPath = join(currentDirFullPath, id);
+
+    this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
     try {
-      return this.moduleRequire.call(module, convertedId);
-    } finally {
+      Module.prototype.require = this.moduleRequire;
+      return tsxRequire(id, scriptFullPath) as unknown;
+    }
+    finally {
       if (isRootRequire) {
         this.updatedModuleTimestamps.clear();
       }
+      Module.prototype.require = this.patchedModuleRequire;
     }
+  }
+
+  private getEsbuildPath(): string {
+    return join(this.app.vault.adapter.getBasePath(), this.app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js");
   }
 
   private convertRequireId(id: string, currentScriptPath?: string, module?: Module): string {
@@ -128,13 +170,13 @@ export default class FixRequireModulesPlugin extends Plugin {
      *
      * 0: Error
      * 1:     at FixRequireModulesPlugin.getCurrentScriptFullPath
-     * 2:     at FixRequireModulesPlugin.convertRequireId
-     * 3:     at FixRequireModulesPlugin.customRequire
-     * 4:     at Module.patchedRequire [as require]
-     * 5:     at require
-     * 6:     at functionName (path/to/caller.js:123:45)
+     * 2:     at FixRequireModulesPlugin.customRequire
+     * 3:     at Module.patchedRequire [as require]
+     * 4:     at require
+     * 5:     at functionName (path/to/caller.js:123:45)
      */
-    const CALLER_LINE_INDEX = 6;
+
+    const CALLER_LINE_INDEX = 5;
     const callStackLines = new Error().stack?.split("\n") ?? [];
     const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
     if (callStackMatch) {
@@ -222,5 +264,17 @@ export default class FixRequireModulesPlugin extends Plugin {
         this.updatedModuleTimestamps.clear();
       }
     }
+  }
+
+  private customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
+    if (this.builtInModuleNames.includes(request)) {
+      return request;
+    }
+
+    if (request === "esbuild") {
+      return this.getEsbuildPath();
+    }
+
+    return this.moduleResolveFileName(request, parent, isMain, options);
   }
 }
