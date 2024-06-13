@@ -41,7 +41,7 @@ if you want to view the source, please visit the github repository of this plugi
   }
   await mkdir(distDir, { recursive: true });
 
-  const distFileNames = ["manifest.json", "styles.css"];
+  const distFileNames = ["manifest.json", "styles.css", "node_modules/esbuild/lib/main.js", "node_modules/@esbuild/win32-x64/esbuild.exe"];
   if (!isProductionBuild) {
     await writeFile(`${distDir}/.hotreload`, "", "utf8");
   }
@@ -55,6 +55,8 @@ if you want to view the source, please visit the github repository of this plugi
     }
   }
 
+  const distPath = `${distDir}/main.js`;
+
   const context = await esbuild.context({
     banner: {
       js: banner,
@@ -62,6 +64,7 @@ if you want to view the source, please visit the github repository of this plugi
     entryPoints: ["src/main.ts"],
     bundle: true,
     external: [
+      "esbuild",
       "obsidian",
       "electron",
       "@codemirror/autocomplete",
@@ -81,9 +84,35 @@ if you want to view the source, please visit the github repository of this plugi
     logLevel: "info",
     sourcemap: isProductionBuild ? false : "inline",
     treeShaking: true,
-    outfile: `${distDir}/main.js`,
+    outfile: distPath,
     platform: "node",
     plugins: [
+      {
+        name: "preprocess",
+        setup(build): void {
+          build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
+            let contents = await readFile(args.path, "utf8");
+            contents = contents.replace(/import\.meta\.url/g, "__filename");
+            contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n${\"\"}//# sourceMappingURL");
+
+            return {
+              contents,
+              loader: "ts"
+            };
+          });
+        },
+      },
+      {
+        name: "fix-require-esbuild",
+        setup(build): void {
+          build.onEnd(async () => {
+            let contents = await readFile(distPath, "utf8");
+            const esbuildReplaceString = `(process.env["ESBUILD_WORKER_THREADS"] = "0", require("path").join(app.vault.adapter.getBasePath(), app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js"))`;
+            contents = contents.replace(/require\("esbuild"\)/g, `require(${esbuildReplaceString})`);
+            await writeFile(distPath, contents, "utf8");
+          });
+        },
+      },
       {
         name: "copy-to-obsidian-plugins-folder",
         setup(build): void {
