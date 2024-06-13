@@ -54,11 +54,11 @@ export default class FixRequireModulesPlugin extends Plugin {
     const plugin = this
 
     function patchedRequire(this: Module, id: string): unknown {
-      return plugin.customRequire(id, this);
+      return plugin.customRequire(id, undefined, this);
     }
   }
 
-  public customRequire(id: string, module?: Module): unknown {
+  public customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
     if (this.builtInModuleNames.includes(id)) {
       return this.pluginRequire(id);
     }
@@ -67,33 +67,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       module = window.module;
     }
 
-    let currentDirFullPath: string;
+    let currentScriptFullPath: string | null;
 
     if (id.startsWith(".")) {
-      if (module.filename) {
-        currentDirFullPath = dirname(module.filename);
-      } else {
-        let activeFile: TFile | null = null;
-        const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
-        if (callStackMatch) {
-          const callerScriptPath = callStackMatch[1]!;
-          activeFile = this.app.vault.getAbstractFileByPath(callerScriptPath) as TFile | null;
-        }
-        if (!activeFile) {
-          activeFile = this.app.workspace.getActiveFile()
-        }
-        const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
-        currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
-      }
+      currentScriptFullPath = this.getCurrentScriptFullPath(currentScriptPath, module);
     } else if (id.startsWith("/")) {
-      currentDirFullPath = this.app.vault.adapter.getBasePath();
+      currentScriptFullPath = this.getFakeRootPath();
     } else {
       return this.moduleRequire.call(module, id);
     }
 
-    const isRootRequire = this.cacheValidMap.size === 0;
-
+    const currentDirFullPath = dirname(currentScriptFullPath);
     const scriptFullPath = join(currentDirFullPath, id);
+
+    const isRootRequire = this.cacheValidMap.size === 0;
     this.checkAndUpdateCacheValidity(scriptFullPath);
 
     try {
@@ -103,6 +90,56 @@ export default class FixRequireModulesPlugin extends Plugin {
         this.cacheValidMap.clear();
       }
     }
+  }
+
+  private getFakeRootPath(): string {
+    return join(this.app.vault.adapter.getBasePath(), "fakeRoot.js");
+  }
+
+  private getCurrentScriptFullPath(currentScriptPath: string | undefined, module: Module): string {
+    let ans: string | null = null;
+    if (module.filename) {
+      ans = this.getFullPath(module.filename);
+      if (!ans) {
+        throw new Error(`Invalid module.filename ${module.filename}`);
+      }
+
+      return ans;
+    }
+
+    if (currentScriptPath) {
+      ans = this.getFullPath(currentScriptPath);
+      if (!ans) {
+        throw new Error(`Invalid currentScriptPath ${currentScriptPath}`);
+      }
+
+      return ans;
+    }
+
+    const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
+    if (callStackMatch) {
+      const callerScriptPath = callStackMatch[1]!;
+      ans = this.getFullPath(callerScriptPath);
+      if (ans) {
+        return ans;
+      }
+    }
+
+    const activeFile = this.app.workspace.getActiveFile();
+    if (activeFile) {
+      return this.getFullPath(activeFile.path)!;
+    } else {
+      return this.getFakeRootPath();
+    }
+  }
+
+  private getFullPath(path: string | null | undefined): string | null {
+    if (!path) {
+      return null;
+    }
+
+    const fullPath = isAbsolute(path) ? path : join(this.app.vault.adapter.getBasePath(), path);
+    return existsSync(fullPath) ? fullPath : null;
   }
 
   private checkAndUpdateCacheValidity(moduleName: string): boolean {
