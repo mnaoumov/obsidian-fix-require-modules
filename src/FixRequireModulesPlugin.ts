@@ -1,12 +1,13 @@
 import {
+  Platform,
   Plugin,
-  TFile
 } from "obsidian";
 import Module from "module";
 import {
   dirname,
   isAbsolute,
-  join
+  join,
+  sep
 } from "path";
 import {
   existsSync,
@@ -193,5 +194,34 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     return ans;
+  }
+
+  public async customImport(id: string, currentScriptPath?: string, module?: Module): Promise<unknown> {
+    if (this.builtInModuleNames.includes(id)) {
+      return this.pluginRequire(id);
+    }
+
+    if (!module) {
+      module = window.module;
+    }
+
+    const isRootRequire = this.updatedModuleTimestamps.size === 0;
+    const scriptFullPath = this.convertRequireId(id, currentScriptPath, module);
+    const timestamp = this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
+    let convertedId = scriptFullPath;
+
+    if (timestamp > 0) {
+      convertedId = `${Platform.resourcePathPrefix}${scriptFullPath.replaceAll(sep, "/")}?${timestamp}`;
+    }
+
+    try {
+      const ans = await import(convertedId);
+      this.nodeRequire.cache[scriptFullPath] = ans;
+      return ans;
+    } finally {
+      if (isRootRequire) {
+        this.updatedModuleTimestamps.clear();
+      }
+    }
   }
 }
