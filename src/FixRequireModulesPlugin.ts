@@ -30,6 +30,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
   private moduleTimeStamps = new Map<string, number>();
+  private cacheValidMap = new Map<string, boolean>();
 
   public override onload(): void {
     this.pluginRequire = require;
@@ -79,39 +80,58 @@ export default class FixRequireModulesPlugin extends Plugin {
       return this.moduleRequire.call(module, id);
     }
 
+    const isRootRequire = this.cacheValidMap.size === 0;
+
     const scriptFullPath = join(currentDirFullPath, id);
-    if (!this.isCacheValid(scriptFullPath)) {
-      delete this.nodeRequire.cache[scriptFullPath];
-      if (existsSync(scriptFullPath)) {
-        this.moduleTimeStamps.set(scriptFullPath, statSync(scriptFullPath).mtimeMs);
+    this.checkAndUpdateCacheValidity(scriptFullPath);
+
+    try {
+      return this.moduleRequire.call(module, scriptFullPath);
+    } finally {
+      if (isRootRequire) {
+        this.cacheValidMap.clear();
       }
     }
-
-    return this.moduleRequire.call(module, scriptFullPath);
   }
 
-  private isCacheValid(scriptFullPath: string): boolean {
-    if (!isAbsolute(scriptFullPath)) {
+  private checkAndUpdateCacheValidity(moduleName: string): boolean {
+    const isValid = this.checkCacheValidity(moduleName);
+    this.cacheValidMap.set(moduleName, isValid);
+
+    if (!isValid) {
+      delete this.nodeRequire.cache[moduleName];
+    }
+
+    return isValid;
+  }
+
+  private checkCacheValidity(moduleName: string): boolean {
+    if (this.cacheValidMap.has(moduleName)) {
+      return this.cacheValidMap.get(moduleName)!;
+    }
+
+    if (!isAbsolute(moduleName)) {
       return true;
     }
 
-    if (!existsSync(scriptFullPath)) {
-      return false;
-    }
-
-    const fileTimestamp = statSync(scriptFullPath).mtimeMs;
-    const savedTimestamp = this.moduleTimeStamps.get(scriptFullPath);
-    if (fileTimestamp !== savedTimestamp) {
-      return false;
-    }
-
-    const cachedModule = this.nodeRequire.cache[scriptFullPath];
+    const cachedModule = this.nodeRequire.cache[moduleName];
     if (!cachedModule) {
       return true;
     }
 
+    if (!existsSync(moduleName)) {
+      return false;
+    }
+
+    const fileTimestamp = statSync(moduleName).mtimeMs;
+    const savedTimestamp = this.moduleTimeStamps.get(moduleName);
+    if (fileTimestamp !== savedTimestamp) {
+      this.moduleTimeStamps.set(moduleName, fileTimestamp);
+      return false;
+    }
+
     for (const childModule of cachedModule.children) {
-      if (!this.isCacheValid(childModule.filename)) {
+      if (!this.checkAndUpdateCacheValidity(childModule.filename)) {
         return false;
       }
     }
