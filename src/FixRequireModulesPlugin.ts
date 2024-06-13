@@ -1,4 +1,7 @@
-import { Plugin } from "obsidian";
+import {
+  Plugin,
+  TFile
+} from "obsidian";
 import Module from "module";
 import {
   dirname,
@@ -70,7 +73,14 @@ export default class FixRequireModulesPlugin extends Plugin {
       if (module.filename) {
         currentDirFullPath = dirname(module.filename);
       } else {
-        const activeFile = this.app.workspace.getActiveFile();
+        let activeFile: TFile | null;
+        const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+):\d+:\d+\)$/);
+        if (callStackMatch) {
+          const callerScriptPath = callStackMatch[1]!;
+          activeFile = this.app.vault.getAbstractFileByPath(callerScriptPath) as TFile;
+        } else {
+          activeFile = this.app.workspace.getActiveFile();
+        }
         const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
         currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
       }
