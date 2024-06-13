@@ -52,7 +52,8 @@ export default class FixRequireModulesPlugin extends Plugin {
       Module.prototype.require = this.moduleRequire;
     });
 
-    const plugin = this
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const plugin = this;
 
     function patchedRequire(this: Module, id: string): unknown {
       return plugin.customRequire(id, undefined, this);
@@ -198,7 +199,7 @@ export default class FixRequireModulesPlugin extends Plugin {
 
   public async customImport(id: string, currentScriptPath?: string, module?: Module): Promise<unknown> {
     if (this.builtInModuleNames.includes(id)) {
-      return this.pluginRequire(id);
+      return this.pluginRequire(id) as unknown;
     }
 
     if (!module) {
@@ -215,9 +216,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     try {
-      const ans = await import(convertedId);
-      this.nodeRequire.cache[scriptFullPath] = ans;
-      return ans;
+      return await import(convertedId) as unknown;
     } finally {
       if (isRootRequire) {
         this.updatedModuleTimestamps.clear();
