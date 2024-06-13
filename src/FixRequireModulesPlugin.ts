@@ -109,14 +109,12 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
     try {
-      Module.prototype.require = this.moduleRequire;
-      return tsxRequire(id, scriptFullPath) as unknown;
+      return tsxRequire(id, currentScriptFullPath) as unknown;
     }
     finally {
       if (isRootRequire) {
         this.updatedModuleTimestamps.clear();
       }
-      Module.prototype.require = this.patchedModuleRequire;
     }
   }
 
