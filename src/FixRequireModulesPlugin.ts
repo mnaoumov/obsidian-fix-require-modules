@@ -54,6 +54,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.moduleResolveFileName = ModuleEx._resolveFilename.bind(ModuleEx);
 
     this.patchModuleRequire();
+    this.patchModuleResolveFileName();
   }
 
   private patchModuleRequire(): void {
@@ -65,18 +66,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       Module.prototype.require = this.moduleRequire;
     });
 
-    const ModuleEx = Module as ModuleExConstructor;
-    ModuleEx._resolveFilename = this.customResolveFilename.bind(this);
-    this.register(() => {
-      ModuleEx._resolveFilename = this.moduleResolveFileName;
-    });
-
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const plugin = this;
 
     function patchedModuleRequire(this: Module, id: string): unknown {
       return plugin.customRequire(id, undefined, this);
     }
+  }
+
+  private patchModuleResolveFileName(): void {
+    const ModuleEx = Module as ModuleExConstructor;
+    ModuleEx._resolveFilename = this.customResolveFilename.bind(this);
+    this.register(() => {
+      ModuleEx._resolveFilename = this.moduleResolveFileName;
+    });
   }
 
   public customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
