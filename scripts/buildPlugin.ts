@@ -43,7 +43,7 @@ if you want to view the source, please visit the github repository of this plugi
 
   const distFileNames = ["manifest.json", "styles.css"];
   if (!isProductionBuild) {
-    await writeFile(`${distDir}/.hotreload`, "", "utf-8");
+    await writeFile(`${distDir}/.hotreload`, "", "utf8");
   }
 
   for (const fileName of distFileNames) {
@@ -86,7 +86,7 @@ if you want to view the source, please visit the github repository of this plugi
     plugins: [
       {
         name: "copy-to-obsidian-plugins-folder",
-        setup: (build): void => {
+        setup(build): void {
           build.onEnd(async () => {
             if (isProductionBuild || !obsidianConfigDir) {
               return;
