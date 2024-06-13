@@ -73,13 +73,14 @@ export default class FixRequireModulesPlugin extends Plugin {
       if (module.filename) {
         currentDirFullPath = dirname(module.filename);
       } else {
-        let activeFile: TFile | null;
-        const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+):\d+:\d+\)$/);
+        let activeFile: TFile | null = null;
+        const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
         if (callStackMatch) {
           const callerScriptPath = callStackMatch[1]!;
-          activeFile = this.app.vault.getAbstractFileByPath(callerScriptPath) as TFile;
-        } else {
-          activeFile = this.app.workspace.getActiveFile();
+          activeFile = this.app.vault.getAbstractFileByPath(callerScriptPath) as TFile | null;
+        }
+        if (!activeFile) {
+          activeFile = this.app.workspace.getActiveFile()
         }
         const currentDir = activeFile?.parent ?? this.app.vault.getRoot();
         currentDirFullPath = this.app.vault.adapter.getFullPath(currentDir.path);
