@@ -201,7 +201,8 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     const fullPath = isAbsolute(path) ? path : join(this.app.vault.adapter.getBasePath(), path);
-    return existsSync(fullPath) ? fullPath : null;
+    const cleanPath = fullPath.split("?")[0]!;
+    return existsSync(cleanPath) ? cleanPath : null;
   }
 
   private getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
