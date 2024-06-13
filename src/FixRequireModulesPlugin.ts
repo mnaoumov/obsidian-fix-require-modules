@@ -32,8 +32,8 @@ export default class FixRequireModulesPlugin extends Plugin {
   private pluginRequire!: NodeJS.Require;
   private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
-  private moduleTimeStamps = new Map<string, number>();
-  private cacheValidMap = new Map<string, boolean>();
+  private moduleTimestamps = new Map<string, number>();
+  private updatedModuleTimestamps = new Map<string, number>();
 
   public override onload(): void {
     this.pluginRequire = require;
@@ -67,6 +67,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       module = window.module;
     }
 
+    const isRootRequire = this.updatedModuleTimestamps.size === 0;
+    const convertedId = this.convertRequireId(id, currentScriptPath, module);
+    this.getRecursiveTimestampAndInvalidateCache(convertedId);
+
+    try {
+      return this.moduleRequire.call(module, convertedId);
+    } finally {
+      if (isRootRequire) {
+        this.updatedModuleTimestamps.clear();
+      }
+    }
+  }
+
+  private convertRequireId(id: string, currentScriptPath?: string, module?: Module): string {
     let currentScriptFullPath: string | null;
 
     if (id.startsWith(".")) {
@@ -74,31 +88,22 @@ export default class FixRequireModulesPlugin extends Plugin {
     } else if (id.startsWith("/")) {
       currentScriptFullPath = this.getFakeRootPath();
     } else {
-      return this.moduleRequire.call(module, id);
+      return id;
     }
 
     const currentDirFullPath = dirname(currentScriptFullPath);
     const scriptFullPath = join(currentDirFullPath, id);
 
-    const isRootRequire = this.cacheValidMap.size === 0;
-    this.checkAndUpdateCacheValidity(scriptFullPath);
-
-    try {
-      return this.moduleRequire.call(module, scriptFullPath);
-    } finally {
-      if (isRootRequire) {
-        this.cacheValidMap.clear();
-      }
-    }
+    return scriptFullPath;
   }
 
   private getFakeRootPath(): string {
     return join(this.app.vault.adapter.getBasePath(), "fakeRoot.js");
   }
 
-  private getCurrentScriptFullPath(currentScriptPath: string | undefined, module: Module): string {
+  private getCurrentScriptFullPath(currentScriptPath: string | undefined, module?: Module): string {
     let ans: string | null = null;
-    if (module.filename) {
+    if (module && module.filename) {
       ans = this.getFullPath(module.filename);
       if (!ans) {
         throw new Error(`Invalid module.filename ${module.filename}`);
@@ -116,7 +121,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       return ans;
     }
 
-    const callStackMatch = new Error().stack?.split("\n").at(4)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
+    /**
+     * The caller line index is 6 because the call stack is as follows:
+     *
+     * 0: Error
+     * 1:     at FixRequireModulesPlugin.getCurrentScriptFullPath
+     * 2:     at FixRequireModulesPlugin.convertRequireId
+     * 3:     at FixRequireModulesPlugin.customRequire
+     * 4:     at Module.patchedRequire [as require]
+     * 5:     at require
+     * 6:     at functionName (path/to/caller.js:123:45)
+     */
+    const CALLER_LINE_INDEX = 6;
+    const callStackLines = new Error().stack?.split("\n") ?? [];
+    const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
     if (callStackMatch) {
       const callerScriptPath = callStackMatch[1]!;
       ans = this.getFullPath(callerScriptPath);
@@ -142,48 +160,38 @@ export default class FixRequireModulesPlugin extends Plugin {
     return existsSync(fullPath) ? fullPath : null;
   }
 
-  private checkAndUpdateCacheValidity(moduleName: string): boolean {
-    const isValid = this.checkCacheValidity(moduleName);
-    this.cacheValidMap.set(moduleName, isValid);
-
-    if (!isValid) {
+  private getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
+    const timestamp = this.getRecursiveTimestamp(moduleName);
+    if (this.moduleTimestamps.get(moduleName) ?? 0 < timestamp) {
+      this.moduleTimestamps.set(moduleName, timestamp);
       delete this.nodeRequire.cache[moduleName];
     }
 
-    return isValid;
+    return timestamp;
   }
 
-  private checkCacheValidity(moduleName: string): boolean {
-    if (this.cacheValidMap.has(moduleName)) {
-      return this.cacheValidMap.get(moduleName)!;
+  private getRecursiveTimestamp(moduleName: string): number {
+    if (this.updatedModuleTimestamps.has(moduleName)) {
+      return this.updatedModuleTimestamps.get(moduleName)!;
     }
 
     if (!isAbsolute(moduleName)) {
-      return true;
-    }
-
-    const cachedModule = this.nodeRequire.cache[moduleName];
-    if (!cachedModule) {
-      return true;
+      return 0;
     }
 
     if (!existsSync(moduleName)) {
-      return false;
+      return new Date().getTime();
     }
 
-    const fileTimestamp = statSync(moduleName).mtimeMs;
-    const savedTimestamp = this.moduleTimeStamps.get(moduleName);
-    if (fileTimestamp !== savedTimestamp) {
-      this.moduleTimeStamps.set(moduleName, fileTimestamp);
-      return false;
+    let ans = statSync(moduleName).mtimeMs;
+
+    const cachedModule = this.nodeRequire.cache[moduleName];
+
+    for (const childModule of cachedModule?.children ?? []) {
+      const childTimestamp = this.getRecursiveTimestampAndInvalidateCache(childModule.filename);
+      ans = Math.max(ans, childTimestamp);
     }
 
-    for (const childModule of cachedModule.children) {
-      if (!this.checkAndUpdateCacheValidity(childModule.filename)) {
-        return false;
-      }
-    }
-
-    return true;
+    return ans;
   }
 }
