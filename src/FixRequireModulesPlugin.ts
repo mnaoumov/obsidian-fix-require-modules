@@ -14,11 +14,18 @@ import {
   statSync
 } from "fs";
 
-import { require as tsxRequire } from "tsx/cjs/api";
+import { register } from "tsx/cjs/api";
 
 declare module "node:module" {
   export function _resolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string;
 }
+
+type Tsx = {
+  (): void,
+  require: (id: string, fromFile: string | URL) => unknown;
+  resolve: (id: string, fromFile: string | URL, resolveOptions?: { paths?: string[] | undefined; } | undefined) => string;
+  unregister: () => void;
+};
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze([
@@ -42,15 +49,20 @@ export default class FixRequireModulesPlugin extends Plugin {
   private moduleTimestamps = new Map<string, number>();
   private updatedModuleTimestamps = new Map<string, number>();
   private moduleResolveFileName!: typeof Module._resolveFilename;
+  private moduleDependencies = new Map<string, Set<string>>();
+  private tsx!: Tsx;
 
   public override onload(): void {
     this.pluginRequire = require;
     this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
+    this.tsx = register({ namespace: FixRequireModulesPlugin.name });
     this.moduleResolveFileName = Module._resolveFilename.bind(Module);
 
     this.patchModuleRequire();
     this.patchModuleResolveFileName();
+
+    this.register(() => this.tsx.unregister());
   }
 
   private patchModuleRequire(): void {
@@ -102,11 +114,21 @@ export default class FixRequireModulesPlugin extends Plugin {
     const isRootRequire = this.updatedModuleTimestamps.size === 0;
     const currentDirFullPath = dirname(currentScriptFullPath);
     const scriptFullPath = join(currentDirFullPath, id);
-
     this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
+    const cleanModuleFullPath = this.getFullPath(module.filename);
+    if (cleanModuleFullPath) {
+      let currentModuleDependencies = this.moduleDependencies.get(cleanModuleFullPath);
+      if (!currentModuleDependencies) {
+        currentModuleDependencies = new Set<string>();
+        this.moduleDependencies.set(cleanModuleFullPath, currentModuleDependencies);
+      }
+
+      currentModuleDependencies.add(scriptFullPath);
+    }
+
     try {
-      return tsxRequire(id, currentScriptFullPath) as unknown;
+      return this.tsx.require(id, currentScriptFullPath) as unknown;
     }
     finally {
       if (isRootRequire) {
@@ -204,7 +226,8 @@ export default class FixRequireModulesPlugin extends Plugin {
     const timestamp = this.getRecursiveTimestamp(moduleName);
     if (this.moduleTimestamps.get(moduleName) ?? 0 < timestamp) {
       this.moduleTimestamps.set(moduleName, timestamp);
-      delete this.nodeRequire.cache[moduleName];
+      delete this.nodeRequire.cache[this.getNodeRequireCacheKey(moduleName)];
+      this.moduleDependencies.delete(moduleName);
     }
 
     return timestamp;
@@ -225,10 +248,8 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     let ans = statSync(moduleName).mtimeMs;
 
-    const cachedModule = this.nodeRequire.cache[moduleName];
-
-    for (const childModule of cachedModule?.children ?? []) {
-      const childTimestamp = this.getRecursiveTimestampAndInvalidateCache(childModule.filename);
+    for (const childModule of this.moduleDependencies.get(moduleName) ?? []) {
+      const childTimestamp = this.getRecursiveTimestampAndInvalidateCache(childModule);
       ans = Math.max(ans, childTimestamp);
     }
 
@@ -272,5 +293,9 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     return this.moduleResolveFileName(request, parent, isMain, options);
+  }
+
+  private getNodeRequireCacheKey(moduleName: string): string {
+    return `${moduleName}?namespace=${FixRequireModulesPlugin.name}`;
   }
 }
