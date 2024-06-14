@@ -29,8 +29,23 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
       .addButton(button =>
         button
           .setButtonText("Save")
+          .setTooltip("Save config path and reload config")
           .onClick(async () => {
             this.plugin.updateSettings({ configPath });
+          })
+      );
+
+    new Setting(this.containerEl)
+      .setName("Hotkeys")
+      .setDesc("Hotkeys to invoke scripts")
+      .addButton(button =>
+        button
+          .setButtonText("Configure")
+          .setTooltip("Configure Hotkeys")
+          .onClick(() => {
+            const hotkeysTab = this.app.setting.openTabById("hotkeys");
+            hotkeysTab.searchComponent.setValue(`${this.plugin.manifest.name}:`);
+            hotkeysTab.updateHotkeyVisibility();
           })
       );
   }
