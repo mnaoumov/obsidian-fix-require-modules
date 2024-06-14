@@ -95,7 +95,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     });
   }
 
-  public customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
+  private customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
     if (this.builtInModuleNames.includes(id)) {
       return this.pluginRequire(id);
     }
