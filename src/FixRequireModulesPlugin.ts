@@ -124,7 +124,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     try {
-      return this.tsx.require(id, currentScriptFullPath) as unknown;
+      return this.tsx.require(id, currentScriptFullPath);
     }
     finally {
       if (isRootRequire) {
