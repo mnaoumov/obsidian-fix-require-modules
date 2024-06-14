@@ -1,4 +1,7 @@
-import { Plugin } from "obsidian";
+import {
+  Plugin,
+  type MarkdownPostProcessorContext
+} from "obsidian";
 import { loadConfig } from "./Config.ts";
 import {
   applyPatches,
@@ -9,6 +12,7 @@ import {
 } from "./CustomRequire.ts";
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
+import { processCodeButtonBlock } from "./code-button.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
@@ -36,6 +40,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     await this.loadSettings();
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
     await this.updateSettings({});
+    this.registerMarkdownCodeBlockProcessor("code-button", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
   }
 
   private async loadSettings() {

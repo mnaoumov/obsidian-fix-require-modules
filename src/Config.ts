@@ -1,12 +1,12 @@
 import {
   invoke,
-  printError,
   type Script
 } from "./Script.ts";
 
 import type { Plugin } from "obsidian";
 import selectItem from "./select-item.ts";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
+import { printError } from "./Error.ts";
 
 type Config = Script[];
 
