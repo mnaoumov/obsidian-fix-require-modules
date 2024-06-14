@@ -1,5 +1,4 @@
 import {
-  Plugin,
   PluginSettingTab,
   Setting
 } from "obsidian";
@@ -17,15 +16,21 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
     this.containerEl.empty();
     this.containerEl.createEl("h2", { text: "Fix Require Modules" });
 
+    let configPath = this.plugin.settings.configPath;
     new Setting(this.containerEl)
       .setName("Config path")
       .setDesc("Path to the config file")
-      .addText((text) =>
+      .addText(text =>
         text
           .setPlaceholder("path/to/config.ts")
-          .setValue(this.plugin!.settings.configPath)
-          .onChange(async (value) => {
-            this.plugin.updateSettings({ configPath: value });
+          .setValue(configPath)
+          .onChange(value => configPath = value)
+      )
+      .addButton(button =>
+        button
+          .setButtonText("Save")
+          .onClick(async () => {
+            this.plugin.updateSettings({ configPath });
           })
       );
   }
