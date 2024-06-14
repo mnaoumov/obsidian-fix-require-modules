@@ -152,7 +152,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private getEsbuildPath(): string {
-    return join(this.app.vault.adapter.getBasePath(), this.app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js");
+    return join(this.app.vault.adapter.getBasePath(), this.manifest.dir!, "node_modules/esbuild/lib/main.js");
   }
 
   private getFakeRootPath(): string {
