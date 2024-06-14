@@ -10,6 +10,8 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 
 type Config = Script[];
 
+type ConfigModule = Config | { default: Config };
+
 let isStartupScriptInvoked = false;
 
 const sampleConfig: Config = [
@@ -90,14 +92,16 @@ export async function loadConfig(plugin: FixRequireModulesPlugin): Promise<void>
       return sampleConfig;
     }
 
-    let config: Config;
+    let configModule: ConfigModule;
 
     try {
-      config = window.require("/" + configPath) as Config;
+      configModule = window.require("/" + configPath);
     } catch (error) {
       printError(new Error("Error loading config file. Using sample config instead.", { cause: error }));
       return sampleConfig;
     }
+
+    const config: Config = "default" in configModule ? configModule.default : configModule;
 
     const set = new Set<string>();
 
