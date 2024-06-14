@@ -45,7 +45,8 @@ if you want to view the source, please visit the github repository of this plugi
     "manifest.json",
     "styles.css",
     "node_modules/esbuild/lib/main.js",
-    "node_modules/@esbuild/win32-x64/esbuild.exe"
+    "node_modules/@esbuild/win32-x64/esbuild.exe",
+    "config.d.ts",
   ];
   if (!isProductionBuild) {
     await writeFile(`${distDir}/.hotreload`, "", "utf8");
