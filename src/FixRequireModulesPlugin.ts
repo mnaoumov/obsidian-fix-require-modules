@@ -16,10 +16,8 @@ import {
 
 import { require as tsxRequire } from "tsx/cjs/api";
 
-type ModuleConstructor = typeof Module;
-
-interface ModuleExConstructor extends ModuleConstructor {
-  _resolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string;
+declare module "node:module" {
+  export function _resolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string;
 }
 
 export default class FixRequireModulesPlugin extends Plugin {
@@ -49,8 +47,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.pluginRequire = require;
     this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
-    const ModuleEx = Module as ModuleExConstructor;
-    this.moduleResolveFileName = ModuleEx._resolveFilename.bind(ModuleEx);
+    this.moduleResolveFileName = Module._resolveFilename.bind(Module);
 
     this.patchModuleRequire();
     this.patchModuleResolveFileName();
@@ -73,10 +70,9 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private patchModuleResolveFileName(): void {
-    const ModuleEx = Module as ModuleExConstructor;
-    ModuleEx._resolveFilename = this.customResolveFilename.bind(this);
+    Module._resolveFilename = this.customResolveFilename.bind(this);
     this.register(() => {
-      ModuleEx._resolveFilename = this.moduleResolveFileName;
+      Module._resolveFilename = this.moduleResolveFileName;
     });
   }
 
