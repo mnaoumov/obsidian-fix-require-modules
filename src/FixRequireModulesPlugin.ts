@@ -1,13 +1,9 @@
-import {
-  Platform,
-  Plugin,
-} from "obsidian";
+import { Plugin } from "obsidian";
 import Module from "module";
 import {
   dirname,
   isAbsolute,
-  join,
-  sep
+  join
 } from "path";
 import {
   existsSync,
@@ -141,23 +137,6 @@ export default class FixRequireModulesPlugin extends Plugin {
     return join(this.app.vault.adapter.getBasePath(), this.app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js");
   }
 
-  private convertRequireId(id: string, currentScriptPath?: string, module?: Module): string {
-    let currentScriptFullPath: string | null;
-
-    if (id.startsWith(".")) {
-      currentScriptFullPath = this.getCurrentScriptFullPath(currentScriptPath, module);
-    } else if (id.startsWith("/")) {
-      currentScriptFullPath = this.getFakeRootPath();
-    } else {
-      return id;
-    }
-
-    const currentDirFullPath = dirname(currentScriptFullPath);
-    const scriptFullPath = join(currentDirFullPath, id);
-
-    return scriptFullPath;
-  }
-
   private getFakeRootPath(): string {
     return join(this.app.vault.adapter.getBasePath(), "fakeRoot.js");
   }
@@ -254,33 +233,6 @@ export default class FixRequireModulesPlugin extends Plugin {
     }
 
     return ans;
-  }
-
-  public async customImport(id: string, currentScriptPath?: string, module?: Module): Promise<unknown> {
-    if (this.builtInModuleNames.includes(id)) {
-      return this.pluginRequire(id) as unknown;
-    }
-
-    if (!module) {
-      module = window.module;
-    }
-
-    const isRootRequire = this.updatedModuleTimestamps.size === 0;
-    const scriptFullPath = this.convertRequireId(id, currentScriptPath, module);
-    const timestamp = this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
-    let convertedId = scriptFullPath;
-
-    if (timestamp > 0) {
-      convertedId = `${Platform.resourcePathPrefix}${scriptFullPath.replaceAll(sep, "/")}?${timestamp}`;
-    }
-
-    try {
-      return await import(convertedId) as unknown;
-    } finally {
-      if (isRootRequire) {
-        this.updatedModuleTimestamps.clear();
-      }
-    }
   }
 
   private customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
