@@ -19,7 +19,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   public async updateSettings(newSettings: Partial<FixRequireModulesSettings>): Promise<void> {
-    this._settings = Object.assign(this._settings, newSettings);
+    this._settings = Object.assign(new FixRequireModulesSettings(), this._settings, newSettings);
     await this.saveData(this._settings);
     await loadConfig(this);
   }
