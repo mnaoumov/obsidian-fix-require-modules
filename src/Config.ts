@@ -1,4 +1,3 @@
-import { join } from "path";
 import {
   invoke,
   printError,
@@ -7,6 +6,7 @@ import {
 
 import type { Plugin } from "obsidian";
 import selectItem from "./select-item.ts";
+import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 
 type Config = Script[];
 
@@ -45,8 +45,8 @@ async function selectAndInvokeScript(plugin: Plugin, config: Config): Promise<vo
   await invoke(script);
 }
 
-export async function loadConfig(plugin: Plugin): Promise<void> {
-  const config = await readConfig();
+export async function loadConfig(plugin: FixRequireModulesPlugin): Promise<void> {
+  const config = await readConfig(plugin);
 
   if (!isStartupScriptInvoked) {
     isStartupScriptInvoked = true;
@@ -77,14 +77,20 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
     });
   }
 
-  async function readConfig(): Promise<Config> {
-    const configPath = join(plugin.manifest.dir!, "config.ts");
+  async function readConfig(plugin: FixRequireModulesPlugin): Promise<Config> {
+    const configPath = plugin.settings.configPath;
 
-    let config: Config;
-    if (!await plugin.app.vault.adapter.exists(configPath)) {
-      console.warn("Config file not found. Using sample config instead.");
+    if (!configPath) {
+      console.warn("No config path specified. Using sample config instead.");
       return sampleConfig;
     }
+
+    if (!(await plugin.app.vault.adapter.exists(configPath))) {
+      console.warn(`Config was not found at ${configPath}. Using sample config instead.`);
+      return sampleConfig;
+    }
+
+    let config: Config;
 
     try {
       config = window.require("/" + configPath) as Config;
@@ -100,6 +106,8 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
         console.error(`Invalid config file. Duplicate script name: ${script.name}. Using sample config instead.`);
         return sampleConfig;
       }
+
+      set.add(script.name);
     }
 
     return config;
