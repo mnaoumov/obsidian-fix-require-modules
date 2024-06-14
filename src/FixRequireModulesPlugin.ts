@@ -185,12 +185,10 @@ export default class FixRequireModulesPlugin extends Plugin {
      * 0: Error
      * 1:     at FixRequireModulesPlugin.getCurrentScriptFullPath
      * 2:     at FixRequireModulesPlugin.customRequire
-     * 3:     at Module.patchedRequire [as require]
-     * 4:     at require
-     * 5:     at functionName (path/to/caller.js:123:45)
+     * 3:     at functionName (path/to/caller.js:123:45)
      */
 
-    const CALLER_LINE_INDEX = 5;
+    const CALLER_LINE_INDEX = 3;
     const callStackLines = new Error().stack?.split("\n") ?? [];
     const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
     if (callStackMatch) {
