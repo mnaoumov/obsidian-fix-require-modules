@@ -41,7 +41,6 @@ export default class FixRequireModulesPlugin extends Plugin {
   private pluginRequire!: NodeJS.Require;
   private nodeRequire!: NodeJS.Require;
   private moduleRequire!: NodeJS.Require;
-  private patchedModuleRequire!: NodeJS.Require;
   private moduleTimestamps = new Map<string, number>();
   private updatedModuleTimestamps = new Map<string, number>();
   private moduleResolveFileName!: (request: string, parent: Module, isMain: boolean, options?: { paths?: string[]; } | undefined) => string;
@@ -60,7 +59,6 @@ export default class FixRequireModulesPlugin extends Plugin {
   private patchModuleRequire(): void {
     Object.assign(patchedModuleRequire, this.moduleRequire);
     Module.prototype.require = patchedModuleRequire as NodeJS.Require;
-    this.patchedModuleRequire = Module.prototype.require;
 
     this.register(() => {
       Module.prototype.require = this.moduleRequire;
