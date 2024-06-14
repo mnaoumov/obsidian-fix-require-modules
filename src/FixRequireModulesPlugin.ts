@@ -41,7 +41,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   private moduleRequire!: NodeJS.Require;
   private moduleTimestamps = new Map<string, number>();
   private updatedModuleTimestamps = new Map<string, number>();
-  private moduleResolveFileName!: (request: string, parent: Module, isMain: boolean, options?: { paths?: string[]; } | undefined) => string;
+  private moduleResolveFileName!: typeof Module._resolveFilename;
 
   public override onload(): void {
     this.pluginRequire = require;
