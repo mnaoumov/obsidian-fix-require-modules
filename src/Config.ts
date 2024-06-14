@@ -2,45 +2,37 @@ import { join } from "path";
 import {
   invoke,
   printError,
-  type Invocable,
   type Script
 } from "./Script.ts";
 
 import type { Plugin } from "obsidian";
 import selectItem from "./select-item.ts";
 
-type Config = {
-  startup: Invocable;
-  scripts: Script[];
-}
+type Config = Script[];
 
 let isStartupScriptInvoked = false;
 
-const sampleConfig: Config = {
-  startup: () => {
-    console.log("`Fix Require Modules` plugin's startup script. See README.md for more information.");
-  },
-  scripts: [
-    {
-      name: "Sync script",
-      invoke: (): void => {
-        console.log("`Fix Require Modules` plugin's sync script. See README.md for more information.");
-      }
+const sampleConfig: Config = [
+  {
+    name: "Sample sync startup script",
+    invoke: (): void => {
+      console.log("This is a Sample sync startup script. See README.md for more information.");
     },
-    {
-      name: "Async script",
-      invoke: async (): Promise<void> => {
-        await Promise.resolve();
-        console.log("`Fix Require Modules` plugin's async script. See README.md for more information.");
-      }
+    isStartupScript: true
+  },
+  {
+    name: "Sample async script",
+    invoke: async (): Promise<void> => {
+      await Promise.resolve();
+      console.log("This is a Sample async script. See README.md for more information.");
     }
-  ]
-};
+  }
+];
 
 async function selectAndInvokeScript(plugin: Plugin, config: Config): Promise<void> {
   const script = await selectItem({
     app: plugin.app,
-    items: config.scripts,
+    items: config,
     itemTextFunc: script => script.name,
     placeholder: "Choose a script to invoke"
   });
@@ -57,13 +49,11 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
   const config = await readConfig();
 
   if (!isStartupScriptInvoked) {
-    const startupScript = {
-      name: "Startup",
-      invoke: config.startup
-    };
-
-    await invoke(startupScript);
     isStartupScriptInvoked = true;
+
+    for (const startupScript of config.filter(script => script.isStartupScript)) {
+      await invoke(startupScript);
+    }
   }
 
   const commands = plugin.app.commands.listCommands().filter(c => c.id.startsWith(`${plugin.manifest.id}:`));
@@ -77,7 +67,7 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
     callback: () => selectAndInvokeScript(plugin, config)
   });
 
-  for (const script of config.scripts) {
+  for (const script of config) {
     plugin.addCommand({
       id: `invoke-${script.name}`,
       name: `Invoke Script ${script.name}`,
@@ -105,7 +95,7 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
 
     const set = new Set<string>();
 
-    for (const script of config!.scripts) {
+    for (const script of config) {
       if (set.has(script.name)) {
         console.error(`Invalid config file. Duplicate script name: ${script.name}. Using sample config instead.`);
         return sampleConfig;
