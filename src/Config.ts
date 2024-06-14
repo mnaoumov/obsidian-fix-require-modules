@@ -6,13 +6,10 @@ import {
   type Script
 } from "./Script.ts";
 
-import type {
-  App,
-  Plugin
-} from "obsidian";
-import ScriptSelectorModal from "./ScriptSelectorModal.ts";
+import type { Plugin } from "obsidian";
+import selectItem from "./select-item.ts";
 
-export type Config = {
+type Config = {
   startup: Invocable;
   scripts: Script[];
 }
@@ -40,14 +37,19 @@ const sampleConfig: Config = {
   ]
 };
 
-export async function selectAndInvokeScript(app: App, scripts: Script[]): Promise<void> {
-  const scriptName = await ScriptSelectorModal.select(app, scripts.map(s => s.name));
-  if (scriptName === null) {
+async function selectAndInvokeScript(plugin: Plugin, config: Config): Promise<void> {
+  const script = await selectItem({
+    app: plugin.app,
+    items: config.scripts,
+    itemTextFunc: script => script.name,
+    placeholder: "Choose a script to invoke"
+  });
+
+  if (script === null) {
     console.debug("No script selected");
     return;
   }
 
-  const script = scripts.find(script => script.name === scriptName)!;
   await invoke(script);
 }
 
@@ -72,7 +74,7 @@ export async function loadConfig(plugin: Plugin): Promise<void> {
   plugin.addCommand({
     id: "invokeScript",
     name: "Invoke Script <<Choose>>",
-    callback: () => selectAndInvokeScript(app, config.scripts),
+    callback: () => selectAndInvokeScript(plugin, config)
   });
 
   for (const script of config.scripts) {
