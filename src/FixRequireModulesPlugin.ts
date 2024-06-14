@@ -45,6 +45,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   private moduleTimestamps = new Map<string, number>();
   private updatedModuleTimestamps = new Map<string, number>();
   private moduleResolveFileName!: typeof Module._resolveFilename;
+  private tsxModuleResolveFileName!: typeof Module._resolveFilename;
   private moduleDependencies = new Map<string, Set<string>>();
   private tsx!: Tsx;
 
@@ -52,14 +53,15 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.pluginRequire = require;
     this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
-    this.tsx = register({ namespace: FixRequireModulesPlugin.name });
     this.moduleResolveFileName = Module._resolveFilename.bind(Module);
+    this.tsx = register({ namespace: FixRequireModulesPlugin.name });
+    this.tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
 
     this.patchNodeRequire();
     this.patchModuleRequire();
-    this.patchModuleResolveFileName();
 
     this.register(() => this.tsx.unregister());
+    this.patchModuleResolveFileName();
   }
 
   private patchNodeRequire(): void {
@@ -110,16 +112,16 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     if (id.startsWith(".")) {
       currentScriptFullPath = this.getCurrentScriptFullPath(currentScriptPath, module);
-    } else if (id.startsWith("/")) {
-      id = `.${id}`;
-    } else {
+    } else if (!id.startsWith("/")) {
       return this.moduleRequire.call(module, id);
     }
 
-    const isRootRequire = this.updatedModuleTimestamps.size === 0;
     const currentDirFullPath = dirname(currentScriptFullPath);
     const scriptFullPath = join(currentDirFullPath, id);
-    this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
+
+    if (!existsSync(scriptFullPath)) {
+      return this.moduleRequire.call(module, id);
+    }
 
     const cleanModuleFullPath = this.getFullPath(module.filename);
     if (cleanModuleFullPath) {
@@ -131,6 +133,13 @@ export default class FixRequireModulesPlugin extends Plugin {
 
       currentModuleDependencies.add(scriptFullPath);
     }
+
+    if (id.startsWith("/")) {
+      id = `.${id}`;
+    }
+
+    const isRootRequire = this.updatedModuleTimestamps.size === 0;
+    this.getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
     try {
       return this.tsx.require(id, currentScriptFullPath);
@@ -253,7 +262,23 @@ export default class FixRequireModulesPlugin extends Plugin {
       return this.getEsbuildPath();
     }
 
-    return this.moduleResolveFileName(request, parent, isMain, options);
+    let path: string;
+
+    if (!isAbsolute(request) && !request.startsWith(".")) {
+      return this.moduleResolveFileName(request, parent, isMain, options);
+    }
+
+    if (isAbsolute(request) || !parent.filename) {
+      path = request;
+    } else {
+      path = join(parent.filename, request);
+    }
+
+    if (!this.getFullPath(path)) {
+      return this.moduleResolveFileName(request, parent, isMain, options);
+    }
+
+    return this.tsxModuleResolveFileName(request, parent, isMain, options);
   }
 
   private getNodeRequireCacheKey(moduleName: string): string {
