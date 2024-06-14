@@ -95,7 +95,7 @@ export async function loadConfig(plugin: FixRequireModulesPlugin): Promise<void>
     let configModule: ConfigModule;
 
     try {
-      configModule = window.require("/" + configPath);
+      configModule = window.require("/" + configPath) as ConfigModule;
     } catch (error) {
       printError(new Error("Error loading config file. Using sample config instead.", { cause: error }));
       return sampleConfig;

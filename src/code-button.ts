@@ -1,4 +1,7 @@
-import type { App, MarkdownPostProcessorContext } from "obsidian";
+import type {
+  App,
+  MarkdownPostProcessorContext
+} from "obsidian";
 import { join } from "node:path";
 import { errorToString } from "./Error.ts";
 

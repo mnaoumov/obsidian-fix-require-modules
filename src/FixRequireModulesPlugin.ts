@@ -28,7 +28,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     await loadConfig(this);
   }
 
-  public override async onload(): Promise<void> {
+  public override onload(): void {
     setPluginRequire(require);
     initPluginVariables(this);
     initTsx(this);
@@ -43,8 +43,8 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.registerMarkdownCodeBlockProcessor("code-button", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
   }
 
-  private async loadSettings() {
-    const settings = await this.loadData();
-    this._settings = Object.assign(new FixRequireModulesSettings(), settings)
+  private async loadSettings(): Promise<void> {
+    const settings = await this.loadData() as FixRequireModulesSettings | undefined;
+    this._settings = Object.assign(new FixRequireModulesSettings(), settings);
   }
 }

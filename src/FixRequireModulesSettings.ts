@@ -1,4 +1,4 @@
 
 export default class FixRequireModulesSettings {
-  configPath: string = "";
+  public configPath: string = "";
 }

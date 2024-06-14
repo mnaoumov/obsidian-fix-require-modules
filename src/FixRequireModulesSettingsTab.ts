@@ -7,12 +7,12 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 export default class FixRequireModulesSettingsTab extends PluginSettingTab {
   public override plugin: FixRequireModulesPlugin;
 
-  constructor(plugin: FixRequireModulesPlugin) {
+  public constructor(plugin: FixRequireModulesPlugin) {
     super(plugin.app, plugin);
     this.plugin = plugin;
   }
 
-  override display() {
+  public override display(): void {
     this.containerEl.empty();
     this.containerEl.createEl("h2", { text: "Fix Require Modules" });
 
@@ -30,8 +30,8 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
         button
           .setButtonText("Save")
           .setTooltip("Save config path and reload config")
-          .onClick(async () => {
-            this.plugin.updateSettings({ configPath });
+          .onClick(async (): Promise<void> => {
+            await this.plugin.updateSettings({ configPath });
           })
       );
 

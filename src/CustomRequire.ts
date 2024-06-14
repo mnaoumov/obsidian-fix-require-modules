@@ -150,7 +150,7 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
   if (activeFile) {
     return getFullPath(activeFile.path)!;
   } else {
-    return fakeRootPath
+    return fakeRootPath;
   }
 }
 
@@ -240,7 +240,7 @@ export function setPluginRequire(require: NodeJS.Require): void {
   pluginRequire = require;
 }
 
-function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & {}, uninstallerRegister: UninstallerRegister) {
+function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object, uninstallerRegister: UninstallerRegister): void {
   const original = obj[key];
   obj[key] = Object.assign(newValue, original);
   uninstallerRegister(() => {
