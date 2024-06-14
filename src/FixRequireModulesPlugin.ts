@@ -55,10 +55,19 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.tsx = register({ namespace: FixRequireModulesPlugin.name });
     this.moduleResolveFileName = Module._resolveFilename.bind(Module);
 
+    this.patchNodeRequire();
     this.patchModuleRequire();
     this.patchModuleResolveFileName();
 
     this.register(() => this.tsx.unregister());
+  }
+
+  private patchNodeRequire(): void {
+    window.require = this.customRequire.bind(this) as NodeJS.Require;
+    Object.assign(window.require, this.nodeRequire);
+    this.register(() => {
+      window.require = this.nodeRequire;
+    });
   }
 
   private patchModuleRequire(): void {
