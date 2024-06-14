@@ -11,6 +11,9 @@ import {
 } from "fs";
 
 import { register } from "tsx/cjs/api";
+import {
+  loadConfig,
+} from "./Config.ts";
 
 declare module "node:module" {
   export function _resolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string;
@@ -49,7 +52,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   private moduleDependencies = new Map<string, Set<string>>();
   private tsx!: Tsx;
 
-  public override onload(): void {
+  public override async onload(): Promise<void> {
     this.pluginRequire = require;
     this.nodeRequire = window.require;
     this.moduleRequire = Module.prototype.require;
@@ -62,6 +65,8 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     this.register(() => this.tsx.unregister());
     this.patchModuleResolveFileName();
+
+    await loadConfig(this);
   }
 
   private patchNodeRequire(): void {

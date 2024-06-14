@@ -1,16 +1,17 @@
-import process from "node:process";
-import runNpmScript from "./tools/npmScriptRunner.ts";
+export type Invocable = () => void | Promise<void>;
 
-const scriptName = process.argv[2] || "";
+export type Script = {
+  name: string;
+  invoke: Invocable;
+}
 
-try {
-  const isLongRunning = await runNpmScript(scriptName);
-  if (!isLongRunning) {
-    process.exit(0);
+export async function invoke(script: Script): Promise<void> {
+  console.debug(`Invoking script: ${script.name}`);
+  try {
+    await script.invoke();
+  } catch (error) {
+    printError(new Error(`Error invoking script: ${script.name}`, { cause: error }));
   }
-} catch (e) {
-  printError(e);
-  process.exit(1);
 }
 
 export function printError(error: unknown, level: number = 0): void {
