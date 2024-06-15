@@ -180,6 +180,8 @@ function getRecursiveTimestamp(moduleName: string): number {
     return updatedModuleTimestamps.get(moduleName)!;
   }
 
+  updatedModuleTimestamps.set(moduleName, 0);
+
   if (!isAbsolute(moduleName)) {
     return 0;
   }
