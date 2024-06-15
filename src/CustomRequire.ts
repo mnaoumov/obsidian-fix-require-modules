@@ -166,7 +166,7 @@ function getFullPath(path: string | null | undefined): string | null {
 
 function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
   const timestamp = getRecursiveTimestamp(moduleName);
-  if (moduleTimestamps.get(moduleName) ?? 0 < timestamp) {
+  if ((moduleTimestamps.get(moduleName) ?? 0) < timestamp) {
     moduleTimestamps.set(moduleName, timestamp);
     delete nodeRequire.cache[getNodeRequireCacheKey(moduleName)];
     moduleDependencies.delete(moduleName);
