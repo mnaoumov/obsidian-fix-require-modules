@@ -128,15 +128,16 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
   }
 
   /**
-   * The caller line index is 6 because the call stack is as follows:
+   * The caller line index is 3 because the call stack is as follows:
    *
    * 0: Error
-   * 1:     at FixRequireModulesPlugin.getCurrentScriptFullPath
-   * 2:     at FixRequireModulesPlugin.customRequire
+   * 1:     at getCurrentScriptFullPath
+   * 2:     at customRequire
    * 3:     at functionName (path/to/caller.js:123:45)
    */
   const CALLER_LINE_INDEX = 3;
   const callStackLines = new Error().stack?.split("\n") ?? [];
+  console.debug(callStackLines);
   const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
   if (callStackMatch) {
     const callerScriptPath = callStackMatch[1]!;
