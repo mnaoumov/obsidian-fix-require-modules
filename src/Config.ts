@@ -74,7 +74,15 @@ export async function loadConfig(plugin: FixRequireModulesPlugin): Promise<void>
       id: `invoke-${script.name}`,
       name: `Invoke Script ${script.name}`,
       callback: async () => {
-        await invoke(script);
+        const updatedConfig = await readConfig(plugin);
+        const updatedScript = updatedConfig.find(s => s.name === script.name) ?? {
+          name: script.name,
+          invoke: () => {
+            throw new Error(`Script not found: ${script.name}`);
+          }
+        };
+
+        await invoke(updatedScript);
       }
     });
   }
