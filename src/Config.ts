@@ -77,7 +77,7 @@ export async function loadConfig(plugin: FixRequireModulesPlugin): Promise<void>
         const updatedConfig = await readConfig(plugin);
         const updatedScript = updatedConfig.find(s => s.name === script.name) ?? {
           name: script.name,
-          invoke: () => {
+          invoke: (): void => {
             throw new Error(`Script not found: ${script.name}`);
           }
         };

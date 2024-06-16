@@ -23,6 +23,10 @@ type Tsx = {
 
 type UninstallerRegister = (uninstaller: () => void) => void;
 
+type SourceMap = {
+  sources: string[];
+};
+
 export const builtInModuleNames = [
   "obsidian",
   "@codemirror/autocomplete",
@@ -42,6 +46,7 @@ export const builtInModuleNames = [
 const nodeRequire = window.require;
 const moduleRequire = Module.prototype.require;
 const moduleResolveFileName = Module._resolveFilename.bind(Module);
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const moduleCompile = Module.prototype._compile;
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
@@ -258,7 +263,7 @@ function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object, un
 export function applyPatches(uninstallerRegister: UninstallerRegister): void {
   patch(window, "require", customRequire as NodeJS.Require, uninstallerRegister);
   patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require, uninstallerRegister);
-  patch(Module.prototype, "_compile", patchedCompile, uninstallerRegister)
+  patch(Module.prototype, "_compile", patchedCompile, uninstallerRegister);
   patch(Module, "_resolveFilename", customResolveFilename, uninstallerRegister);
 
   function patchedModuleRequire(this: Module, id: string): unknown {
@@ -279,23 +284,24 @@ export function initPluginVariables(plugin: Plugin): void {
 }
 
 function customCompile(content: string, filename: string, module: Module): void {
-  content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_, sourceMapBase64) => {
-    return `\n//# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
+  content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
+    return `
+//#${""} sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
   });
   return moduleCompile.call(module, content, filename);
 }
 
 function fixSourceMap(sourceMapBase64: string): string {
   const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf8");
-  const sourceMap = JSON.parse(sourceMapJson);
+  const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map(fixSource);
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
 }
 
 function fixSource(source: string): string{
-    if (!isAbsolute(source)) {
-      return source;
-    }
+  if (!isAbsolute(source)) {
+    return source;
+  }
 
-    return Platform.resourcePathPrefix + source.replace(/\\/g, "/")
+  return Platform.resourcePathPrefix + source.replace(/\\/g, "/");
 }
