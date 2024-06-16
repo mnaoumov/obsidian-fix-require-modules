@@ -39,9 +39,10 @@ export const builtInModuleNames = [
   "@lezer/highlight"
 ];
 
-export const nodeRequire = window.require;
-export const moduleRequire = Module.prototype.require;
-export const moduleResolveFileName = Module._resolveFilename.bind(Module);
+const nodeRequire = window.require;
+const moduleRequire = Module.prototype.require;
+const moduleResolveFileName = Module._resolveFilename.bind(Module);
+const moduleCompile = Module.prototype._compile;
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
 const moduleDependencies = new Map<string, Set<string>>();
@@ -54,7 +55,7 @@ let fakeRootPath: string;
 let basePath: string;
 let getActiveFile: () => { path: string; } | null;
 
-export function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
+function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
   if (builtInModuleNames.includes(id)) {
     return pluginRequire(id);
   }
@@ -204,7 +205,7 @@ function getRecursiveTimestamp(moduleName: string): number {
   return ans;
 }
 
-export function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
+function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
   if (builtInModuleNames.includes(request)) {
     return request;
   }
