@@ -29,7 +29,7 @@
     "globals": "^15.3.0",
     "obsidian": "^1.5.7-1",
     "obsidian-typings": "^1.1.6",
-    "tsx": "^4.15.4"
+    "tsx": "^4.15.5"
   },
   "type": "module"
 }
