@@ -3,7 +3,6 @@ import {
   type App,
   type DataAdapter,
 } from "obsidian";
-import { printError } from "./Error.ts";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
 
@@ -12,18 +11,22 @@ type Script = Invocable | { default: Invocable };
 
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
 
-export async function invoke(scriptPath: string): Promise<void> {
-  console.debug(`Invoking script: ${scriptPath}`);
+export async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
+  const scriptString = isStartup ? "startup script" : "script";
+  console.debug(`Invoking ${scriptString}: ${scriptPath}`);
   try {
+    if (!await app.vault.adapter.exists(scriptPath)) {
+      new Error(`Script not found: ${scriptPath}`);
+    }
     const script = window.require(`/${scriptPath}`) as Script;
     const invocable = getInvocable(script);
     if (typeof invocable !== "function") {
-      throw new Error(`Script ${scriptPath} does not export a function`);
+      throw new Error(`${scriptPath} does not export a function`);
     }
     await invocable();
   } catch (error) {
-    new Notice(`Error invoking script ${scriptPath}. See console for details.`)
-    printError(new Error(`Error invoking script: ${scriptPath}`, { cause: error }));
+    new Notice(`Error invoking ${scriptString} ${scriptPath}. See console for details...`)
+    console.error(new Error(`Error invoking ${scriptString}: ${scriptPath}`, { cause: error }));
   }
 }
 
@@ -59,7 +62,7 @@ export async function selectAndInvokeScript(app: App, scriptsDirectory: string):
   }
 
   if (!scriptFile.startsWith("Error:")) {
-    await invoke(`${scriptsDirectory}/${scriptFile}`);
+    await invoke(app, `${scriptsDirectory}/${scriptFile}`);
   }
 }
 
@@ -91,7 +94,7 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
       id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
       name: `Invoke Script ${scriptFile}`,
       callback: async () => {
-        await invoke(`${plugin.settings.scriptsDirectory}/${scriptFile}`);
+        await invoke(plugin.app, `${plugin.settings.scriptsDirectory}/${scriptFile}`);
       }
     });
   }

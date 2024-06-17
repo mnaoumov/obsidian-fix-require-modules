@@ -3,7 +3,6 @@ import type {
   MarkdownPostProcessorContext
 } from "obsidian";
 import { join } from "node:path";
-import { errorToString } from "./Error.ts";
 
 type DefaultEsmModule = { default(): Promise<unknown> };
 
@@ -31,10 +30,9 @@ ${source}
         await app.vault.create(scriptPath, code);
         try {
           const esmModule = window.require(`/${scriptPath}`) as DefaultEsmModule;
-          const result = await esmModule.default();
-          resultEl.setText(`Result: ${stringify(result)}`);
+          await esmModule.default();
         } catch (error) {
-          resultEl.setText(errorToString(error));
+          console.error(new Error("Error executing code block", { cause: error }));
         }
         finally {
           await app.vault.delete(app.vault.getAbstractFileByPath(scriptPath)!);
@@ -48,24 +46,4 @@ ${source}
   if (!sectionInfo) {
     resultEl.textContent = "Error: Could not get code block info.";
   }
-}
-
-function stringify(value: unknown): string {
-  if (value === undefined) {
-    return "undefined";
-  }
-
-  if (value === null) {
-    return "null";
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (value instanceof Error) {
-    return errorToString(value);
-  }
-
-  return JSON.stringify(value, null, 2);
 }

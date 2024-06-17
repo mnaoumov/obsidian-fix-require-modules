@@ -32,11 +32,6 @@ export default class FixRequireModulesPlugin extends Plugin {
     initTsx(this);
     applyPatches(this.register.bind(this));
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
-    this.addCommand({
-      id: "invokeStartupScript",
-      name: "Invoke Startup Script",
-      callback: () => invoke(this.settings.startupScriptPath)
-    });
 
     this.addCommand({
       id: "invokeScript",
@@ -51,7 +46,11 @@ export default class FixRequireModulesPlugin extends Plugin {
     await this.updateSettings({});
     this.registerMarkdownCodeBlockProcessor("code-button", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
     await registerScripts(this);
-    await invoke(this.settings.startupScriptPath);
+    if (!this.settings.startupScriptPath) {
+      console.warn("No startup script specified in the settings");
+    } else {
+      await invoke(this.app, this.settings.startupScriptPath, true);
+    }
   }
 
   public async updateSettings(newSettings: Partial<FixRequireModulesSettings>): Promise<void> {
