@@ -15,7 +15,8 @@ import { processCodeButtonBlock } from "./code-button.ts";
 import {
   invoke,
   registerScripts,
-  selectAndInvokeScript
+  selectAndInvokeScript,
+  stopWatcher
 } from "./Script.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
@@ -46,6 +47,8 @@ export default class FixRequireModulesPlugin extends Plugin {
     });
 
     this.registerMarkdownCodeBlockProcessor(CODE_BLOCK_LANGUAGE, (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
+
+    this.register(stopWatcher);
   }
 
   private async onLayoutReady(): Promise<void> {

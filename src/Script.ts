@@ -7,11 +7,16 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
 import { printError } from "./Error.ts";
 import { basename } from "node:path";
+import {
+  watch,
+  type FSWatcher
+} from "node:fs";
 
 type Invocable = () => void | Promise<void>;
 type Script = Invocable | { default: Invocable };
 
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
+let watcher: FSWatcher | null = null;
 
 export async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
   const scriptString = isStartup ? "startup script" : "script";
@@ -101,6 +106,14 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
       }
     });
   }
+
+  stopWatcher();
+
+  watcher = watch(`${plugin.app.vault.adapter.getBasePath()}/${plugin.settings.scriptsDirectory}`, { recursive: true }, (eventType) => {
+    if (eventType === "rename") {
+      registerScripts(plugin);
+    }
+  });
 }
 
 async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string, directory: string): Promise<string[]> {
@@ -122,4 +135,10 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
 
 function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
+}
+
+export function stopWatcher() {
+  if (watcher) {
+    watcher.close();
+  }
 }
