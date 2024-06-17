@@ -36,9 +36,8 @@ ${source}
         } catch (error) {
           resultEl.setText("Error! ❌\nSee console for details...");
           printError(new Error("Error executing code block", { cause: error }));
-        }
-        finally {
-          await app.vault.delete(app.vault.getAbstractFileByPath(scriptPath)!);
+        } finally {
+          await app.vault.adapter.remove(scriptPath);
         }
       }
     });
