@@ -56,7 +56,7 @@ require("/vault/root/path.js");
 
 The plugin fixes that problem.
 
-For relative and vault-root paths, you can optionally provide the path to the current script/note, if the plugin couldn't detect it. Feel free to submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) in that case.
+For relative paths, you can optionally provide the path to the current script/note, if the plugin couldn't detect it. Feel free to submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) in that case.
 
 ```js
 require("./some/relative/path.js", "path/to/current/script.js");
