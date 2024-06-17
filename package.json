@@ -28,7 +28,7 @@
     "eslint-plugin-modules-newlines": "^0.0.7",
     "globals": "^15.3.0",
     "obsidian": "^1.5.7-1",
-    "obsidian-typings": "^1.1.6",
+    "obsidian-typings": "mnaoumov/obsidian-typings#main",
     "tsx": "^4.15.5"
   },
   "type": "module"
