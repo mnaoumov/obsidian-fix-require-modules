@@ -104,12 +104,12 @@ export default class FixRequireModulesPlugin extends Plugin {
         const message = `Failed to download ${url}. Disabling the plugin...`;
         new Notice(message);
         console.error(message);
-        this.app.plugins.disablePlugin(this.manifest.id);
+        await this.app.plugins.disablePlugin(this.manifest.id);
       }
 
       const dir = dirname(fullPath);
       if (!await this.app.vault.adapter.exists(dir)) {
-        this.app.vault.adapter.mkdir(dir);
+        await this.app.vault.adapter.mkdir(dir);
       }
       await this.app.vault.adapter.writeBinary(fullPath, response.arrayBuffer);
       notice.hide();
