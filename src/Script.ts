@@ -6,6 +6,7 @@ import {
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
 import { printError } from "./Error.ts";
+import { basename } from "node:path";
 
 type Invocable = () => void | Promise<void>;
 type Script = Invocable | { default: Invocable };
@@ -94,7 +95,7 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
       id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
-      name: `Invoke Script ${scriptFile}`,
+      name: `Invoke Script: ${scriptFile}`,
       callback: async () => {
         await invoke(plugin.app, `${plugin.settings.scriptsDirectory}/${scriptFile}`);
       }
@@ -105,16 +106,20 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
 async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string, directory: string): Promise<string[]> {
   const files: string[] = [];
   const listedFiles = await adapter.list(`${scriptsDirectory}/${directory}`);
-  for (const file of listedFiles.files.sort((a, b) => a.localeCompare(b))) {
-    if (extensions.some(ext => file.toLowerCase().endsWith(ext))) {
-      files.push(file.replace(`${scriptsDirectory}/`, ""));
+  for (const fileName of getSortedBaseNames(listedFiles.files)) {
+    const lowerCasedFileName = fileName.toLowerCase();
+    if (extensions.some(ext => lowerCasedFileName.endsWith(ext))) {
+      files.push(directory ? `${directory}/${fileName}`: fileName);
     }
   }
-  for (const subDirectory of listedFiles.folders.sort((a, b) => a.localeCompare(b))) {
-    const subFiles = await getAllScriptFiles(adapter, scriptsDirectory, `${directory}/${subDirectory}`);
+  for (const directoryName of getSortedBaseNames(listedFiles.folders)) {
+    const subFiles = await getAllScriptFiles(adapter, scriptsDirectory, directory ? `${directory}/${directoryName}` : directoryName);
     files.push(...subFiles);
   }
 
   return files;
 }
 
+function getSortedBaseNames(fullNames: string[]): string[] {
+  return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
+}

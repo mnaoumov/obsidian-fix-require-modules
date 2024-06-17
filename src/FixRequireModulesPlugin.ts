@@ -35,7 +35,7 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     this.addCommand({
       id: "invokeScript",
-      name: "Invoke Script <<Choose>>",
+      name: "Invoke Script: <<Choose>>",
       callback: () => selectAndInvokeScript(this.app, this.settings.scriptsDirectory)
     });
 
