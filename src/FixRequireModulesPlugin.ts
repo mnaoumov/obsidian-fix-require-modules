@@ -51,7 +51,6 @@ export default class FixRequireModulesPlugin extends Plugin {
   private async onLayoutReady(): Promise<void> {
     await this.loadSettings();
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
-    await this.updateSettings({});
     await registerScripts(this);
     if (!this.settings.startupScriptPath) {
       console.warn("No startup script specified in the settings");
