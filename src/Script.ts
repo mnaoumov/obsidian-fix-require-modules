@@ -53,7 +53,7 @@ export async function selectAndInvokeScript(app: App, scriptsDirectory: string):
 
   const scriptFile = await selectItem({
     app: app,
-    items: await getAllScriptFiles(app.vault.adapter, scriptsDirectory, ""),
+    items: scriptFiles,
     itemTextFunc: script => script,
     placeholder: "Choose a script to invoke"
   });
