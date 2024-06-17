@@ -50,7 +50,6 @@ Originally `require()` would throw `Cannot find module` error for:
 
 ```js
 require("./some/relative/path.js");
-require("./some/relative/path.js");
 require("../some/other/relative/path.js");
 require("/vault/root/path.js");
 ```
