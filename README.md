@@ -183,6 +183,10 @@ await hello("world");
 
 ![Code Button](images/code-button.png)
 
+## Tips
+
+If you are planning to use scripts a lot, you might eventually want to install some `node` modules. If so, I recommend to put scripts in a `dot directory`, such as `.scripts` within your vault. `Obsidian` doesn't track changes within `dot directories` and won't re-index your `node_modules` folder over and over.
+
 ## Roadmap
 
 I could fix the behavior of `require()` but I could not make any essential changes to dynamic `import()`, such as `await import("obsidian")`, because it requires `module.register()` hooks that were introduced in `Node.js v18.19.0` and the latest `Obsidian` version is shipped with `Node.js v18.15.0`. As soon as `Obsidian` updates the shipped version of `Node.js` to the corresponding version, I will make corresponding fixes to dynamic `import()`.
