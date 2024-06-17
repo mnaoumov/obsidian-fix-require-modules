@@ -29,7 +29,7 @@ export function errorToString(error: unknown, level: number = 0): string {
   }
 
   if (error.cause !== undefined) {
-    ans += `${indent}Caused by:` + "\n";
+    ans += `\n${indent}Caused by:` + "\n";
     ans += errorToString(error.cause, level + 1);
   }
 
