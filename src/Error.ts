@@ -1,9 +1,7 @@
-export function printError(error: unknown, level: number = 0): void {
+export function printError(error: unknown): void {
   if (error === undefined) {
     return;
   }
-
-  const indent = "  ".repeat(level);
 
   if (!(error instanceof Error)) {
     let str = "";
@@ -16,19 +14,18 @@ export function printError(error: unknown, level: number = 0): void {
       str = JSON.stringify(error);
     }
 
-    console.error(`${indent}${str}`);
+    console.error(str);
     return;
   }
 
   if (!error.stack) {
-    console.error(`${indent}${error.name}: ${error.message}`);
+    console.error(`${error.name}: ${error.message}`);
   } else {
-    const stackLines = error.stack.split("\n").map(line => `${indent}${line}`);
-    console.error(stackLines.join("\n"));
+    console.error(error.stack);
   }
 
   if (error.cause !== undefined) {
-    console.error(`${indent}Caused by:`);
-    printError(error.cause, level + 1);
+    console.error(`Caused by:`);
+    printError(error.cause);
   }
 }
