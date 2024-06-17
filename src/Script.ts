@@ -5,6 +5,7 @@ import {
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
+import { printError } from "./Error.ts";
 
 type Invocable = () => void | Promise<void>;
 type Script = Invocable | { default: Invocable };
@@ -25,8 +26,8 @@ export async function invoke(app: App, scriptPath: string, isStartup?: boolean):
     }
     await invocable();
   } catch (error) {
-    new Notice(`Error invoking ${scriptString} ${scriptPath}. See console for details...`)
-    console.error(new Error(`Error invoking ${scriptString}: ${scriptPath}`, { cause: error }));
+    new Notice(`Error invoking ${scriptString} ${scriptPath}. See console for details...`);
+    printError(new Error(`Error invoking ${scriptString}: ${scriptPath}`, { cause: error }));
   }
 }
 
@@ -75,14 +76,14 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
 
   if (!plugin.settings.scriptsDirectory) {
     const message = "No scripts directory specified in the settings";
-    new Notice(message)
+    new Notice(message);
     console.error(message);
     return;
   }
 
   if (!await plugin.app.vault.adapter.exists(plugin.settings.scriptsDirectory)) {
     const message = `Scripts directory not found: ${plugin.settings.scriptsDirectory}`;
-    new Notice(message)
+    new Notice(message);
     console.error(message);
     return;
   }

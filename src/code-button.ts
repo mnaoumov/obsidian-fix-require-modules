@@ -3,6 +3,7 @@ import type {
   MarkdownPostProcessorContext
 } from "obsidian";
 import { join } from "node:path";
+import { printError } from "scripts/npmScriptExecutor.ts";
 
 type DefaultEsmModule = { default(): Promise<unknown> };
 
@@ -32,7 +33,7 @@ ${source}
           const esmModule = window.require(`/${scriptPath}`) as DefaultEsmModule;
           await esmModule.default();
         } catch (error) {
-          console.error(new Error("Error executing code block", { cause: error }));
+          printError(new Error("Error executing code block", { cause: error }));
         }
         finally {
           await app.vault.delete(app.vault.getAbstractFileByPath(scriptPath)!);
