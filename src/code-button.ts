@@ -3,7 +3,7 @@ import type {
   MarkdownPostProcessorContext
 } from "obsidian";
 import { join } from "node:path";
-import { printError } from "scripts/npmScriptExecutor.ts";
+import { printError } from "./Error.ts";
 
 type DefaultEsmModule = { default(): Promise<unknown> };
 
