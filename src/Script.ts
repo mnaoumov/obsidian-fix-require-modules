@@ -26,7 +26,8 @@ export async function invoke(app: App, scriptPath: string, isStartup?: boolean):
     }
     await invocable();
   } catch (error) {
-    new Notice(`Error invoking ${scriptString} ${scriptPath}. See console for details...`);
+    new Notice(`Error invoking ${scriptString} ${scriptPath}
+See console for details...`);
     printError(new Error(`Error invoking ${scriptString} ${scriptPath}`, { cause: error }));
   }
 }
