@@ -111,7 +111,7 @@ export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<
 
   watcher = watch(`${plugin.app.vault.adapter.getBasePath()}/${plugin.settings.scriptsDirectory}`, { recursive: true }, (eventType) => {
     if (eventType === "rename") {
-      registerScripts(plugin);
+      registerScripts(plugin).catch(printError);
     }
   });
 }
@@ -137,7 +137,7 @@ function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
 }
 
-export function stopWatcher() {
+export function stopWatcher(): void {
   if (watcher) {
     watcher.close();
   }
