@@ -38,13 +38,20 @@ export default class FixRequireModulesPlugin extends Plugin {
       name: "Invoke Script <<Choose>>",
       callback: () => selectAndInvokeScript(this.app, this.settings.scriptsDirectory)
     });
+
+    const CODE_BLOCK_LANGUAGE = "code-button";
+    window.CodeMirror.defineMode(CODE_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "text/typescript"));
+    this.register(() => {
+      window.CodeMirror.defineMode(CODE_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "null"));
+    })
+
+    this.registerMarkdownCodeBlockProcessor(CODE_BLOCK_LANGUAGE, (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
   }
 
   private async onLayoutReady(): Promise<void> {
     await this.loadSettings();
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
     await this.updateSettings({});
-    this.registerMarkdownCodeBlockProcessor("code-button", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
     await registerScripts(this);
     if (!this.settings.startupScriptPath) {
       console.warn("No startup script specified in the settings");
