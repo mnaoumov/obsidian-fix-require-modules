@@ -43,9 +43,7 @@ if you want to view the source, please visit the github repository of this plugi
 
   const distFileNames = [
     "manifest.json",
-    "styles.css",
-    "node_modules/esbuild/lib/main.js",
-    "node_modules/@esbuild/win32-x64/esbuild.exe"
+    "styles.css"
   ];
   if (!isProductionBuild) {
     await writeFile(`${distDir}/.hotreload`, "", "utf8");
