@@ -1,4 +1,5 @@
 
 export default class FixRequireModulesSettings {
-  public configPath: string = "";
+  public scriptsDirectory: string = "";
+  public startupScriptPath: string = "";
 }

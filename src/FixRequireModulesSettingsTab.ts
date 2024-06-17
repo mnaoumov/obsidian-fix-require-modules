@@ -1,8 +1,10 @@
 import {
   PluginSettingTab,
-  Setting
+  Setting,
+  debounce
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
+import type FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
 
 export default class FixRequireModulesSettingsTab extends PluginSettingTab {
   public override plugin: FixRequireModulesPlugin;
@@ -16,23 +18,26 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
     this.containerEl.empty();
     this.containerEl.createEl("h2", { text: "Fix Require Modules" });
 
-    let configPath = this.plugin.settings.configPath;
+    const extensionsStr = "(.js, .cjs, .mjs, .ts, .cts, .mts)";
+
     new Setting(this.containerEl)
-      .setName("Config path")
-      .setDesc("Path to the config file")
+      .setName("Scripts directory")
+      .setDesc(`Path to directory with script files ${extensionsStr}`)
       .addText(text =>
         text
-          .setPlaceholder("path/to/config.ts")
-          .setValue(configPath)
-          .onChange(value => configPath = value)
-      )
-      .addButton(button =>
-        button
-          .setButtonText("Save")
-          .setTooltip("Save config path and reload config")
-          .onClick(async (): Promise<void> => {
-            await this.plugin.updateSettings({ configPath });
-          })
+          .setPlaceholder("path/to/scripts/directory")
+          .setValue(this.plugin.settings.scriptsDirectory)
+          .onChange(this.createOnChangeHandler("scriptsDirectory"))
+      );
+
+    new Setting(this.containerEl)
+      .setName("Startup script path")
+      .setDesc(`Path to the the startup script ${extensionsStr}`)
+      .addText(text =>
+        text
+          .setPlaceholder("path/to/startup.ts")
+          .setValue(this.plugin.settings.startupScriptPath)
+          .onChange(this.createOnChangeHandler("startupScriptPath"))
       );
 
     new Setting(this.containerEl)
@@ -48,5 +53,15 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
             hotkeysTab.updateHotkeyVisibility();
           })
       );
+  }
+
+  private createOnChangeHandler<PropertyKey extends keyof FixRequireModulesSettings>(
+    propertyKey: PropertyKey
+  ): (value: FixRequireModulesSettings[PropertyKey]) => void {
+    const DEBOUNCE_TIMEOUT_IN_MILLISECONDS = 2000;
+
+    return debounce(async (value: FixRequireModulesSettings[PropertyKey]) => {
+      await this.plugin.updateSettings({ [propertyKey]: value });
+    }, DEBOUNCE_TIMEOUT_IN_MILLISECONDS);
   }
 }

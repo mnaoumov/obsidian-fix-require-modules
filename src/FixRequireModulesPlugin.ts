@@ -2,7 +2,6 @@ import {
   Plugin,
   type MarkdownPostProcessorContext
 } from "obsidian";
-import { loadConfig } from "./Config.ts";
 import {
   applyPatches,
   builtInModuleNames,
@@ -13,6 +12,11 @@ import {
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
 import { processCodeButtonBlock } from "./code-button.ts";
+import {
+  invoke,
+  registerScripts,
+  selectAndInvokeScript
+} from "./Script.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
@@ -22,18 +26,23 @@ export default class FixRequireModulesPlugin extends Plugin {
     return Object.freeze(this._settings);
   }
 
-  public async updateSettings(newSettings: Partial<FixRequireModulesSettings>): Promise<void> {
-    this._settings = Object.assign(new FixRequireModulesSettings(), this._settings, newSettings);
-    await this.saveData(this._settings);
-    await loadConfig(this);
-  }
-
   public override onload(): void {
     setPluginRequire(require);
     initPluginVariables(this);
     initTsx(this);
     applyPatches(this.register.bind(this));
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    this.addCommand({
+      id: "invokeStartupScript",
+      name: "Invoke Startup Script",
+      callback: () => invoke(this.settings.startupScriptPath)
+    });
+
+    this.addCommand({
+      id: "invokeScript",
+      name: "Invoke Script <<Choose>>",
+      callback: () => selectAndInvokeScript(this.app, this.settings.scriptsDirectory)
+    });
   }
 
   private async onLayoutReady(): Promise<void> {
@@ -41,6 +50,18 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
     await this.updateSettings({});
     this.registerMarkdownCodeBlockProcessor("code-button", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
+    await registerScripts(this);
+    await invoke(this.settings.startupScriptPath);
+  }
+
+  public async updateSettings(newSettings: Partial<FixRequireModulesSettings>): Promise<void> {
+    const scriptsDirectory = this._settings.scriptsDirectory;
+    this._settings = Object.assign(new FixRequireModulesSettings(), this._settings, newSettings);
+    await this.saveData(this._settings);
+
+    if (this.settings.scriptsDirectory !== scriptsDirectory) {
+      await registerScripts(this);
+    }
   }
 
   private async loadSettings(): Promise<void> {
