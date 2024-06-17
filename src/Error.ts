@@ -25,7 +25,7 @@ export function printError(error: unknown): void {
   }
 
   if (error.cause !== undefined) {
-    console.error(`Caused by:`);
+    console.error("Caused by:");
     printError(error.cause);
   }
 }
