@@ -13,7 +13,7 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
   if (sectionInfo) {
     const lines = sectionInfo.text.split("\n");
     const codeBlockHeader = lines[sectionInfo.lineStart]!;
-    const caption = codeBlockHeader.slice("```code-button ".length).trim();
+    const caption = codeBlockHeader.slice("```code-button ".length).trim() || "(no caption)";
 
     el.createEl("button", {
       text: caption,
