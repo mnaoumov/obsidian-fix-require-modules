@@ -109,7 +109,7 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
   for (const fileName of getSortedBaseNames(listedFiles.files)) {
     const lowerCasedFileName = fileName.toLowerCase();
     if (extensions.some(ext => lowerCasedFileName.endsWith(ext))) {
-      files.push(directory ? `${directory}/${fileName}`: fileName);
+      files.push(directory ? `${directory}/${fileName}` : fileName);
     }
   }
   for (const directoryName of getSortedBaseNames(listedFiles.folders)) {
