@@ -97,6 +97,10 @@ All the `require()`'d modules are cached for performance reasons, but the cache 
 
 Therefore you can be sure that `require("./someScript.js")` will always get you the most actual version of the script.
 
+### Source maps
+
+The plugin properly manages compiled code's source maps allowing to seamlessly debug compiled code in `Obsidian` using original code.
+
 ### Invocable Scripts
 
 You can make any script easily invocable via the plugin.
@@ -177,7 +181,7 @@ You can also assign hotkeys for the most used scripts.
 
 ### Code buttons
 
-The plugin adds the ability to create a code button that executes `JavaScript`/`TypeScript`:
+The plugin adds the ability to create a code button that executes `JavaScript`/`TypeScript` written in `CommonJS` (`cjs`) style:
 
 ````markdown
 ```code-button Click me!
