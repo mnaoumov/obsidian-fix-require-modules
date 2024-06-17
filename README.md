@@ -93,7 +93,7 @@ require("path/to/script.mts");
 
 ### Smart caching
 
-All the `require()`d modules are cached for performance reasons, but the cache is invalidated if the script itself or any of its dependent scripts changed.
+All the `require()`'d modules are cached for performance reasons, but the cache is invalidated if the script itself or any of its dependent scripts changed.
 
 Therefore you can be sure that `require("./someScript.js")` will always get you the most actual version of the script.
 
