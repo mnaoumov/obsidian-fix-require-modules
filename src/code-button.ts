@@ -5,7 +5,7 @@ import type {
 import { join } from "node:path";
 import { printError } from "./Error.ts";
 
-type DefaultEsmModule = { default(): Promise<unknown> };
+type DefaultEsmModule = { default(): Promise<void> };
 
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
@@ -21,7 +21,7 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
       async onclick(): Promise<void> {
         resultEl.empty();
         resultEl.setText("Executing...⌛");
-        const code = `export default async function(): Promise<unknown> {
+        const code = `export default async function(): Promise<void> {
 ${source}
 };`;
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
@@ -32,7 +32,9 @@ ${source}
         try {
           const esmModule = window.require(`/${scriptPath}`) as DefaultEsmModule;
           await esmModule.default();
+          resultEl.setText("Done! ✅");
         } catch (error) {
+          resultEl.setText("Error! ❌\nSee console for details...");
           printError(new Error("Error executing code block", { cause: error }));
         }
         finally {
@@ -45,6 +47,6 @@ ${source}
   const resultEl = el.createEl("pre");
 
   if (!sectionInfo) {
-    resultEl.textContent = "Error: Could not get code block info.";
+    resultEl.textContent = "Error! ❌\nCould not get code block info. Try to reopen the note...";
   }
 }
