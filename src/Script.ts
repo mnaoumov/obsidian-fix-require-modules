@@ -81,7 +81,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
     plugin.app.commands.removeCommand(command.id);
   }
 
-  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory()
+  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory();
 
   if (!invocableScriptsDirectory) {
     const message = "No Invocable scripts directory specified in the settings";

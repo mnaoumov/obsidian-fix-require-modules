@@ -14,7 +14,7 @@ export default class FixRequireModulesSettings {
 
   private getPathRelativeToModulesRoot(path: string): string {
     if (!path) {
-      return ""
+      return "";
     }
 
     if (!this.modulesRoot) {
