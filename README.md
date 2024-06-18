@@ -51,17 +51,26 @@ Originally `require()` would throw `Cannot find module` error for:
 ```js
 require("./some/relative/path.js");
 require("../some/other/relative/path.js");
-require("/vault/root/path.js");
 ```
 
 The plugin fixes that problem.
 
-For relative paths, you can optionally provide the path to the current script/note, if the plugin couldn't detect it. Feel free to submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) in that case.
+You can optionally provide the path to the current script/note, if the plugin couldn't detect it. Feel free to submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) in that case.
 
 ```js
 require("./some/relative/path.js", "path/to/current/script.js");
 require("./some/relative/path.js", "path/to/current/note.md");
 ```
+
+### Root-relative modules
+
+The plugin adds the ability to use
+
+```js
+require("/path/from/root.js");
+```
+
+The root `/` directory is configurable via settings.
 
 ### [`ECMAScript Modules`][ESM]
 
@@ -155,8 +164,6 @@ export default async function someName(param1: string): Promise<void> {
 
 The plugin allows to configure a script directory, so every script from it and its subdirectories can be invoked using `Command Palette`.
 
-![Scripts Directory Setting](images/scripts-directory.png)
-
 In `Command Palette` the order of the scripts could be unpredictable, because `Obsidian` sorts commands based on some internal heuristics.
 
 ![Command Palette](images/commmand-palette.png)
@@ -169,13 +176,9 @@ You can use custom command `Fix Require Modules: Invoke Script: <<Choose>>` to h
 
 The plugin adds a configuration setting to invoke any script when `Obsidian` loads.
 
-![Startup](images/startup.png)
-
 ### Hotkeys
 
 You can also assign hotkeys for the most used scripts.
-
-![Hotkeys settings](images/hotkeys-settings.png)
 
 ![Hotkeys](images/hotkeys.png)
 
@@ -198,7 +201,8 @@ If you are planning to use scripts a lot, you might eventually want to install s
 
 ## Roadmap
 
-I could fix the behavior of `require()` but I could not make any essential changes to dynamic `import()`, such as `await import("obsidian")`, because it requires `module.register()` hooks that were introduced in `Node.js v18.19.0` and the latest `Obsidian` version is shipped with `Node.js v18.15.0`. As soon as `Obsidian` updates the shipped version of `Node.js` to the corresponding version, I will make corresponding fixes to dynamic `import()`.
+- I could fix the behavior of `require()` but I could not make any essential changes to dynamic `import()`, such as `await import("obsidian")`, because it requires `module.register()` hooks that were introduced in `Node.js v18.19.0` and the latest `Obsidian` version is shipped with `Node.js v18.15.0`. As soon as `Obsidian` updates the shipped version of `Node.js` to the corresponding version, I will make corresponding fixes to dynamic `import()`.
+- For the same reason I could not make `code buttons` to support `ECMAScript Modules` (`esm`) syntax, because it wouldn't work with top-level `await` statements. Will be fixed together with the previous issue.
 
 ## Installation
 
