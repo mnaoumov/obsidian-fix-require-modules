@@ -1,10 +1,8 @@
 import {
   PluginSettingTab,
   Setting,
-  debounce
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
-import type FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
 
 export default class FixRequireModulesSettingsTab extends PluginSettingTab {
   public override plugin: FixRequireModulesPlugin;
@@ -18,26 +16,53 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
     this.containerEl.empty();
     this.containerEl.createEl("h2", { text: "Fix Require Modules" });
 
-    const extensionsStr = "(.js, .cjs, .mjs, .ts, .cts, .mts)";
+    const settings = this.plugin.settings;
 
     new Setting(this.containerEl)
-      .setName("Scripts directory")
-      .setDesc(`Path to directory with script files ${extensionsStr}`)
+      .setName("Script modules root")
+      .setDesc(createDocumentFragment(`Path to the directory that is considered as <b><code>/</code></b> in <b><code>require("/script.js")</code></b><br />
+Leave blank to use the root of the vault.
+`))
       .addText(text =>
         text
-          .setPlaceholder("path/to/scripts/directory")
-          .setValue(this.plugin.settings.scriptsDirectory)
-          .onChange(this.createOnChangeHandler("scriptsDirectory"))
+          .setPlaceholder("path/to/script/modules/root")
+          .setValue(this.plugin.settings.modulesRoot)
+          .onChange((value) => settings.modulesRoot = value)
+      );
+
+    new Setting(this.containerEl)
+      .setName("Invocable scripts directory")
+      .setDesc(createDocumentFragment(`Path to the directory with invocable scripts.<br />
+Should be a relative path to the <b><code>Script modules root</code></b><br />
+Leave blank if you don't use invocable scripts.
+`))
+      .addText(text =>
+        text
+          .setPlaceholder("path/to/invocable/scripts/directory")
+          .setValue(this.plugin.settings.invocableScriptsDirectory)
+          .onChange((value) => settings.invocableScriptsDirectory = value)
       );
 
     new Setting(this.containerEl)
       .setName("Startup script path")
-      .setDesc(`Path to the the startup script ${extensionsStr}`)
+      .setDesc(createDocumentFragment(`Path to the invocable script executed on startup.<br />
+Should be a relative path to the <b><code>Script modules root</code></b><br />
+Leave blank if you don't use startup script.
+`))
       .addText(text =>
         text
           .setPlaceholder("path/to/startup.ts")
           .setValue(this.plugin.settings.startupScriptPath)
-          .onChange(this.createOnChangeHandler("startupScriptPath"))
+          .onChange((value) => settings.startupScriptPath = value)
+      );
+
+    new Setting(this.containerEl)
+      .addButton(button =>
+        button
+          .setButtonText("Save settings")
+          .onClick(async () => {
+            await this.plugin.saveSettings(settings);
+          })
       );
 
     new Setting(this.containerEl)
@@ -54,14 +79,10 @@ export default class FixRequireModulesSettingsTab extends PluginSettingTab {
           })
       );
   }
+}
 
-  private createOnChangeHandler<PropertyKey extends keyof FixRequireModulesSettings>(
-    propertyKey: PropertyKey
-  ): (value: FixRequireModulesSettings[PropertyKey]) => void {
-    const DEBOUNCE_TIMEOUT_IN_MILLISECONDS = 2000;
-
-    return debounce(async (value: FixRequireModulesSettings[PropertyKey]) => {
-      await this.plugin.updateSettings({ [propertyKey]: value });
-    }, DEBOUNCE_TIMEOUT_IN_MILLISECONDS);
-  }
+function createDocumentFragment(htmlString: string): DocumentFragment {
+  const template = createEl("template");
+  template.innerHTML = htmlString;
+  return template.content;
 }

@@ -50,9 +50,9 @@ export async function selectAndInvokeScript(app: App, scriptsDirectory: string):
   let scriptFiles: string[];
 
   if (!scriptsDirectory) {
-    scriptFiles = ["Error: No scripts directory specified in the settings"];
+    scriptFiles = ["Error: No Invocable scripts directory specified in the settings"];
   } else if (!await app.vault.adapter.exists(scriptsDirectory)) {
-    scriptFiles = [`Error: Scripts directory not found: ${scriptsDirectory}`];
+    scriptFiles = [`Error: Invocable scripts directory not found: ${scriptsDirectory}`];
   } else {
     scriptFiles = await getAllScriptFiles(app.vault.adapter, scriptsDirectory, "");
   }
@@ -74,44 +74,46 @@ export async function selectAndInvokeScript(app: App, scriptsDirectory: string):
   }
 }
 
-export async function registerScripts(plugin: FixRequireModulesPlugin): Promise<void> {
+export async function registerInvocableScripts(plugin: FixRequireModulesPlugin): Promise<void> {
   const COMMAND_NAME_PREFIX = "invokeScriptFile-";
   const commands = plugin.app.commands.listCommands().filter(c => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
   for (const command of commands) {
     plugin.app.commands.removeCommand(command.id);
   }
 
-  if (!plugin.settings.scriptsDirectory) {
-    const message = "No scripts directory specified in the settings";
+  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory()
+
+  if (!invocableScriptsDirectory) {
+    const message = "No Invocable scripts directory specified in the settings";
+    new Notice(message);
+    console.warn(message);
+    return;
+  }
+
+  if (!await plugin.app.vault.adapter.exists(invocableScriptsDirectory)) {
+    const message = `Invocable scripts directory not found: ${invocableScriptsDirectory}`;
     new Notice(message);
     console.error(message);
     return;
   }
 
-  if (!await plugin.app.vault.adapter.exists(plugin.settings.scriptsDirectory)) {
-    const message = `Scripts directory not found: ${plugin.settings.scriptsDirectory}`;
-    new Notice(message);
-    console.error(message);
-    return;
-  }
-
-  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settings.scriptsDirectory, "");
+  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settings.getInvocableScriptsDirectory(), "");
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
       id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
       name: `Invoke Script: ${scriptFile}`,
       callback: async () => {
-        await invoke(plugin.app, `${plugin.settings.scriptsDirectory}/${scriptFile}`);
+        await invoke(plugin.app, `${invocableScriptsDirectory}/${scriptFile}`);
       }
     });
   }
 
   stopWatcher();
 
-  watcher = watch(`${plugin.app.vault.adapter.getBasePath()}/${plugin.settings.scriptsDirectory}`, { recursive: true }, (eventType) => {
+  watcher = watch(`${plugin.app.vault.adapter.getBasePath()}/${invocableScriptsDirectory}`, { recursive: true }, (eventType) => {
     if (eventType === "rename") {
-      registerScripts(plugin).catch(printError);
+      registerInvocableScripts(plugin).catch(printError);
     }
   });
 }
