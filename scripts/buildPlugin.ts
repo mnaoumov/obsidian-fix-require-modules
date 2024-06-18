@@ -96,7 +96,8 @@ if you want to view the source, please visit the github repository of this plugi
           build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
             let contents = await readFile(args.path, "utf8");
             contents = contents.replace(/import\.meta\.url/g, "__filename");
-            contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n${\"\"}//# sourceMappingURL");
+            // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
+            contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n//#${\"\"} sourceMappingURL");
 
             return {
               contents,

@@ -285,6 +285,7 @@ export function initPluginVariables(plugin: Plugin): void {
 
 function customCompile(content: string, filename: string, module: Module): void {
   content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
+    // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
     return `
 //#${""} sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
   });
