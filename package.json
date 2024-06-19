@@ -1,6 +1,6 @@
 {
   "name": "fix-require-modules",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Fixes `require()` calls for the built-in modules",
   "scripts": {
     "build": "tsx scripts/npmScriptExecutor.ts build",
