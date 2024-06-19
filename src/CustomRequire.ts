@@ -303,9 +303,9 @@ function fixSource(source: string): string {
     return source;
   }
 
-  return Platform.resourcePathPrefix + source.replace(/\\/g, "/");
+  return Platform.resourcePathPrefix + source.replaceAll("\\", "/");
 }
 
 export function setModuleRoot(moduleRoot: string): void {
-  fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js");
+  fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js").replaceAll("\\", "/");
 }
