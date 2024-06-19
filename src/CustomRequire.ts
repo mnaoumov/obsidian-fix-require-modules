@@ -75,7 +75,7 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
 
   let currentScriptFullPath = fakeRootPath;
 
-  if (id.startsWith(".")) {
+  if (id.startsWith("./") || id.startsWith("../")) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
   } else if (!id.startsWith("/")) {
     return moduleRequire.call(module, id);
@@ -221,7 +221,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
 
   let path: string;
 
-  if (!isAbsolute(request) && !request.startsWith(".")) {
+  if (!isAbsolute(request) && !request.startsWith("./") && !request.startsWith("../")) {
     return moduleResolveFileName(request, parent, isMain, options);
   }
 
