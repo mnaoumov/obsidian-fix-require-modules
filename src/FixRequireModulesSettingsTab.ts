@@ -1,4 +1,5 @@
 import {
+  Notice,
   PluginSettingTab,
   Setting,
 } from "obsidian";
@@ -62,6 +63,7 @@ Leave blank if you don't use startup script.
           .setButtonText("Save settings")
           .onClick(async () => {
             await this.plugin.saveSettings(settings);
+            new Notice("Settings saved");
           })
       );
 
