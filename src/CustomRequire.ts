@@ -66,7 +66,7 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
   }
 
   if (id === "esbuild") {
-    return moduleRequire(esBuildPath);
+    return moduleRequire.call(module, esBuildPath);
   }
 
   if (!module) {

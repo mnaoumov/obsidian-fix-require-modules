@@ -46,15 +46,15 @@ function getInvocable(script: Script): Invocable {
   return script;
 }
 
-export async function selectAndInvokeScript(app: App, scriptsDirectory: string): Promise<void> {
+export async function selectAndInvokeScript(app: App, invocableScriptsDirectory: string): Promise<void> {
   let scriptFiles: string[];
 
-  if (!scriptsDirectory) {
+  if (!invocableScriptsDirectory) {
     scriptFiles = ["Error: No Invocable scripts directory specified in the settings"];
-  } else if (!await app.vault.adapter.exists(scriptsDirectory)) {
-    scriptFiles = [`Error: Invocable scripts directory not found: ${scriptsDirectory}`];
+  } else if (!await app.vault.adapter.exists(invocableScriptsDirectory)) {
+    scriptFiles = [`Error: Invocable scripts directory not found: ${invocableScriptsDirectory}`];
   } else {
-    scriptFiles = await getAllScriptFiles(app.vault.adapter, scriptsDirectory, "");
+    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, "");
   }
 
   const scriptFile = await selectItem({
@@ -70,7 +70,7 @@ export async function selectAndInvokeScript(app: App, scriptsDirectory: string):
   }
 
   if (!scriptFile.startsWith("Error:")) {
-    await invoke(app, `${scriptsDirectory}/${scriptFile}`);
+    await invoke(app, `${invocableScriptsDirectory}/${scriptFile}`);
   }
 }
 
