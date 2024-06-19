@@ -80,7 +80,7 @@ export default class FixRequireModulesPlugin extends Plugin {
 
   private async loadSettings(): Promise<void> {
     const settings = await this.loadData() as FixRequireModulesSettings | undefined;
-    this.saveSettings(settings ?? new FixRequireModulesSettings());
+    await this.saveSettings(settings ?? new FixRequireModulesSettings());
   }
 
   private async downloadEsbuild(): Promise<void> {
