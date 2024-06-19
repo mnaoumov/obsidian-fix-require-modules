@@ -77,12 +77,14 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
 
   if (id.startsWith("./") || id.startsWith("../")) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
-  } else if (!id.startsWith("/")) {
-    return moduleRequire.call(module, id);
+  }
+
+  if (id.startsWith("/")) {
+    id = `.${id}`;
   }
 
   const currentDirFullPath = dirname(currentScriptFullPath);
-  const scriptFullPath = join(currentDirFullPath, id);
+  const scriptFullPath = isAbsolute(id) ? id : join(currentDirFullPath, id);
 
   if (!existsSync(scriptFullPath)) {
     return moduleRequire.call(module, id);
@@ -97,10 +99,6 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
     }
 
     currentModuleDependencies.add(scriptFullPath);
-  }
-
-  if (id.startsWith("/")) {
-    id = `.${id}`;
   }
 
   const isRootRequire = updatedModuleTimestamps.size === 0;
