@@ -30,7 +30,7 @@ ${source}
         const scriptPath = join(dir?.path ?? "", `.${randomFileName}.ts`);
         await app.vault.create(scriptPath, code);
         try {
-          const esmModule = window.require(`/${scriptPath}`) as DefaultEsmModule;
+          const esmModule = window.require(app.vault.adapter.getFullPath(scriptPath)) as DefaultEsmModule;
           await esmModule.default();
           resultEl.setText("Done! ✅");
         } catch (error) {

@@ -25,7 +25,7 @@ export async function invoke(app: App, scriptPath: string, isStartup?: boolean):
     if (!await app.vault.adapter.exists(scriptPath)) {
       new Error(`Script not found: ${scriptPath}`);
     }
-    const script = window.require(`/${scriptPath}`) as Script;
+    const script = window.require(app.vault.adapter.getFullPath(scriptPath)) as Script;
     const invocable = getInvocable(script);
     if (typeof invocable !== "function") {
       throw new Error(`${scriptPath} does not export a function`);
