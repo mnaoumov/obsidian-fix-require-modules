@@ -279,7 +279,6 @@ export function initPluginVariables(plugin: Plugin): void {
   pluginId = plugin.manifest.id;
   basePath = plugin.app.vault.adapter.getBasePath();
   esBuildPath = join(basePath, plugin.manifest.dir!, "node_modules/esbuild/lib/main.js");
-  fakeRootPath = join(basePath, "fakeRoot.js");
   getActiveFile = plugin.app.workspace.getActiveFile.bind(plugin.app.workspace);
 }
 
@@ -299,10 +298,14 @@ function fixSourceMap(sourceMapBase64: string): string {
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
 }
 
-function fixSource(source: string): string{
+function fixSource(source: string): string {
   if (!isAbsolute(source)) {
     return source;
   }
 
   return Platform.resourcePathPrefix + source.replace(/\\/g, "/");
+}
+
+export function setModuleRoot(moduleRoot: string): void {
+  fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js");
 }

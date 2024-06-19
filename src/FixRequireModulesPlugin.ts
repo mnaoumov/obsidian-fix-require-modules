@@ -9,6 +9,7 @@ import {
   builtInModuleNames,
   initPluginVariables,
   initTsx,
+  setModuleRoot,
   setPluginRequire,
 } from "./CustomRequire.ts";
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
@@ -27,20 +28,24 @@ import {
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
-  private _settings!: FixRequireModulesSettings;
+  private _settings: FixRequireModulesSettings = new FixRequireModulesSettings();
 
   public get settings(): FixRequireModulesSettings {
     return FixRequireModulesSettings.clone(this._settings);
   }
 
-  public override async onload(): Promise<void> {
+  public override onload(): void {
+    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+  }
+
+  private async onLayoutReady(): Promise<void> {
     await this.downloadEsbuild();
+    await this.loadSettings();
 
     setPluginRequire(require);
     initPluginVariables(this);
     initTsx(this);
     applyPatches(this.register.bind(this));
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
 
     this.addCommand({
       id: "invokeScript",
@@ -55,14 +60,10 @@ export default class FixRequireModulesPlugin extends Plugin {
     });
 
     this.registerMarkdownCodeBlockProcessor(CODE_BLOCK_LANGUAGE, (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
-
     this.register(stopWatcher);
-  }
 
-  private async onLayoutReady(): Promise<void> {
-    await this.loadSettings();
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
-    await registerInvocableScripts(this);
+
     if (!this.settings.startupScriptPath) {
       console.warn("No Startup script path specified in the settings");
     } else {
@@ -71,18 +72,15 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   public async saveSettings(newSettings: FixRequireModulesSettings): Promise<void> {
-    const invocableScriptsDirectory = this._settings.getInvocableScriptsDirectory();
     this._settings = FixRequireModulesSettings.clone(newSettings);
     await this.saveData(this._settings);
-
-    if (this.settings.getInvocableScriptsDirectory() !== invocableScriptsDirectory) {
-      await registerInvocableScripts(this);
-    }
+    await registerInvocableScripts(this);
+    setModuleRoot(this._settings.modulesRoot);
   }
 
   private async loadSettings(): Promise<void> {
     const settings = await this.loadData() as FixRequireModulesSettings | undefined;
-    this._settings = FixRequireModulesSettings.clone(settings);
+    this.saveSettings(settings ?? new FixRequireModulesSettings());
   }
 
   private async downloadEsbuild(): Promise<void> {
