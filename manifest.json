@@ -1,7 +1,7 @@
 {
   "id": "fix-require-modules",
   "name": "Fix Require Modules",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "minAppVersion": "0.15.0",
   "description": "Fixes `require()` calls for the built-in modules",
   "author": "mnaoumov",
