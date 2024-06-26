@@ -49,12 +49,12 @@ export default class FixRequireModulesPlugin extends Plugin {
   private async onLayoutReady(): Promise<void> {
     await this.downloadEsbuild();
 
-    setPluginRequire(require);
     initPluginVariables(this);
+    await this.loadSettings();
+
+    setPluginRequire(require);
     initTsx(this);
     applyPatches(this.register.bind(this));
-
-    await this.loadSettings();
 
     this.addCommand({
       id: "invokeScript",
