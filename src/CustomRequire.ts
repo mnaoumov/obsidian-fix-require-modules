@@ -217,6 +217,11 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return esBuildPath;
   }
 
+  if (request.startsWith("@esbuild/")) {
+    const filename = moduleResolveFileName(request, parent, isMain, options);
+    return filename.split("?")[0]!;
+  }
+
   let path: string;
 
   if (!isAbsolute(request) && !request.startsWith("./") && !request.startsWith("../")) {
