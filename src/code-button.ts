@@ -7,6 +7,8 @@ import { printError } from "./Error.ts";
 
 type DefaultEsmModule = { default(): Promise<void> };
 
+const importExportRegex = /\bimport\s+.*\bfrom\b|^\s*export\s+/m;
+
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
 
@@ -21,17 +23,28 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
       async onclick(): Promise<void> {
         resultEl.empty();
         resultEl.setText("Executing...⌛");
-        const code = `export default async function(): Promise<void> {
+
+        const isEsm = importExportRegex.test(source);
+        let code: string;
+
+        if (isEsm) {
+          code = source;
+        } else {
+          code = `export default async function scriptWrapper(): Promise<void> {
 ${source}
 };`;
+        }
+
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
         const dir = noteFile?.parent;
         const randomFileName = Math.random().toString(36).substring(2, 15);
         const scriptPath = join(dir?.path ?? "", `.${randomFileName}.ts`);
         await app.vault.create(scriptPath, code);
         try {
-          const esmModule = window.require(app.vault.adapter.getFullPath(scriptPath)) as DefaultEsmModule;
-          await esmModule.default();
+          const result = window.require(app.vault.adapter.getFullPath(scriptPath));
+          if (!isEsm) {
+            await (result as DefaultEsmModule).default();
+          }
           resultEl.setText("Done! ✅");
         } catch (error) {
           resultEl.setText("Error! ❌\nSee console for details...");
