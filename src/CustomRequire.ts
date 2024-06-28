@@ -240,10 +240,10 @@ function getNodeRequireCacheKey(moduleName: string): string {
   return `${moduleName}?namespace=${pluginId}`;
 }
 
-export function initTsx(plugin: Plugin): void {
+export function initTsx(uninstallerRegister: UninstallerRegister): void {
   tsx = register({ namespace: pluginId });
   tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
-  plugin.register(tsx.unregister);
+  uninstallerRegister(tsx.unregister);
 }
 
 export function setPluginRequire(require: NodeJS.Require): void {

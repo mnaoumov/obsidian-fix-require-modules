@@ -52,9 +52,11 @@ export default class FixRequireModulesPlugin extends Plugin {
     initPluginVariables(this);
     await this.loadSettings();
 
+    const uninstallerRegister = this.register.bind(this);
+
     setPluginRequire(require);
-    initTsx(this);
-    applyPatches(this.register.bind(this));
+    initTsx(uninstallerRegister);
+    applyPatches(uninstallerRegister);
 
     this.addCommand({
       id: "invokeScript",
