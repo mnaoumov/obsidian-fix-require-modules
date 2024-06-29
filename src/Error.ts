@@ -18,10 +18,12 @@ export function printError(error: unknown): void {
     return;
   }
 
-  if (!error.stack) {
-    console.error(`${error.name}: ${error.message}`);
-  } else {
-    console.error(error.stack);
+  const title = `${error.name}: ${error.message}`;
+  console.error(`\x1b[0m${title}\x1b[0m`);
+
+  if (error.stack) {
+    const restStack = error.stack.startsWith(title) ? error.stack.substring(title.length + 1) : error.stack;
+    console.error(`Error stack:\n${restStack}`);
   }
 
   if (error.cause !== undefined) {
