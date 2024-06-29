@@ -4,10 +4,11 @@ import type {
 } from "obsidian";
 import { join } from "node:path";
 import { printError } from "./Error.ts";
+import babel from "@babel/core";
+import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
+import babelPresetTypeScript from "@babel/preset-typescript";
 
 type DefaultEsmModule = { default(): Promise<void> };
-
-const importExportRegex = /\bimport\s+.*\bfrom\b|^\s*export\s+/m;
 
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
@@ -24,33 +25,27 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
         resultEl.empty();
         resultEl.setText("Executing...⌛");
 
-        const isEsm = importExportRegex.test(source);
-        let code: string;
-
-        if (isEsm) {
-          code = source;
-        } else {
-          code = `export default async function scriptWrapper(): Promise<void> {
-${source}
-};`;
-        }
-
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
         const dir = noteFile?.parent;
         const randomFileName = Math.random().toString(36).substring(2, 15);
         const scriptPath = join(dir?.path ?? "", `.${randomFileName}.ts`);
-        await app.vault.create(scriptPath, code);
+
         try {
-          const result = window.require(app.vault.adapter.getFullPath(scriptPath));
-          if (!isEsm) {
-            await (result as DefaultEsmModule).default();
-          }
+          const code = `export default async function scriptWrapper(): Promise<void> {
+${await convertToCommonJs(source, scriptPath)}
+};`
+
+          await app.vault.create(scriptPath, code);
+          const defaultEsModule = window.require(app.vault.adapter.getFullPath(scriptPath)) as DefaultEsmModule;
+          await defaultEsModule.default();
           resultEl.setText("Done! ✅");
         } catch (error) {
           resultEl.setText("Error! ❌\nSee console for details...");
           printError(new Error("Error executing code block", { cause: error }));
         } finally {
-          await app.vault.adapter.remove(scriptPath);
+          if (await app.vault.adapter.exists(scriptPath)) {
+            await app.vault.adapter.remove(scriptPath);
+          }
         }
       }
     });
@@ -61,4 +56,18 @@ ${source}
   if (!sectionInfo) {
     resultEl.textContent = "Error! ❌\nCould not get code block info. Try to reopen the note...";
   }
+}
+
+async function convertToCommonJs(code: string, scriptPath: string): Promise<string> {
+  const result = await babel.transformAsync(code, {
+    presets: [
+      babelPresetTypeScript
+    ],
+    plugins: [
+      babelPluginTransformModulesCommonJS
+    ],
+    "filename": scriptPath
+  });
+
+  return result!.code!;
 }
