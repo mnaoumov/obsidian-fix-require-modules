@@ -13,6 +13,7 @@ import {
   Platform,
   Plugin
 } from "obsidian";
+import type { UninstallerRegister } from "./UninstallerRegister.d.ts";
 
 type Tsx = {
   (): void,
@@ -20,8 +21,6 @@ type Tsx = {
   resolve: (id: string, fromFile: string | URL, resolveOptions?: { paths?: string[] | undefined; } | undefined) => string;
   unregister: () => void;
 };
-
-type UninstallerRegister = (uninstaller: () => void) => void;
 
 type SourceMap = {
   sources: string[];

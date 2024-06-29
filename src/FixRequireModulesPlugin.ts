@@ -25,6 +25,7 @@ import {
   dirname,
   join
 } from "node:path";
+import { registerDynamicImport } from "./DynamicImport.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
@@ -57,6 +58,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     setPluginRequire(require);
     initTsx(uninstallerRegister);
     applyPatches(uninstallerRegister);
+    registerDynamicImport(uninstallerRegister);
 
     this.addCommand({
       id: "invokeScript",
