@@ -4,11 +4,23 @@ import type {
 } from "obsidian";
 import { join } from "node:path";
 import { printError } from "./Error.ts";
-import babel from "@babel/core";
+import babel, {
+  NodePath,
+  type PluginItem,
+  type PluginPass,
+  types,
+  type PluginObj
+} from "@babel/core";
 import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
 import babelPresetTypeScript from "@babel/preset-typescript";
 
 type DefaultEsmModule = { default(): Promise<void> };
+
+type InputMap = {
+  sourcemap: {
+    sources: string[];
+  }
+};
 
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
@@ -27,12 +39,13 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
 
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
         const dir = noteFile?.parent;
-        const randomFileName = Math.random().toString(36).substring(2, 15);
-        const scriptPath = join(dir?.path ?? "", `.${randomFileName}.ts`);
+        const randomName = Math.random().toString(36).substring(2, 15);
+        const randomFileName = `.${randomName}.ts`;
+        const scriptPath = join(dir?.path ?? "", randomFileName);
 
         try {
           const code = `export default async function scriptWrapper(): Promise<void> {
-${await convertToCommonJs(source, scriptPath)}
+${await convertToCommonJs(source)}
 };`
 
           await app.vault.create(scriptPath, code);
@@ -58,15 +71,40 @@ ${await convertToCommonJs(source, scriptPath)}
   }
 }
 
-async function convertToCommonJs(code: string, scriptPath: string): Promise<string> {
-  const result = await babel.transformAsync(code, {
+interface FixSourceMapPluginState extends PluginPass {
+  opts: { code: string }
+}
+
+const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {
+  name: "fix-source-map",
+  visitor: {
+    Program(_: NodePath<types.Program>, state: FixSourceMapPluginState): void {
+      debugger;
+      const inputMap = state.file.inputMap as InputMap;
+      const base64 = Buffer.from(state.opts.code).toString("base64");
+      inputMap.sourcemap.sources[0] = `data:application/typescript;base64,${base64}`;
+    }
+  }
+};
+
+async function convertToCommonJs(code: string): Promise<string> {
+  let result = await babel.transformAsync(code, {
     presets: [
       babelPresetTypeScript
     ],
     plugins: [
       babelPluginTransformModulesCommonJS
     ],
-    "filename": scriptPath
+    filename: "(code-button block script).ts",
+    sourceMaps: "inline"
+  });
+
+  result = await babel.transformAsync(result!.code!, {
+    plugins: [
+      [fixSourceMapPlugin, { code }]
+    ],
+    filename: "(code-button block script).ts",
+    sourceMaps: "inline"
   });
 
   return result!.code!;
