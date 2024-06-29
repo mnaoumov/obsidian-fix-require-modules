@@ -184,12 +184,22 @@ You can also assign hotkeys for the most used scripts.
 
 ### Code buttons
 
-The plugin adds the ability to create a code button that executes `JavaScript`/`TypeScript` written in `CommonJS` (`cjs`) style:
+The plugin adds the ability to create a code button that executes `JavaScript`/`TypeScript`, :
 
 ````markdown
 ```code-button Click me!
-const { hello } = require("/.scripts/src/utils.js");
-await hello("world");
+// CommonJS (cjs) style is supported
+const { dependency1 } = require("./path/to/script1.js");
+
+// ES Modules (esm) style is supported
+import { dependency2 } from "./path/to/script2.js";
+
+// Top-level await is supported
+await Promise.resolve(42);
+
+// TypeScript syntax is supported
+function myTypeScriptFn(arg: string): void {
+}
 ```
 ````
 
@@ -202,7 +212,6 @@ If you are planning to use scripts a lot, you might eventually want to install s
 ## Roadmap
 
 - I could fix the behavior of `require()` but I could not make any essential changes to dynamic `import()`, such as `await import("obsidian")`, because it requires `module.register()` hooks that were introduced in `Node.js v18.19.0` and the latest `Obsidian` version is shipped with `Node.js v18.15.0`. As soon as `Obsidian` updates the shipped version of `Node.js` to the corresponding version, I will make corresponding fixes to dynamic `import()`.
-- For the same reason I could not make `code buttons` to support `ECMAScript Modules` (`esm`) syntax, because it wouldn't work with top-level `await` statements. Will be fixed together with the previous issue.
 
 ## Installation
 
