@@ -1,12 +1,13 @@
-import {
+import type {
   NodePath,
-  type PluginObj,
-  type PluginPass,
-  types
+  PluginObj,
+  PluginPass
 } from "@babel/core";
 
+import type { Program } from "@babel/types";
+
 interface FixSourceMapPluginState extends PluginPass {
-  opts: { code: string }
+  opts: { sourceUrl: string }
 }
 
 type InputMap = {
@@ -18,11 +19,9 @@ type InputMap = {
 const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {
   name: "fix-source-map",
   visitor: {
-    Program(_: NodePath<types.Program>, state: FixSourceMapPluginState): void {
-      debugger;
+    Program(_: NodePath<Program>, state: FixSourceMapPluginState): void {
       const inputMap = state.file.inputMap as InputMap;
-      const base64 = Buffer.from(state.opts.code).toString("base64");
-      inputMap.sourcemap.sources[0] = `data:application/typescript;base64,${base64}`;
+      inputMap.sourcemap.sources[0] = state.opts.sourceUrl;
     }
   }
 };

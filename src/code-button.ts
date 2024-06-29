@@ -7,9 +7,11 @@ import { printError } from "./Error.ts";
 import babel from "@babel/core";
 import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
 import babelPresetTypeScript from "@babel/preset-typescript";
-import fixSourceMapPlugin from "./fixSourceMapPlugin.ts";
+import babelPluginFixSourceMap from "./babelPluginFixSourceMap.ts";
+import { convertPathToObsidianUrl } from "./CustomRequire.ts";
+import babelPluginWrapInDefaultAsyncFunction from "./babelPluginWrapInDefaultAsyncFunction.ts";
 
-type DefaultEsmModule = { default(): Promise<void> };
+type CodeButtonBlockScriptWrapper = () => Promise<void>;
 
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
@@ -29,24 +31,27 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
         const dir = noteFile?.parent;
         const randomName = Math.random().toString(36).substring(2, 15);
-        const randomFileName = `.${randomName}.ts`;
-        const scriptPath = join(dir?.path ?? "", randomFileName);
+        const codeButtonBlockScriptFileName = `.code-button-block-script-${randomName}.mts`;
+        const codeButtonBlockScriptPath = join(dir?.path ?? "", codeButtonBlockScriptFileName);
+        await app.vault.create(codeButtonBlockScriptPath, source);
+        const codeButtonBlockScriptWrapperFileName = `.code-button-block-script-wrapper-${randomName}.cjs`;
+        const codeButtonBlockScriptWrapperPath = join(dir?.path ?? "", codeButtonBlockScriptWrapperFileName);
+        const sourceUrl = convertPathToObsidianUrl(app.vault.adapter.getFullPath(codeButtonBlockScriptPath));
 
         try {
-          const code = `export default async function scriptWrapper(): Promise<void> {
-${await convertToCommonJs(source)}
-};`
-
-          await app.vault.create(scriptPath, code);
-          const defaultEsModule = window.require(app.vault.adapter.getFullPath(scriptPath)) as DefaultEsmModule;
-          await defaultEsModule.default();
+          const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceUrl);
+          await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
+          const codeButtonBlockScriptWrapper = window.require(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
+          await codeButtonBlockScriptWrapper();
           resultEl.setText("Done! ✅");
         } catch (error) {
           resultEl.setText("Error! ❌\nSee console for details...");
           printError(new Error("Error executing code block", { cause: error }));
         } finally {
-          if (await app.vault.adapter.exists(scriptPath)) {
-            await app.vault.adapter.remove(scriptPath);
+          for (const path of [codeButtonBlockScriptPath, codeButtonBlockScriptWrapperPath]) {
+            if (await app.vault.adapter.exists(path)) {
+              await app.vault.adapter.remove(path);
+            }
           }
         }
       }
@@ -60,23 +65,24 @@ ${await convertToCommonJs(source)}
   }
 }
 
-async function convertToCommonJs(code: string): Promise<string> {
-  let result = await babel.transformAsync(code, {
+async function makeWrapperScript(source: string, sourceFileName: string, sourceUrl: string): Promise<string> {
+  let result = await babel.transformAsync(source, {
     presets: [
       babelPresetTypeScript
     ],
     plugins: [
       babelPluginTransformModulesCommonJS
     ],
-    filename: "(code-button block script).ts",
+    filename: sourceFileName,
     sourceMaps: "inline"
   });
 
   result = await babel.transformAsync(result!.code!, {
     plugins: [
-      [fixSourceMapPlugin, { code }]
+      babelPluginWrapInDefaultAsyncFunction,
+      [babelPluginFixSourceMap, { sourceUrl }]
     ],
-    filename: "(code-button block script).ts",
+    filename: sourceFileName,
     sourceMaps: "inline"
   });
 

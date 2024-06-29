@@ -297,11 +297,11 @@ function customCompile(content: string, filename: string, module: Module): void 
 function fixSourceMap(sourceMapBase64: string): string {
   const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf8");
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
-  sourceMap.sources = sourceMap.sources.map(fixSource);
+  sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
 }
 
-function fixSource(source: string): string {
+export function convertPathToObsidianUrl(source: string): string {
   if (!isAbsolute(source)) {
     return source;
   }
