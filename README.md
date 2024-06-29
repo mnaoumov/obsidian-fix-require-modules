@@ -207,9 +207,17 @@ function myTypeScriptFn(arg: string): void {
 
 If you are planning to use scripts a lot, you might eventually want to install some `node` modules. If so, I recommend to put scripts in a `dot directory`, such as `.scripts` within your vault. `Obsidian` doesn't track changes within `dot directories` and won't re-index your `node_modules` folder over and over.
 
-## Roadmap
+## Limitations
 
-- I could fix the behavior of `require()` but I could not make any essential changes to dynamic `import()`, such as `await import("obsidian")`, because it requires `module.register()` hooks that were introduced in `Node.js v18.19.0` and the latest `Obsidian` version is shipped with `Node.js v18.15.0`. As soon as `Obsidian` updates the shipped version of `Node.js` to the corresponding version, I will make corresponding fixes to dynamic `import()`.
+### Dynamic `import()`
+
+It is currently impossible to extend dynamic `import()` expressions to support things like `const obsidian = await import("obsidian")`.
+
+The reason for that is the limitation of `Electron` environment in `Obsidian`.
+
+Although `Obsidian` starting from version `1.6.5` is shipped with `Node.js v20.14.0` which has `Module.register()` which allows to extend dynamic `import()` behavior.
+
+But we cannot use `Module.register()` because it depends on `Node.js Workers` and fails with `The V8 platform used by this instance of Node does not support creating Workers`.
 
 ## Installation
 
