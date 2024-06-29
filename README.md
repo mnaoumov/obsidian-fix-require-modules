@@ -116,7 +116,7 @@ You can make any script easily invocable via the plugin.
 
 For that you need to define a module for with default export function (sync or async).
 
-```js
+```ts
 // cjs sync
 module.exports = (param1) => {
   console.log(param1);
@@ -136,9 +136,7 @@ export default function someName(param1) {
 export default async function someName(param1) {
   await Promise.resolve(param1);
 }
-```
 
-```ts
 // cts sync
 module.exports = (param1: string): void => {
   console.log(param1);
