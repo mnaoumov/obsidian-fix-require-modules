@@ -4,23 +4,12 @@ import type {
 } from "obsidian";
 import { join } from "node:path";
 import { printError } from "./Error.ts";
-import babel, {
-  NodePath,
-  type PluginItem,
-  type PluginPass,
-  types,
-  type PluginObj
-} from "@babel/core";
+import babel from "@babel/core";
 import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
 import babelPresetTypeScript from "@babel/preset-typescript";
+import fixSourceMapPlugin from "./fixSourceMapPlugin.ts";
 
 type DefaultEsmModule = { default(): Promise<void> };
-
-type InputMap = {
-  sourcemap: {
-    sources: string[];
-  }
-};
 
 export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, app: App): void {
   const sectionInfo = ctx.getSectionInfo(el);
@@ -70,22 +59,6 @@ ${await convertToCommonJs(source)}
     resultEl.textContent = "Error! ❌\nCould not get code block info. Try to reopen the note...";
   }
 }
-
-interface FixSourceMapPluginState extends PluginPass {
-  opts: { code: string }
-}
-
-const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {
-  name: "fix-source-map",
-  visitor: {
-    Program(_: NodePath<types.Program>, state: FixSourceMapPluginState): void {
-      debugger;
-      const inputMap = state.file.inputMap as InputMap;
-      const base64 = Buffer.from(state.opts.code).toString("base64");
-      inputMap.sourcemap.sources[0] = `data:application/typescript;base64,${base64}`;
-    }
-  }
-};
 
 async function convertToCommonJs(code: string): Promise<string> {
   let result = await babel.transformAsync(code, {
