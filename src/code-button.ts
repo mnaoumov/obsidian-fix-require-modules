@@ -30,16 +30,18 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
 
         const noteFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
         const dir = noteFile?.parent;
+        const dirPath = dir?.path ?? "";
         const randomName = Math.random().toString(36).substring(2, 15);
         const codeButtonBlockScriptFileName = `.code-button-block-script-${randomName}.mts`;
-        const codeButtonBlockScriptPath = join(dir?.path ?? "", codeButtonBlockScriptFileName);
+        const codeButtonBlockScriptPath = join(dirPath, codeButtonBlockScriptFileName);
         await app.vault.create(codeButtonBlockScriptPath, source);
         const codeButtonBlockScriptWrapperFileName = `.code-button-block-script-wrapper-${randomName}.cjs`;
-        const codeButtonBlockScriptWrapperPath = join(dir?.path ?? "", codeButtonBlockScriptWrapperFileName);
+        const codeButtonBlockScriptWrapperPath = join(dirPath, codeButtonBlockScriptWrapperFileName);
+        const sourceDir = app.vault.adapter.getFullPath(dirPath);
         const sourceUrl = convertPathToObsidianUrl(app.vault.adapter.getFullPath(codeButtonBlockScriptPath));
 
         try {
-          const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceUrl);
+          const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
           await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
           const codeButtonBlockScriptWrapper = window.require(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
           await codeButtonBlockScriptWrapper();
@@ -65,8 +67,9 @@ export function processCodeButtonBlock(source: string, el: HTMLElement, ctx: Mar
   }
 }
 
-async function makeWrapperScript(source: string, sourceFileName: string, sourceUrl: string): Promise<string> {
+async function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): Promise<string> {
   let result = await babel.transformAsync(source, {
+    cwd: sourceDir,
     presets: [
       babelPresetTypeScript
     ],
@@ -78,6 +81,7 @@ async function makeWrapperScript(source: string, sourceFileName: string, sourceU
   });
 
   result = await babel.transformAsync(result!.code!, {
+    cwd: sourceDir,
     plugins: [
       babelPluginWrapInDefaultAsyncFunction,
       [babelPluginFixSourceMap, { sourceUrl }]
