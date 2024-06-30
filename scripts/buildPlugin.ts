@@ -111,7 +111,7 @@ if you want to view the source, please visit the github repository of this plugi
         setup(build): void {
           build.onEnd(async () => {
             let contents = await readFile(distPath, "utf8");
-            const esbuildReplaceString = String.raw`(process.env["ESBUILD_WORKER_THREADS"] = "0", require("path").join(app.vault.adapter.getBasePath(), app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js"))`;
+            const esbuildReplaceString = String.raw`(process.env["ESBUILD_WORKER_THREADS"] = "0", require("path").join(window.app.vault.adapter.getBasePath(), window.app.vault.configDir, "plugins/fix-require-modules/node_modules/esbuild/lib/main.js"))`;
             contents = contents.replace(/require\("esbuild"\)/g, `require(${esbuildReplaceString})`);
             await writeFile(distPath, contents, "utf8");
           });
