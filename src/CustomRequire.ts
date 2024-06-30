@@ -14,6 +14,7 @@ import {
   Plugin
 } from "obsidian";
 import type { UninstallerRegister } from "./UninstallerRegister.d.ts";
+import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
 
 type Tsx = {
   (): void,
@@ -56,7 +57,7 @@ let tsxModuleResolveFileName!: typeof Module._resolveFilename;
 let tsx: Tsx;
 let pluginRequire: NodeJS.Require;
 let pluginId: string;
-let esBuildPath: string;
+let esbuildPath: string;
 let fakeRootPath: string;
 let basePath: string;
 let getActiveFile: () => { path: string; } | null;
@@ -221,7 +222,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
   }
 
   if (request === "esbuild") {
-    return esBuildPath;
+    return esbuildPath;
   }
 
   let path: string;
@@ -280,7 +281,7 @@ export function applyPatches(uninstallerRegister: UninstallerRegister): void {
 export function initPluginVariables(plugin: Plugin): void {
   pluginId = plugin.manifest.id;
   basePath = plugin.app.vault.adapter.getBasePath();
-  esBuildPath = join(basePath, plugin.manifest.dir!, "node_modules/esbuild/lib/main.js");
+  esbuildPath = join(basePath, plugin.manifest.dir!, ESBUILD_MAIN_PATH);
   getActiveFile = plugin.app.workspace.getActiveFile.bind(plugin.app.workspace);
 }
 

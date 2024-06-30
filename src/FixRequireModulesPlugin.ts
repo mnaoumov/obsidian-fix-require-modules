@@ -1,7 +1,5 @@
 import {
-  Notice,
   Plugin,
-  requestUrl
 } from "obsidian";
 import {
   applyPatches,
@@ -19,12 +17,9 @@ import {
   selectAndInvokeScript,
   stopWatcher
 } from "./Script.ts";
-import {
-  dirname,
-  join
-} from "node:path";
 import { registerDynamicImport } from "./DynamicImport.ts";
 import { registerCodeButtonBlock } from "./CodeButtonBlock.ts";
+import { downloadEsbuild } from "./esbuild.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
@@ -40,7 +35,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private async onLayoutReady(): Promise<void> {
-    await this.downloadEsbuild();
+    await downloadEsbuild(this);
 
     initPluginVariables(this);
     await this.loadSettings();
@@ -79,36 +74,5 @@ export default class FixRequireModulesPlugin extends Plugin {
   private async loadSettings(): Promise<void> {
     const settings = await this.loadData() as FixRequireModulesSettings | undefined;
     await this.saveSettings(settings ?? new FixRequireModulesSettings());
-  }
-
-  private async downloadEsbuild(): Promise<void> {
-    const assets = {
-      "node_modules/esbuild/lib/main.js": "https://unpkg.com/esbuild@0.21.4/lib/main.js",
-      "node_modules/@esbuild/win32-x64/esbuild.exe": "https://unpkg.com/@esbuild/win32-x64@0.21.4/esbuild.exe"
-    } as Record<string, string>;
-
-    for (const [path, url] of Object.entries(assets)) {
-      const fullPath = join(this.manifest.dir!, path);
-      if (await this.app.vault.adapter.exists(fullPath)) {
-        continue;
-      }
-
-      const notice = new Notice("In order to use this plugin, we need to download some esbuild assets. This will only happen once. Please wait...");
-
-      const response = await requestUrl(url);
-      if (response.status !== 200) {
-        const message = `Failed to download ${url}. Disabling the plugin...`;
-        new Notice(message);
-        console.error(message);
-        await this.app.plugins.disablePlugin(this.manifest.id);
-      }
-
-      const dir = dirname(fullPath);
-      if (!await this.app.vault.adapter.exists(dir)) {
-        await this.app.vault.adapter.mkdir(dir);
-      }
-      await this.app.vault.adapter.writeBinary(fullPath, response.arrayBuffer);
-      notice.hide();
-    }
   }
 }
