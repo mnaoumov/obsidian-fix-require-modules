@@ -3,7 +3,7 @@ import "node:module";
 declare global {
   namespace NodeJS {
     export interface Module {
-      _compile(code: string, filename: string): void;
+      _compile(code: string, filename: string): unknown;
       load(filename: string): void;
     }
   }
