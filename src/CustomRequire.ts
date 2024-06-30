@@ -172,7 +172,7 @@ function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
   const timestamp = getRecursiveTimestamp(moduleName);
   if ((moduleTimestamps.get(moduleName) ?? 0) < timestamp) {
     moduleTimestamps.set(moduleName, timestamp);
-    delete nodeRequire.cache[getNodeRequireCacheKey(moduleName)];
+    delete nodeRequire.cache[moduleName];
     moduleDependencies.delete(moduleName);
   }
 
