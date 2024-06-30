@@ -3,8 +3,7 @@ import {
 } from "obsidian";
 import {
   builtInModuleNames,
-  registerCustomRequire,
-  setModuleRoot,
+  registerCustomRequire
 } from "./CustomRequire.ts";
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
@@ -26,22 +25,21 @@ export default class FixRequireModulesPlugin extends Plugin {
     return FixRequireModulesSettings.clone(this._settings);
   }
 
-  public override onload(): void {
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+  public override async onload(): Promise<void> {
+    await this.loadSettings();
     registerCodeButtonBlock(this);
+    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
   public async saveSettings(newSettings: FixRequireModulesSettings): Promise<void> {
     this._settings = FixRequireModulesSettings.clone(newSettings);
     await this.saveData(this._settings);
     await registerInvocableScripts(this);
-    setModuleRoot(this._settings.modulesRoot);
   }
 
   private async onLayoutReady(): Promise<void> {
     await downloadEsbuild(this);
-    registerCustomRequire(this);
-    await this.loadSettings();
+    registerCustomRequire(this, require);
 
     const uninstallerRegister = this.register.bind(this);
     registerDynamicImport(uninstallerRegister);
@@ -56,6 +54,8 @@ export default class FixRequireModulesPlugin extends Plugin {
 
     this.addSettingTab(new FixRequireModulesSettingsTab(this));
 
+    await this.saveSettings(this._settings);
+
     if (!this.settings.startupScriptPath) {
       console.warn("No Startup script path specified in the settings");
     } else {
@@ -64,7 +64,6 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private async loadSettings(): Promise<void> {
-    const settings = await this.loadData() as FixRequireModulesSettings | undefined;
-    await this.saveSettings(settings ?? new FixRequireModulesSettings());
+    this._settings = await this.loadData() ?? new FixRequireModulesSettings();
   }
 }
