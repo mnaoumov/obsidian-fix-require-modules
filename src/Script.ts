@@ -18,23 +18,11 @@ type Script = Invocable | { default: Invocable };
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
 let watcher: FSWatcher | null = null;
 
-export async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
-  const scriptString = isStartup ? "startup script" : "script";
-  console.debug(`Invoking ${scriptString}: ${scriptPath}`);
-  try {
-    if (!await app.vault.adapter.exists(scriptPath)) {
-      new Error(`Script not found: ${scriptPath}`);
-    }
-    const script = window.require(app.vault.adapter.getFullPath(scriptPath)) as Script;
-    const invocable = getInvocable(script);
-    if (typeof invocable !== "function") {
-      throw new Error(`${scriptPath} does not export a function`);
-    }
-    await invocable();
-  } catch (error) {
-    new Notice(`Error invoking ${scriptString} ${scriptPath}
-See console for details...`);
-    printError(new Error(`Error invoking ${scriptString} ${scriptPath}`, { cause: error }));
+export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
+  if (!plugin.settings.startupScriptPath) {
+    console.warn("No Startup script path specified in the settings");
+  } else {
+    await invoke(plugin.app, plugin.settings.getStartupScriptPath(), true);
   }
 }
 
@@ -145,4 +133,24 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
 
 function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
+}
+
+async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
+  const scriptString = isStartup ? "startup script" : "script";
+  console.debug(`Invoking ${scriptString}: ${scriptPath}`);
+  try {
+    if (!await app.vault.adapter.exists(scriptPath)) {
+      new Error(`Script not found: ${scriptPath}`);
+    }
+    const script = window.require(app.vault.adapter.getFullPath(scriptPath)) as Script;
+    const invocable = getInvocable(script);
+    if (typeof invocable !== "function") {
+      throw new Error(`${scriptPath} does not export a function`);
+    }
+    await invocable();
+  } catch (error) {
+    new Notice(`Error invoking ${scriptString} ${scriptPath}
+See console for details...`);
+    printError(new Error(`Error invoking ${scriptString} ${scriptPath}`, { cause: error }));
+  }
 }

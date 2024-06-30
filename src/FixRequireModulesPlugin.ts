@@ -8,7 +8,7 @@ import {
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
 import {
-  invoke,
+  invokeStartupScript,
   registerInvocableScripts,
   selectAndInvokeScript,
   stopWatcher
@@ -50,12 +50,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.register(stopWatcher);
 
     await this.saveSettings(this._settings);
-
-    if (!this.settings.startupScriptPath) {
-      console.warn("No Startup script path specified in the settings");
-    } else {
-      await invoke(this.app, this.settings.getStartupScriptPath(), true);
-    }
+    await invokeStartupScript(this);
   }
 
   private async loadSettings(): Promise<void> {
