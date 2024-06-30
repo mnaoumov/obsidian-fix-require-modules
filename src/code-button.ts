@@ -7,9 +7,9 @@ import { printError } from "./Error.ts";
 import babel from "@babel/core";
 import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
 import babelPresetTypeScript from "@babel/preset-typescript";
-import babelPluginFixSourceMap from "./babelPluginFixSourceMap.ts";
+import babelPluginFixSourceMap from "./babel/babelPluginFixSourceMap.ts";
 import { convertPathToObsidianUrl } from "./CustomRequire.ts";
-import babelPluginWrapInDefaultAsyncFunction from "./babelPluginWrapInDefaultAsyncFunction.ts";
+import babelPluginWrapInDefaultAsyncFunction from "./babel/babelPluginWrapInDefaultAsyncFunction.ts";
 
 type CodeButtonBlockScriptWrapper = () => Promise<void>;
 
