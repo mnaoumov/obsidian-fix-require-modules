@@ -11,10 +11,10 @@ import {
 import { register } from "tsx/cjs/api";
 import {
   App,
-  Platform,
 } from "obsidian";
 import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
+import { convertPathToObsidianUrl } from "./util/obsidian.ts";
 
 type Tsx = {
   (): void,
@@ -68,14 +68,6 @@ export function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRe
   pluginRequire = pluginRequire_;
   initTsx();
   applyPatches();
-}
-
-export function convertPathToObsidianUrl(source: string): string {
-  if (!isAbsolute(source)) {
-    return source;
-  }
-
-  return Platform.resourcePathPrefix + source.replaceAll("\\", "/");
 }
 
 function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
