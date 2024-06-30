@@ -47,6 +47,7 @@ const moduleRequire = Module.prototype.require;
 const moduleResolveFileName = Module._resolveFilename.bind(Module);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const moduleCompile = Module.prototype._compile;
+const moduleLoad = Module.prototype.load;
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
 const moduleDependencies = new Map<string, Set<string>>();
@@ -60,26 +61,22 @@ let basePath: string;
 let getActiveFile: () => { path: string; } | null;
 
 function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
-  if (builtInModuleNames.includes(id)) {
-    return pluginRequire(id);
-  }
-
-  if (id === "esbuild") {
-    return moduleRequire.call(module, esBuildPath);
-  }
-
   if (!module) {
     module = window.module;
+  }
+
+  if (id.endsWith(getNodeRequireCacheKey(""))) {
+    return moduleRequire.call(module, id);
   }
 
   let currentScriptFullPath = fakeRootPath;
 
   if (id.startsWith("./") || id.startsWith("../")) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
-  }
-
-  if (id.startsWith("/")) {
+  } else if (id.startsWith("/")) {
     id = `.${id}`;
+  } else if (!isAbsolute(id)) {
+    return moduleRequire.call(module, id);
   }
 
   const currentDirFullPath = dirname(currentScriptFullPath);
@@ -104,7 +101,7 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
   getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
   try {
-    return tsx.require(id, currentScriptFullPath);
+    return moduleRequire.call(module, id);
   }
   finally {
     if (isRootRequire) {
@@ -208,6 +205,16 @@ function getRecursiveTimestamp(moduleName: string): number {
 }
 
 function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
+  if (request.endsWith(getNodeRequireCacheKey(""))) {
+    return tsxModuleResolveFileName(request, parent, isMain, options);
+  }
+
+  const [cleanRequest = "", query = null] = request.split("?");
+  if (query != null) {
+    const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
+    return `${cleanFilename}?${query}`;
+  }
+
   if (builtInModuleNames.includes(request)) {
     return request;
   }
@@ -216,16 +223,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return esBuildPath;
   }
 
-  if (request.startsWith("@esbuild/")) {
-    const filename = moduleResolveFileName(request, parent, isMain, options);
-    return filename.split("?")[0]!;
-  }
-
   let path: string;
-
-  if (!isAbsolute(request) && !request.startsWith("./") && !request.startsWith("../")) {
-    return moduleResolveFileName(request, parent, isMain, options);
-  }
 
   if (isAbsolute(request) || !parent.filename) {
     path = request;
@@ -233,11 +231,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     path = join(parent.filename, request);
   }
 
-  if (!getFullPath(path)) {
-    return moduleResolveFileName(request, parent, isMain, options);
-  }
-
-  return tsxModuleResolveFileName(request, parent, isMain, options);
+  return moduleResolveFileName(path, parent, isMain, options);
 }
 
 function getNodeRequireCacheKey(moduleName: string): string {
@@ -266,6 +260,7 @@ export function applyPatches(uninstallerRegister: UninstallerRegister): void {
   patch(window, "require", customRequire as NodeJS.Require, uninstallerRegister);
   patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require, uninstallerRegister);
   patch(Module.prototype, "_compile", patchedCompile, uninstallerRegister);
+  patch(Module.prototype, "load", patchedLoad, uninstallerRegister);
   patch(Module, "_resolveFilename", customResolveFilename, uninstallerRegister);
 
   function patchedModuleRequire(this: Module, id: string): unknown {
@@ -274,6 +269,10 @@ export function applyPatches(uninstallerRegister: UninstallerRegister): void {
 
   function patchedCompile(this: Module, content: string, filename: string): void {
     return customCompile(content, filename, this);
+  }
+
+  function patchedLoad(this: Module, filename: string): void {
+    return customLoad(filename, this);
   }
 }
 
@@ -310,4 +309,28 @@ export function convertPathToObsidianUrl(source: string): string {
 
 export function setModuleRoot(moduleRoot: string): void {
   fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js").replaceAll("\\", "/");
+}
+
+function customLoad(filename: string, module: Module): void {
+  if (filename.endsWith(getNodeRequireCacheKey(""))) {
+    moduleLoad.call(module, filename);
+    return;
+  }
+
+  filename = filename.split("?")[0]!;
+
+  if (builtInModuleNames.includes(filename)) {
+    module.exports = pluginRequire(filename);
+    module.loaded = true;
+    return;
+  }
+
+  if (isAbsolute(filename)) {
+    delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
+    module.exports = tsx.require(filename, filename);
+    module.loaded = true;
+    return;
+  }
+
+  moduleLoad.call(module, filename);
 }

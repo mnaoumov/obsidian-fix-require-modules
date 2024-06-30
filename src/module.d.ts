@@ -4,6 +4,7 @@ declare global {
   namespace NodeJS {
     export interface Module {
       _compile(code: string, filename: string): void;
+      load(filename: string): void;
     }
   }
 }
