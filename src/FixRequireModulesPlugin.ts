@@ -34,6 +34,13 @@ export default class FixRequireModulesPlugin extends Plugin {
     registerCodeButtonBlock(this);
   }
 
+  public async saveSettings(newSettings: FixRequireModulesSettings): Promise<void> {
+    this._settings = FixRequireModulesSettings.clone(newSettings);
+    await this.saveData(this._settings);
+    await registerInvocableScripts(this);
+    setModuleRoot(this._settings.modulesRoot);
+  }
+
   private async onLayoutReady(): Promise<void> {
     await downloadEsbuild(this);
 
@@ -62,13 +69,6 @@ export default class FixRequireModulesPlugin extends Plugin {
     } else {
       await invoke(this.app, this.settings.getStartupScriptPath(), true);
     }
-  }
-
-  public async saveSettings(newSettings: FixRequireModulesSettings): Promise<void> {
-    this._settings = FixRequireModulesSettings.clone(newSettings);
-    await this.saveData(this._settings);
-    await registerInvocableScripts(this);
-    setModuleRoot(this._settings.modulesRoot);
   }
 
   private async loadSettings(): Promise<void> {

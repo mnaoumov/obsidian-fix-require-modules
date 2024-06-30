@@ -12,6 +12,10 @@ export default class FixRequireModulesSettings {
     return this.getPathRelativeToModulesRoot(this.startupScriptPath);
   }
 
+  public static clone(settings?: FixRequireModulesSettings): FixRequireModulesSettings {
+    return Object.assign(new FixRequireModulesSettings(), settings);
+  }
+
   private getPathRelativeToModulesRoot(path: string): string {
     if (!path) {
       return "";
@@ -22,9 +26,5 @@ export default class FixRequireModulesSettings {
     }
 
     return this.modulesRoot + "/" + path;
-  }
-
-  public static clone(settings?: FixRequireModulesSettings): FixRequireModulesSettings {
-    return Object.assign(new FixRequireModulesSettings(), settings);
   }
 }

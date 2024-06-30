@@ -62,6 +62,55 @@ let fakeRootPath: string;
 let basePath: string;
 let getActiveFile: () => { path: string; } | null;
 
+export function initTsx(uninstallerRegister: UninstallerRegister): void {
+  tsx = register({ namespace: pluginId });
+  tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
+  uninstallerRegister(tsx.unregister);
+}
+
+export function setPluginRequire(require: NodeJS.Require): void {
+  pluginRequire = require;
+}
+
+export function applyPatches(uninstallerRegister: UninstallerRegister): void {
+  patch(window, "require", customRequire as NodeJS.Require, uninstallerRegister);
+  patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require, uninstallerRegister);
+  patch(Module.prototype, "_compile", patchedCompile, uninstallerRegister);
+  patch(Module.prototype, "load", patchedLoad, uninstallerRegister);
+  patch(Module, "_resolveFilename", customResolveFilename, uninstallerRegister);
+
+  function patchedModuleRequire(this: Module, id: string): unknown {
+    return customRequire(id, undefined, this);
+  }
+
+  function patchedCompile(this: Module, content: string, filename: string): unknown {
+    return customCompile(content, filename, this);
+  }
+
+  function patchedLoad(this: Module, filename: string): void {
+    return customLoad(filename, this);
+  }
+}
+
+export function initPluginVariables(plugin: Plugin): void {
+  pluginId = plugin.manifest.id;
+  basePath = plugin.app.vault.adapter.getBasePath();
+  esbuildPath = join(basePath, plugin.manifest.dir!, ESBUILD_MAIN_PATH);
+  getActiveFile = plugin.app.workspace.getActiveFile.bind(plugin.app.workspace);
+}
+
+export function convertPathToObsidianUrl(source: string): string {
+  if (!isAbsolute(source)) {
+    return source;
+  }
+
+  return Platform.resourcePathPrefix + source.replaceAll("\\", "/");
+}
+
+export function setModuleRoot(moduleRoot: string): void {
+  fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js").replaceAll("\\", "/");
+}
+
 function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
   if (!module) {
     module = window.module;
@@ -240,49 +289,12 @@ function getNodeRequireCacheKey(moduleName: string): string {
   return `${moduleName}?namespace=${pluginId}`;
 }
 
-export function initTsx(uninstallerRegister: UninstallerRegister): void {
-  tsx = register({ namespace: pluginId });
-  tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
-  uninstallerRegister(tsx.unregister);
-}
-
-export function setPluginRequire(require: NodeJS.Require): void {
-  pluginRequire = require;
-}
-
 function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object, uninstallerRegister: UninstallerRegister): void {
   const original = obj[key];
   obj[key] = Object.assign(newValue, original);
   uninstallerRegister(() => {
     obj[key] = original;
   });
-}
-
-export function applyPatches(uninstallerRegister: UninstallerRegister): void {
-  patch(window, "require", customRequire as NodeJS.Require, uninstallerRegister);
-  patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require, uninstallerRegister);
-  patch(Module.prototype, "_compile", patchedCompile, uninstallerRegister);
-  patch(Module.prototype, "load", patchedLoad, uninstallerRegister);
-  patch(Module, "_resolveFilename", customResolveFilename, uninstallerRegister);
-
-  function patchedModuleRequire(this: Module, id: string): unknown {
-    return customRequire(id, undefined, this);
-  }
-
-  function patchedCompile(this: Module, content: string, filename: string): unknown {
-    return customCompile(content, filename, this);
-  }
-
-  function patchedLoad(this: Module, filename: string): void {
-    return customLoad(filename, this);
-  }
-}
-
-export function initPluginVariables(plugin: Plugin): void {
-  pluginId = plugin.manifest.id;
-  basePath = plugin.app.vault.adapter.getBasePath();
-  esbuildPath = join(basePath, plugin.manifest.dir!, ESBUILD_MAIN_PATH);
-  getActiveFile = plugin.app.workspace.getActiveFile.bind(plugin.app.workspace);
 }
 
 function customCompile(content: string, filename: string, module: Module): unknown {
@@ -299,18 +311,6 @@ function fixSourceMap(sourceMapBase64: string): string {
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
-}
-
-export function convertPathToObsidianUrl(source: string): string {
-  if (!isAbsolute(source)) {
-    return source;
-  }
-
-  return Platform.resourcePathPrefix + source.replaceAll("\\", "/");
-}
-
-export function setModuleRoot(moduleRoot: string): void {
-  fakeRootPath = join(basePath, moduleRoot, "fakeRoot.js").replaceAll("\\", "/");
 }
 
 function customLoad(filename: string, module: Module): void {

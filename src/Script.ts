@@ -38,14 +38,6 @@ See console for details...`);
   }
 }
 
-function getInvocable(script: Script): Invocable {
-  if ("default" in script) {
-    return script.default;
-  }
-
-  return script;
-}
-
 export async function selectAndInvokeScript(app: App, invocableScriptsDirectory: string): Promise<void> {
   let scriptFiles: string[];
 
@@ -118,6 +110,20 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
   });
 }
 
+export function stopWatcher(): void {
+  if (watcher) {
+    watcher.close();
+  }
+}
+
+function getInvocable(script: Script): Invocable {
+  if ("default" in script) {
+    return script.default;
+  }
+
+  return script;
+}
+
 async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string, directory: string): Promise<string[]> {
   const files: string[] = [];
   const listedFiles = await adapter.list(`${scriptsDirectory}/${directory}`);
@@ -137,10 +143,4 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
 
 function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
-}
-
-export function stopWatcher(): void {
-  if (watcher) {
-    watcher.close();
-  }
 }
