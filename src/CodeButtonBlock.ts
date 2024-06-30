@@ -4,7 +4,7 @@ import type {
   Plugin
 } from "obsidian";
 import { join } from "node:path";
-import { printError } from "./Error.ts";
+import { printError } from "./util/Error.ts";
 import babel from "@babel/core";
 import babelPluginTransformModulesCommonJS from "@babel/plugin-transform-modules-commonjs";
 import babelPresetTypeScript from "@babel/preset-typescript";

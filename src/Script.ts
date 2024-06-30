@@ -5,7 +5,7 @@ import {
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
-import { printError } from "./Error.ts";
+import { printError } from "./util/Error.ts";
 import { basename } from "node:path";
 import {
   watch,
