@@ -38,7 +38,9 @@ See console for details...`);
   }
 }
 
-export async function selectAndInvokeScript(app: App, invocableScriptsDirectory: string): Promise<void> {
+export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Promise<void> {
+  const app = plugin.app;
+  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory();
   let scriptFiles: string[];
 
   if (!invocableScriptsDirectory) {
