@@ -15,6 +15,7 @@ import {
 } from "obsidian";
 import type { UninstallerRegister } from "./UninstallerRegister.d.ts";
 import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
+import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 
 type Tsx = {
   (): void,
@@ -43,6 +44,8 @@ export const builtInModuleNames = [
   "@lezer/highlight"
 ];
 
+let plugin: FixRequireModulesPlugin;
+
 const nodeRequire = window.require;
 const moduleRequire = Module.prototype.require;
 const moduleResolveFileName = Module._resolveFilename.bind(Module);
@@ -61,6 +64,15 @@ let esbuildPath: string;
 let fakeRootPath: string;
 let basePath: string;
 let getActiveFile: () => { path: string; } | null;
+
+export function registerCustomRequire(plugin_: FixRequireModulesPlugin): void {
+  plugin = plugin_;
+  initPluginVariables(plugin);
+  const uninstallerRegister = plugin.register.bind(plugin);
+  setPluginRequire(require);
+  initTsx(uninstallerRegister);
+  applyPatches(uninstallerRegister);
+}
 
 export function initTsx(uninstallerRegister: UninstallerRegister): void {
   tsx = register({ namespace: pluginId });

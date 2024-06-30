@@ -2,12 +2,9 @@ import {
   Plugin,
 } from "obsidian";
 import {
-  applyPatches,
   builtInModuleNames,
-  initPluginVariables,
-  initTsx,
+  registerCustomRequire,
   setModuleRoot,
-  setPluginRequire,
 } from "./CustomRequire.ts";
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
@@ -43,15 +40,10 @@ export default class FixRequireModulesPlugin extends Plugin {
 
   private async onLayoutReady(): Promise<void> {
     await downloadEsbuild(this);
-
-    initPluginVariables(this);
+    registerCustomRequire(this);
     await this.loadSettings();
 
     const uninstallerRegister = this.register.bind(this);
-
-    setPluginRequire(require);
-    initTsx(uninstallerRegister);
-    applyPatches(uninstallerRegister);
     registerDynamicImport(uninstallerRegister);
 
     this.addCommand({
