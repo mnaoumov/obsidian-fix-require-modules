@@ -101,7 +101,7 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
   getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
   try {
-    return moduleRequire.call(module, id);
+    return moduleRequire.call(module, scriptFullPath);
   }
   finally {
     if (isRootRequire) {
