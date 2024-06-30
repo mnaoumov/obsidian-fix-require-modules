@@ -12,7 +12,7 @@ import {
   identifier,
   memberExpression,
   type Program
-} from "@babel/types"
+} from "@babel/types";
 
 const fixSourceMapPlugin: PluginObj<PluginPass> = {
   name: "wrap-in-default-async-function",

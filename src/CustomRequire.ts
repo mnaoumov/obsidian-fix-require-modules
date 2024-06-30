@@ -47,6 +47,7 @@ const moduleRequire = Module.prototype.require;
 const moduleResolveFileName = Module._resolveFilename.bind(Module);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const moduleCompile = Module.prototype._compile;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const moduleLoad = Module.prototype.load;
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
@@ -320,7 +321,7 @@ function customLoad(filename: string, module: Module): void {
   filename = filename.split("?")[0]!;
 
   if (builtInModuleNames.includes(filename)) {
-    module.exports = pluginRequire(filename);
+    module.exports = pluginRequire(filename) as unknown;
     module.loaded = true;
     return;
   }

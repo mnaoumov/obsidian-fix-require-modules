@@ -7,7 +7,7 @@ declare global {
   }
 }
 
-export function registerDynamicImport(uninstallerRegister: UninstallerRegister) {
+export function registerDynamicImport(uninstallerRegister: UninstallerRegister): void {
   window.dynamicImport = dynamicImport;
   uninstallerRegister(() => delete window.dynamicImport);
 }
@@ -19,10 +19,10 @@ async function dynamicImport(moduleName: string): Promise<unknown> {
   } else if (moduleName.toLowerCase().startsWith(Platform.resourcePathPrefix)) {
     moduleName = moduleName.substring(Platform.resourcePathPrefix.length);
   } else if (isUrl(moduleName)) {
-    return await import(moduleName);
+    return await import(moduleName) as unknown;
   }
 
-  return window.require(moduleName);
+  return window.require(moduleName) as unknown;
 }
 
 function isUrl(str: string): boolean {
