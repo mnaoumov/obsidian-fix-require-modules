@@ -1,8 +1,7 @@
 import {
   Notice,
   Plugin,
-  requestUrl,
-  type MarkdownPostProcessorContext
+  requestUrl
 } from "obsidian";
 import {
   applyPatches,
@@ -14,7 +13,6 @@ import {
 } from "./CustomRequire.ts";
 import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
 import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
-import { processCodeButtonBlock } from "./code-button.ts";
 import {
   invoke,
   registerInvocableScripts,
@@ -26,6 +24,7 @@ import {
   join
 } from "node:path";
 import { registerDynamicImport } from "./DynamicImport.ts";
+import { registerCodeButtonBlock } from "./CodeButtonBlock.ts";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
@@ -37,14 +36,7 @@ export default class FixRequireModulesPlugin extends Plugin {
 
   public override onload(): void {
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
-
-    const CODE_BLOCK_LANGUAGE = "code-button";
-    window.CodeMirror.defineMode(CODE_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "text/typescript"));
-    this.register(() => {
-      window.CodeMirror.defineMode(CODE_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "null"));
-    });
-
-    this.registerMarkdownCodeBlockProcessor(CODE_BLOCK_LANGUAGE, (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => processCodeButtonBlock(source, el, ctx, this.app));
+    registerCodeButtonBlock(this);
   }
 
   private async onLayoutReady(): Promise<void> {
