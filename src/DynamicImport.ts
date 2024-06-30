@@ -1,5 +1,7 @@
-import { Platform } from "obsidian";
-import type { UninstallerRegister } from "./UninstallerRegister.d.ts";
+import {
+  Platform,
+  Plugin
+} from "obsidian";
 
 declare global {
   interface Window {
@@ -7,9 +9,9 @@ declare global {
   }
 }
 
-export function registerDynamicImport(uninstallerRegister: UninstallerRegister): void {
+export function registerDynamicImport(plugin: Plugin): void {
   window.dynamicImport = dynamicImport;
-  uninstallerRegister(() => delete window.dynamicImport);
+  plugin.register(() => delete window.dynamicImport);
 }
 
 async function dynamicImport(moduleName: string): Promise<unknown> {

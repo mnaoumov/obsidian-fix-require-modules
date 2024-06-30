@@ -40,9 +40,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   private async onLayoutReady(): Promise<void> {
     await downloadEsbuild(this);
     registerCustomRequire(this, require);
-
-    const uninstallerRegister = this.register.bind(this);
-    registerDynamicImport(uninstallerRegister);
+    registerDynamicImport(this);
 
     this.addCommand({
       id: "invokeScript",
