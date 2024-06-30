@@ -28,6 +28,12 @@ export default class FixRequireModulesPlugin extends Plugin {
   public override async onload(): Promise<void> {
     await this.loadSettings();
     registerCodeButtonBlock(this);
+    this.addSettingTab(new FixRequireModulesSettingsTab(this));
+    this.addCommand({
+      id: "invokeScript",
+      name: "Invoke Script: <<Choose>>",
+      callback: () => selectAndInvokeScript(this)
+    });
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
@@ -41,16 +47,7 @@ export default class FixRequireModulesPlugin extends Plugin {
     await downloadEsbuild(this);
     registerCustomRequire(this, require);
     registerDynamicImport(this);
-
-    this.addCommand({
-      id: "invokeScript",
-      name: "Invoke Script: <<Choose>>",
-      callback: () => selectAndInvokeScript(this)
-    });
-
     this.register(stopWatcher);
-
-    this.addSettingTab(new FixRequireModulesSettingsTab(this));
 
     await this.saveSettings(this._settings);
 
