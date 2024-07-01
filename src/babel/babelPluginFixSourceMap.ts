@@ -5,15 +5,14 @@ import type {
 } from "@babel/core";
 
 import type { Program } from "@babel/types";
+import type { SourceMap } from "../util/types.js";
 
 interface FixSourceMapPluginState extends PluginPass {
   opts: { sourceUrl: string }
 }
 
 type InputMap = {
-  sourcemap: {
-    sources: string[];
-  }
+  sourcemap: SourceMap
 };
 
 const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {

@@ -15,16 +15,13 @@ import {
 import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import { convertPathToObsidianUrl } from "./util/obsidian.ts";
+import type { SourceMap } from "./util/types.js";
 
 type Tsx = {
   (): void,
   require: (id: string, fromFile: string | URL) => unknown;
   resolve: (id: string, fromFile: string | URL, resolveOptions?: { paths?: string[] | undefined; } | undefined) => string;
   unregister: () => void;
-};
-
-type SourceMap = {
-  sources: string[];
 };
 
 export const builtInModuleNames = [
