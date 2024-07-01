@@ -7,6 +7,7 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./SelectModal.ts";
 import { printError } from "./util/Error.ts";
 import { basename } from "node:path";
+import { customRequire } from "./CustomRequire.ts";
 
 type Invocable = () => void | Promise<void>;
 type Script = Invocable | { default: Invocable };
@@ -123,7 +124,7 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
     if (!await app.vault.adapter.exists(scriptPath)) {
       new Error(`Script not found: ${scriptPath}`);
     }
-    const script = window.require(app.vault.adapter.getFullPath(scriptPath)) as Script;
+    const script = customRequire(app.vault.adapter.getFullPath(scriptPath)) as Script;
     const invocable = getInvocable(script);
     if (typeof invocable !== "function") {
       throw new Error(`${scriptPath} does not export a function`);

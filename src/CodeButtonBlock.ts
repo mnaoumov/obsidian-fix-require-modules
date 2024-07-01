@@ -11,6 +11,7 @@ import babelPresetTypeScript from "@babel/preset-typescript";
 import babelPluginFixSourceMap from "./babel/babelPluginFixSourceMap.ts";
 import { convertPathToObsidianUrl } from "./util/obsidian.ts";
 import babelPluginWrapInDefaultAsyncFunction from "./babel/babelPluginWrapInDefaultAsyncFunction.ts";
+import { customRequire } from "./CustomRequire.ts";
 
 type CodeButtonBlockScriptWrapper = () => Promise<void>;
 
@@ -69,7 +70,7 @@ async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: strin
   try {
     const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
     await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
-    const codeButtonBlockScriptWrapper = window.require(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
+    const codeButtonBlockScriptWrapper = customRequire(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper();
     resultEl.setText("Done! ✅");
   } catch (error) {
