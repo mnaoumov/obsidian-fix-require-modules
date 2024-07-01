@@ -17,13 +17,6 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import { convertPathToObsidianUrl } from "./util/obsidian.ts";
 import type { SourceMap } from "./util/types.js";
 
-type Tsx = {
-  (): void,
-  require: (id: string, fromFile: string | URL) => unknown;
-  resolve: (id: string, fromFile: string | URL, resolveOptions?: { paths?: string[] | undefined; } | undefined) => string;
-  unregister: () => void;
-};
-
 export const builtInModuleNames = [
   "obsidian",
   "@codemirror/autocomplete",
