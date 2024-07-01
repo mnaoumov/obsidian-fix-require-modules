@@ -62,7 +62,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private async loadSettings(): Promise<void> {
-    this._settings = await this.loadData() ?? new FixRequireModulesSettings();
+    this._settings = await this.loadData() as FixRequireModulesSettings ?? new FixRequireModulesSettings();
   }
 
   /**
