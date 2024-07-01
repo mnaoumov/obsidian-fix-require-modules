@@ -85,7 +85,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   const scriptFullPath = isAbsolute(id) ? id : join(currentDirFullPath, id);
 
   if (!existsSync(scriptFullPath)) {
-    return moduleRequire.call(module, id);
+    return moduleRequire.call(module, scriptFullPath);
   }
 
   const cleanModuleFullPath = getFullPath(module.filename);
