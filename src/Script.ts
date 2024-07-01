@@ -7,16 +7,11 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import selectItem from "./select-item.ts";
 import { printError } from "./util/Error.ts";
 import { basename } from "node:path";
-import {
-  watch,
-  type FSWatcher
-} from "node:fs";
 
 type Invocable = () => void | Promise<void>;
 type Script = Invocable | { default: Invocable };
 
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
-let watcher: FSWatcher | null = null;
 
 export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
   if (!plugin.settings.startupScriptPath) {
@@ -89,20 +84,6 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
         await invoke(plugin.app, `${invocableScriptsDirectory}/${scriptFile}`);
       }
     });
-  }
-
-  stopWatcher();
-
-  watcher = watch(`${plugin.app.vault.adapter.getBasePath()}/${invocableScriptsDirectory}`, { recursive: true }, (eventType) => {
-    if (eventType === "rename") {
-      registerInvocableScripts(plugin).catch(printError);
-    }
-  });
-}
-
-export function stopWatcher(): void {
-  if (watcher) {
-    watcher.close();
   }
 }
 
