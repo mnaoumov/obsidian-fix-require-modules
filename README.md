@@ -120,7 +120,8 @@ Use `dynamicImport()` to extend the built-in [`import()`][import] function with 
 
 ```js
 await dynamicImport("obsidian");
-await dynamicImport("./som");
+await dynamicImport("./some/relative/path.js");
+await dynamicImport("../some/other/relative/path.js");
 await dynamicImport("./some/relative/path.js", "path/to/current/script.js");
 await dynamicImport("./some/relative/path.js", "path/to/current/note.md");
 await dynamicImport("/path/from/root.js");
