@@ -73,6 +73,8 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
 
   if (id.startsWith("./") || id.startsWith("../")) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
+  } else if (id.startsWith("//")) {
+    id = join(app.vault.adapter.getBasePath(), id.substring(2));
   } else if (id.startsWith("/")) {
     id = `.${id}`;
   } else if (!isAbsolute(id)) {
