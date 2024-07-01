@@ -116,7 +116,7 @@ Manages source maps for compiled code, allowing seamless debugging in [`Obsidian
 
 ### Dynamic Imports
 
-Use `dynamicImport()` to extend the built-in `import()` function with all the features of [`require()`][require] and support for URLs:
+Use `dynamicImport()` to extend the built-in [`import()`][import] function with all the features of [`require()`][require] and support for URLs:
 
 ```js
 await dynamicImport("obsidian");
