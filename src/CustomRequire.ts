@@ -308,17 +308,20 @@ function getFakeRootPath(): string {
 
 function applyPatches(): void {
   patch(window, "require", customRequire as NodeJS.Require);
+  patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require);
+  patch(Module.prototype, "_compile", patchedCompile);
+  patch(Module.prototype, "load", patchedLoad);
   patch(Module, "_resolveFilename", customResolveFilename);
 
-  patch(Module.prototype, "require", wrapForModulePrototype(customRequire) as NodeJS.Require);
-  patch(Module.prototype, "_compile", wrapForModulePrototype(customCompile));
-  patch(Module.prototype, "load", wrapForModulePrototype(customLoad));
-}
+  function patchedModuleRequire(this: Module, id: string): unknown {
+    return customRequire(id, undefined, this);
+  }
 
-function wrapForModulePrototype<Args extends unknown[], ReturnType>(
-  customFn: (...argsWithModule: [...Args, Module]) => ReturnType
-): (this: Module, ...args: Args) => ReturnType {
-  return function patchedFn(this: Module, ...args: Args): ReturnType {
-    return customFn(...args, this);
-  };
+  function patchedCompile(this: Module, content: string, filename: string): unknown {
+    return customCompile(content, filename, this);
+  }
+
+  function patchedLoad(this: Module, filename: string): void {
+    return customLoad(filename, this);
+  }
 }
