@@ -233,14 +233,8 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return join(app.vault.adapter.getBasePath(), plugin.manifest.dir!, ESBUILD_MAIN_PATH);
   }
 
-  let path: string;
-
-  if (isAbsolute(request) || !parent.filename) {
-    path = request;
-  } else {
-    path = join(parent.filename, request);
-  }
-
+  const isRelative = request.startsWith("./") || request.startsWith("../");
+  const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
   return moduleResolveFileName(path, parent, isMain, options);
 }
 
