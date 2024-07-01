@@ -30,7 +30,7 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
   if (sectionInfo) {
     const lines = sectionInfo.text.split("\n");
     const codeBlockHeader = lines[sectionInfo.lineStart]!;
-    const caption = codeBlockHeader.slice(`\`\`\`\`${CODE_BUTTON_BLOCK_LANGUAGE} `.length).trim() || "(no caption)";
+    const caption = codeBlockHeader.slice(`\`\`\`${CODE_BUTTON_BLOCK_LANGUAGE} `.length).trim() || "(no caption)";
 
     el.createEl("button", {
       text: caption,
