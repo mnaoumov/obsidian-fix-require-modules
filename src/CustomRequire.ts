@@ -17,6 +17,10 @@ import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import { convertPathToObsidianUrl } from "./util/obsidian.ts";
 import type { SourceMap } from "./util/types.js";
 
+type MaybeEsModule = {
+  __esModule?: boolean;
+};
+
 export const builtInModuleNames = [
   "obsidian",
   "@codemirror/autocomplete",
@@ -103,10 +107,6 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
   try {
-    if (nodeRequire.cache[scriptFullPath]?.loaded === false) {
-      return tsx.require(scriptFullPath, scriptFullPath);
-    }
-
     return moduleRequire.call(module, scriptFullPath);
   }
   finally {
@@ -165,7 +165,13 @@ function customLoad(filename: string, module: Module): void {
 
   if (isAbsolute(filename)) {
     delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
-    module.exports = tsx.require(filename, filename);
+    const loadedModule = tsx.require(filename, filename) as MaybeEsModule;
+    if (module.exports && loadedModule.__esModule) {
+      Object.assign(module.exports, loadedModule);
+    } else {
+      module.exports = loadedModule;
+    }
+
     module.loaded = true;
     return;
   }
