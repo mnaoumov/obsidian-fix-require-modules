@@ -103,15 +103,8 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   getRecursiveTimestampAndInvalidateCache(scriptFullPath);
 
   try {
-    const cachedModule = nodeRequire.cache[scriptFullPath];
-    if (cachedModule) {
-      if (cachedModule.loaded) {
-        return cachedModule.exports;
-      }
-
-      if (!scriptFullPath.includes("?")) {
-        return customRequire(getNodeRequireCacheKey(scriptFullPath), currentScriptPath, module);
-      }
+    if (nodeRequire.cache[scriptFullPath]?.loaded === false) {
+      return tsx.require(scriptFullPath, scriptFullPath);
     }
 
     return moduleRequire.call(module, scriptFullPath);
