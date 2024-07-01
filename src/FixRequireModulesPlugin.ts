@@ -41,6 +41,7 @@ export default class FixRequireModulesPlugin extends Plugin {
       name: "Invoke Script: <<Choose>>",
       callback: () => selectAndInvokeScript(this)
     });
+    this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
@@ -65,10 +66,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private configureInvocableScriptsDirectoryWatcher(): void {
-    if (this._invocableScriptsDirectoryWatcher) {
-      this._invocableScriptsDirectoryWatcher.close();
-      this._invocableScriptsDirectoryWatcher = null;
-    }
+    this.stopInvocableScriptsDirectoryWatcher();
 
     if (!this.settings.getInvocableScriptsDirectory()){
       return;
@@ -81,5 +79,12 @@ export default class FixRequireModulesPlugin extends Plugin {
         registerInvocableScripts(this).catch(printError);
       }
     });
+  }
+
+  private stopInvocableScriptsDirectoryWatcher(): void {
+    if (this._invocableScriptsDirectoryWatcher) {
+      this._invocableScriptsDirectoryWatcher.close();
+      this._invocableScriptsDirectoryWatcher = null;
+    }
   }
 }
