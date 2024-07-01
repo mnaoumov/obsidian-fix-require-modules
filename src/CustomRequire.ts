@@ -60,7 +60,7 @@ export function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRe
   applyPatches();
 }
 
-function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
+export function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
   if (!module) {
     module = window.module;
   }
