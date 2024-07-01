@@ -120,6 +120,63 @@ function customRequire(id: string, currentScriptPath?: string, module?: Module):
   }
 }
 
+function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
+  if (request.endsWith(getNodeRequireCacheKey(""))) {
+    return tsxModuleResolveFileName(request, parent, isMain, options);
+  }
+
+  const [cleanRequest = "", query = null] = request.split("?");
+  if (query != null) {
+    const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
+    return `${cleanFilename}?${query}`;
+  }
+
+  if (builtInModuleNames.includes(request)) {
+    return request;
+  }
+
+  if (request === "esbuild") {
+    return join(app.vault.adapter.getBasePath(), plugin.manifest.dir!, ESBUILD_MAIN_PATH);
+  }
+
+  const isRelative = request.startsWith("./") || request.startsWith("../");
+  const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
+  return moduleResolveFileName(path, parent, isMain, options);
+}
+
+function customCompile(content: string, filename: string, module: Module): unknown {
+  content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
+    // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
+    return `
+//#${""} sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
+  });
+  return moduleCompile.call(module, content, filename);
+}
+
+function customLoad(filename: string, module: Module): void {
+  if (filename.endsWith(getNodeRequireCacheKey(""))) {
+    moduleLoad.call(module, filename);
+    return;
+  }
+
+  filename = filename.split("?")[0]!;
+
+  if (builtInModuleNames.includes(filename)) {
+    module.exports = pluginRequire(filename) as unknown;
+    module.loaded = true;
+    return;
+  }
+
+  if (isAbsolute(filename)) {
+    delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
+    module.exports = tsx.require(filename, filename);
+    module.loaded = true;
+    return;
+  }
+
+  moduleLoad.call(module, filename);
+}
+
 function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?: Module): string {
   let ans: string | null = null;
   if (module && module.filename) {
@@ -214,30 +271,6 @@ function getRecursiveTimestamp(moduleName: string): number {
   return ans;
 }
 
-function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
-  if (request.endsWith(getNodeRequireCacheKey(""))) {
-    return tsxModuleResolveFileName(request, parent, isMain, options);
-  }
-
-  const [cleanRequest = "", query = null] = request.split("?");
-  if (query != null) {
-    const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
-    return `${cleanFilename}?${query}`;
-  }
-
-  if (builtInModuleNames.includes(request)) {
-    return request;
-  }
-
-  if (request === "esbuild") {
-    return join(app.vault.adapter.getBasePath(), plugin.manifest.dir!, ESBUILD_MAIN_PATH);
-  }
-
-  const isRelative = request.startsWith("./") || request.startsWith("../");
-  const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
-  return moduleResolveFileName(path, parent, isMain, options);
-}
-
 function getNodeRequireCacheKey(moduleName: string): string {
   return `${moduleName}?namespace=${plugin.manifest.id}`;
 }
@@ -250,44 +283,11 @@ function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object): v
   });
 }
 
-function customCompile(content: string, filename: string, module: Module): unknown {
-  content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
-    // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
-    return `
-//#${""} sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
-  });
-  return moduleCompile.call(module, content, filename);
-}
-
 function fixSourceMap(sourceMapBase64: string): string {
   const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf8");
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
-}
-
-function customLoad(filename: string, module: Module): void {
-  if (filename.endsWith(getNodeRequireCacheKey(""))) {
-    moduleLoad.call(module, filename);
-    return;
-  }
-
-  filename = filename.split("?")[0]!;
-
-  if (builtInModuleNames.includes(filename)) {
-    module.exports = pluginRequire(filename) as unknown;
-    module.loaded = true;
-    return;
-  }
-
-  if (isAbsolute(filename)) {
-    delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
-    module.exports = tsx.require(filename, filename);
-    module.loaded = true;
-    return;
-  }
-
-  moduleLoad.call(module, filename);
 }
 
 function initTsx(): void {
