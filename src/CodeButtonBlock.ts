@@ -15,6 +15,7 @@ import babelPluginWrapInDefaultAsyncFunction from "./babel/babelPluginWrapInDefa
 type CodeButtonBlockScriptWrapper = () => Promise<void>;
 
 const CODE_BUTTON_BLOCK_LANGUAGE = "code-button";
+const CODE_BUTTON_BLOCK_CAPTION_REG_EXP = new RegExp(`^\`{3,}${CODE_BUTTON_BLOCK_LANGUAGE}\\s*(.*)$`);
 
 export function registerCodeButtonBlock(plugin: Plugin): void {
   registerCodeHighlighting();
@@ -30,7 +31,8 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
   if (sectionInfo) {
     const lines = sectionInfo.text.split("\n");
     const codeBlockHeader = lines[sectionInfo.lineStart]!;
-    const caption = codeBlockHeader.slice(`\`\`\`${CODE_BUTTON_BLOCK_LANGUAGE} `.length).trim() || "(no caption)";
+    const match = codeBlockHeader.match(CODE_BUTTON_BLOCK_CAPTION_REG_EXP);
+    const caption = match?.[1]?.trim() || "(no caption)";
 
     el.createEl("button", {
       text: caption,
