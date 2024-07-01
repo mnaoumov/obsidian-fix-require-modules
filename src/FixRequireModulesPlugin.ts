@@ -65,6 +65,10 @@ export default class FixRequireModulesPlugin extends Plugin {
     this._settings = await this.loadData() ?? new FixRequireModulesSettings();
   }
 
+  /**
+   * @note We have to create our own watcher and not rely on Vault.on("create"|"delete"|"rename") events because they are not fired for dot-directories.
+   * We want to be able to track changes to the invocable scripts directory, even if it is a dot-directory.
+   */
   private configureInvocableScriptsDirectoryWatcher(): void {
     this.stopInvocableScriptsDirectoryWatcher();
 
