@@ -49,13 +49,13 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
   const platformKey = `${process.platform} ${os.arch()} ${os.endianness()}`;
 
   if (platformKey in knownWindowsPackages) {
-    missingEsbuildFiles.push(`node_modules/${knownWindowsPackages[platformKey]}/esbuild.exe`)
+    missingEsbuildFiles.push(`node_modules/${knownWindowsPackages[platformKey]}/esbuild.exe`);
   } else if (platformKey in knownUnixlikePackages) {
-    missingEsbuildFiles.push(`node_modules/${knownUnixlikePackages[platformKey]}/bin/esbuild`)
+    missingEsbuildFiles.push(`node_modules/${knownUnixlikePackages[platformKey]}/bin/esbuild`);
   } else if (platformKey in knownWebAssemblyFallbackPackages) {
-    missingEsbuildFiles.push(`node_modules/${knownWebAssemblyFallbackPackages[platformKey]}/bin/esbuild`)
+    missingEsbuildFiles.push(`node_modules/${knownWebAssemblyFallbackPackages[platformKey]}/bin/esbuild`);
   } else {
-    showErrorAndDisablePlugin(plugin, `esbuild doesn't support platform ${platformKey}. Disabling the plugin...`);
+    await showErrorAndDisablePlugin(plugin, `esbuild doesn't support platform ${platformKey}. Disabling the plugin...`);
     return;
   }
   for (const path of missingEsbuildFiles) {
@@ -70,7 +70,7 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
 
     const response = await requestUrl(url);
     if (response.status !== 200) {
-      showErrorAndDisablePlugin(plugin, `Failed to download ${url}. Disabling the plugin...`);
+      await showErrorAndDisablePlugin(plugin, `Failed to download ${url}. Disabling the plugin...`);
       return;
     }
 
