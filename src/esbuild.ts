@@ -58,11 +58,16 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
     await showErrorAndDisablePlugin(plugin, `esbuild doesn't support platform ${platformKey}. Disabling the plugin...`);
     return;
   }
+
+  let needsToReload = false;
+
   for (const path of missingEsbuildFiles) {
     const fullPath = join(plugin.manifest.dir!, path);
     if (await app.vault.adapter.exists(fullPath)) {
       continue;
     }
+
+    needsToReload = true;
 
     const notice = new Notice("In order to use this plugin, we need to download some esbuild assets. This will only happen once. Please wait...");
 
@@ -80,6 +85,12 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
     }
     await app.vault.adapter.writeBinary(fullPath, response.arrayBuffer);
     notice.hide();
+  }
+
+  if (needsToReload) {
+    await plugin.app.plugins.disablePlugin(plugin.manifest.id);
+    await plugin.app.plugins.enablePlugin(plugin.manifest.id);
+    return;
   }
 }
 
