@@ -11,7 +11,7 @@ export default async function runNpmScript(scriptName: string): Promise<boolean>
     throw new Error("Script name is not provided");
   }
 
-  const scriptPath = `scripts/npm/${scriptName}.ts`;
+  const scriptPath = `./scripts/npm/${scriptName}.ts`;
 
   if (!existsSync(scriptPath)) {
     throw new Error(`Script file "${scriptPath}" does not exist`);

@@ -4,7 +4,7 @@ import runNpmScript from "../tools/npmScriptRunner.ts";
 import {
   execFromRoot,
   resolvePathFromRoot
-} from "scripts/tools/root.ts";
+} from "../tools/root.ts";
 
 export default async function postversion(): Promise<void> {
   execFromRoot("git push");

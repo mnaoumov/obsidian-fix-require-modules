@@ -1,4 +1,4 @@
-import { execFromRoot } from "scripts/tools/root.ts";
+import { execFromRoot } from "../tools/root.ts";
 import runNpmScript from "../tools/npmScriptRunner.ts";
 
 export default async function preversion(): Promise<void> {
