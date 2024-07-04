@@ -13,12 +13,10 @@ try {
   process.exit(1);
 }
 
-export function printError(error: unknown, level: number = 0): void {
+function printError(error: unknown): void {
   if (error === undefined) {
     return;
   }
-
-  const indent = "  ".repeat(level);
 
   if (!(error instanceof Error)) {
     let str = "";
@@ -31,19 +29,20 @@ export function printError(error: unknown, level: number = 0): void {
       str = JSON.stringify(error);
     }
 
-    console.error(`${indent}${str}`);
+    console.error(str);
     return;
   }
 
-  if (!error.stack) {
-    console.error(`${indent}${error.name}: ${error.message}`);
-  } else {
-    const stackLines = error.stack.split("\n").map(line => `${indent}${line}`);
-    console.error(stackLines.join("\n"));
+  const title = `${error.name}: ${error.message}`;
+  console.error(`\x1b[0m${title}\x1b[0m`);
+
+  if (error.stack) {
+    const restStack = error.stack.startsWith(title) ? error.stack.substring(title.length + 1) : error.stack;
+    console.error(`Error stack:\n${restStack}`);
   }
 
   if (error.cause !== undefined) {
-    console.error(`${indent}Caused by:`);
-    printError(error.cause, level + 1);
+    console.error("Caused by:");
+    printError(error.cause);
   }
 }
