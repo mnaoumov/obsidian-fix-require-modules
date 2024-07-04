@@ -16,12 +16,13 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
+    "skipLibCheck": false,
     "target": "ESNext",
-    "verbatimModuleSyntax": true,
     "types": [
       "node",
       "obsidian-typings"
-    ]
+    ],
+    "verbatimModuleSyntax": true
   },
   "include": [
     "**/*.ts"

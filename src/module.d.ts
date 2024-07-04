@@ -1,4 +1,4 @@
-import "node:module";
+import type Module from "node:module";
 
 declare global {
   namespace NodeJS {
