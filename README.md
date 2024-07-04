@@ -4,7 +4,7 @@ This is a plugin for [`Obsidian`][Obsidian] that fixes [`require()`][require] ca
 
 ## Features
 
-This plugin heavily simplifies working with custom [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] modules. You can work with them using [DevTools Console](https://developer.chrome.com/docs/devtools/console), [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts, [QuickAdd](https://quickadd.obsidian.guide/) scripts, [Templater](https://silentvoid13.github.io/Templater/) scripts, etc.
+This plugin heavily simplifies working with custom [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] modules. You can work with them using [DevTools Console](https://developer.chrome.com/docs/devtools/console), [CustomJS](https://github.com/saml-dev/obsidian-custom-js) scripts, [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts, [Modules](https://github.com/polyipseity/obsidian-modules) scripts, [QuickAdd](https://quickadd.obsidian.guide/) scripts, [Templater](https://silentvoid13.github.io/Templater/) scripts, etc.
 
 ### Built-in Modules
 
