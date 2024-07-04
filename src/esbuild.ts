@@ -9,6 +9,7 @@ import {
 } from "path";
 import os from "node:os";
 import process from "node:process";
+import { execSync } from "node:child_process";
 
 const knownWindowsPackages: Record<string, string> = {
   "win32 arm64 LE": "@esbuild/win32-arm64",
@@ -84,6 +85,11 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
       await app.vault.adapter.mkdir(dir);
     }
     await app.vault.adapter.writeBinary(fullPath, response.arrayBuffer);
+
+    if (fullPath.endsWith("esbuild")) {
+      execSync(`chmod +x "${fullPath}"`);
+    }
+
     notice.hide();
   }
 
