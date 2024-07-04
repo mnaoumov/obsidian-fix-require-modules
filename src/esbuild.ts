@@ -87,7 +87,8 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
     await app.vault.adapter.writeBinary(fullPath, response.arrayBuffer);
 
     if (fullPath.endsWith("esbuild")) {
-      execSync(`chmod +x "${fullPath}"`);
+      const fullRealPath = app.vault.adapter.getFullRealPath(fullPath);
+      execSync(`chmod +x "${fullRealPath}"`);
     }
 
     notice.hide();
