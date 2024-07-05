@@ -1,5 +1,4 @@
-
-export default class FixRequireModulesSettings {
+export default class FixRequireModulesPluginSettings {
   public modulesRoot: string = "";
   public invocableScriptsDirectory: string = "";
   public startupScriptPath: string = "";
@@ -12,8 +11,16 @@ export default class FixRequireModulesSettings {
     return this.getPathRelativeToModulesRoot(this.startupScriptPath);
   }
 
-  public static clone(settings?: FixRequireModulesSettings): FixRequireModulesSettings {
-    return Object.assign(new FixRequireModulesSettings(), settings);
+  public static load(value: unknown): FixRequireModulesPluginSettings {
+    if (!value) {
+      return new FixRequireModulesPluginSettings();
+    }
+
+    return value as FixRequireModulesPluginSettings;
+  }
+
+  public static clone(settings?: FixRequireModulesPluginSettings): FixRequireModulesPluginSettings {
+    return Object.assign(new FixRequireModulesPluginSettings(), settings);
   }
 
   private getPathRelativeToModulesRoot(path: string): string {

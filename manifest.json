@@ -5,6 +5,6 @@
   "minAppVersion": "0.15.0",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "author": "mnaoumov",
-  "authorUrl": "https://github.com/mnaoumov",
+  "authorUrl": "https://github.com/mnaoumov/",
   "isDesktopOnly": true
 }

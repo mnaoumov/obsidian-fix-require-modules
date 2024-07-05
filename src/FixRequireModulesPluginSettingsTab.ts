@@ -5,7 +5,7 @@ import {
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 
-export default class FixRequireModulesSettingsTab extends PluginSettingTab {
+export default class FixRequireModulesPluginSettingsTab extends PluginSettingTab {
   public override plugin: FixRequireModulesPlugin;
 
   public constructor(plugin: FixRequireModulesPlugin) {

@@ -5,8 +5,8 @@ import {
   builtInModuleNames,
   registerCustomRequire
 } from "./CustomRequire.ts";
-import FixRequireModulesSettingsTab from "./FixRequireModulesSettingsTab.ts";
-import FixRequireModulesSettings from "./FixRequireModulesSettings.ts";
+import FixRequireModulesPluginSettingsTab from "./FixRequireModulesPluginSettingsTab.ts";
+import FixRequireModulesPluginSettings from "./FixRequireModulesPluginSettings.ts";
 import {
   invokeStartupScript,
   registerInvocableScripts,
@@ -25,17 +25,17 @@ import { join } from "node:path";
 
 export default class FixRequireModulesPlugin extends Plugin {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
-  private _settings: FixRequireModulesSettings = new FixRequireModulesSettings();
+  private _settings: FixRequireModulesPluginSettings = new FixRequireModulesPluginSettings();
   private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
 
-  public get settings(): FixRequireModulesSettings {
-    return FixRequireModulesSettings.clone(this._settings);
+  public get settings(): FixRequireModulesPluginSettings {
+    return FixRequireModulesPluginSettings.clone(this._settings);
   }
 
   public override async onload(): Promise<void> {
     await this.loadSettings();
     registerCodeButtonBlock(this);
-    this.addSettingTab(new FixRequireModulesSettingsTab(this));
+    this.addSettingTab(new FixRequireModulesPluginSettingsTab(this));
     this.addCommand({
       id: "invokeScript",
       name: "Invoke Script: <<Choose>>",
@@ -45,8 +45,8 @@ export default class FixRequireModulesPlugin extends Plugin {
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
-  public async saveSettings(newSettings: FixRequireModulesSettings): Promise<void> {
-    this._settings = FixRequireModulesSettings.clone(newSettings);
+  public async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+    this._settings = FixRequireModulesPluginSettings.clone(newSettings);
     await this.saveData(this._settings);
     await registerInvocableScripts(this);
     this.configureInvocableScriptsDirectoryWatcher();
@@ -62,7 +62,7 @@ export default class FixRequireModulesPlugin extends Plugin {
   }
 
   private async loadSettings(): Promise<void> {
-    this._settings = await this.loadData() as FixRequireModulesSettings ?? new FixRequireModulesSettings();
+    this._settings = FixRequireModulesPluginSettings.load(await this.loadData());
   }
 
   /**
