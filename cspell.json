@@ -1,0 +1,28 @@
+{
+  "version": "0.2",
+  "ignorePaths": [
+    "dist",
+    "node_modules"
+  ],
+  "dictionaryDefinitions": [],
+  "dictionaries": [],
+  "words": [
+    "codemirror",
+    "collab",
+    "dataviewjs",
+    "hotreload",
+    "lezer",
+    "loong",
+    "mnaoumov",
+    "Naumov",
+    "outfile",
+    "postversion",
+    "preversion",
+    "riscv",
+    "Templater",
+    "Unixlike"
+  ],
+  "ignoreWords": [],
+  "import": [],
+  "enabled": true
+}
