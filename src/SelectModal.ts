@@ -12,7 +12,7 @@ export default async function selectItem<T>({
 }: {
   app: App;
   items: T[];
-  itemTextFunc(item: T): string;
+  itemTextFunc(this: void, item: T): string;
   placeholder?: string;
 }): Promise<T | null> {
   return await new Promise<T | null>((resolve) => {
