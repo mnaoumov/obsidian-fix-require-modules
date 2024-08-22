@@ -1,6 +1,6 @@
 {
   "name": "fix-require-modules",
-  "version": "4.7.0",
+  "version": "4.8.0",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
     "build": "tsx scripts/build.ts",
