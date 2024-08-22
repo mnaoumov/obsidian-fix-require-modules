@@ -15,16 +15,16 @@ type Script = Invocable | { default: Invocable };
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
 
 export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
-  if (!plugin.settings.startupScriptPath) {
+  if (!plugin.settingsCopy.startupScriptPath) {
     console.warn("No Startup script path specified in the settings");
   } else {
-    await invoke(plugin.app, plugin.settings.getStartupScriptPath(), true);
+    await invoke(plugin.app, plugin.settingsCopy.getStartupScriptPath(), true);
   }
 }
 
 export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Promise<void> {
   const app = plugin.app;
-  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory();
+  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
   let scriptFiles: string[];
 
   if (!invocableScriptsDirectory) {
@@ -59,7 +59,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
     plugin.app.commands.removeCommand(command.id);
   }
 
-  const invocableScriptsDirectory = plugin.settings.getInvocableScriptsDirectory();
+  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
 
   if (!invocableScriptsDirectory) {
     const message = "No Invocable scripts directory specified in the settings";
@@ -75,7 +75,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
     return;
   }
 
-  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settings.getInvocableScriptsDirectory(), "");
+  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsDirectory(), "");
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({

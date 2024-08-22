@@ -3,6 +3,7 @@ import {
   Plugin
 } from "obsidian";
 import { customRequire } from "./CustomRequire.ts";
+import { isUrl } from "obsidian-dev-utils/url";
 
 declare global {
   interface Window {
@@ -26,13 +27,4 @@ async function dynamicImport(moduleName: string, currentScriptPath?: string): Pr
   }
 
   return customRequire(moduleName, currentScriptPath);
-}
-
-function isUrl(str: string): boolean {
-  try {
-    const url = new URL(str);
-    return url.protocol !== "file:";
-  } catch {
-    return false;
-  }
 }

@@ -1,6 +1,4 @@
-import {
-  Plugin,
-} from "obsidian";
+import { PluginSettingTab } from "obsidian";
 import {
   builtInModuleNames,
   registerCustomRequire
@@ -22,47 +20,44 @@ import {
 } from "node:fs";
 import { printError } from "./util/Error.ts";
 import { join } from "node:path";
+import { PluginBase } from "obsidian-dev-utils/obsidian/Plugin/PluginBase";
+import type { MaybePromise } from "obsidian-dev-utils/Async";
 
-export default class FixRequireModulesPlugin extends Plugin {
+export default class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
-  private _settings: FixRequireModulesPluginSettings = new FixRequireModulesPluginSettings();
   private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
 
-  public get settings(): FixRequireModulesPluginSettings {
-    return FixRequireModulesPluginSettings.clone(this._settings);
+  protected override createDefaultPluginSettings(this: void): FixRequireModulesPluginSettings {
+    return new FixRequireModulesPluginSettings();
   }
 
-  public override async onload(): Promise<void> {
-    await this.loadSettings();
+  protected override createPluginSettingsTab(): PluginSettingTab | null {
+    return new FixRequireModulesPluginSettingsTab(this);
+  }
+
+  protected override onloadComplete(): MaybePromise<void> {
     registerCodeButtonBlock(this);
-    this.addSettingTab(new FixRequireModulesPluginSettingsTab(this));
     this.addCommand({
       id: "invokeScript",
       name: "Invoke Script: <<Choose>>",
       callback: () => selectAndInvokeScript(this)
     });
     this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
-  public async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
-    this._settings = FixRequireModulesPluginSettings.clone(newSettings);
-    await this.saveData(this._settings);
+  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
     await registerInvocableScripts(this);
     this.configureInvocableScriptsDirectoryWatcher();
   }
 
-  private async onLayoutReady(): Promise<void> {
+  protected override async onLayoutReady(): Promise<void> {
     await downloadEsbuild(this);
     registerCustomRequire(this, require);
     registerDynamicImport(this);
 
-    await this.saveSettings(this._settings);
+    await this.saveSettings(this.settings);
     await invokeStartupScript(this);
-  }
-
-  private async loadSettings(): Promise<void> {
-    this._settings = FixRequireModulesPluginSettings.load(await this.loadData());
   }
 
   /**
@@ -72,11 +67,11 @@ export default class FixRequireModulesPlugin extends Plugin {
   private configureInvocableScriptsDirectoryWatcher(): void {
     this.stopInvocableScriptsDirectoryWatcher();
 
-    if (!this.settings.getInvocableScriptsDirectory()){
+    if (!this.settings.getInvocableScriptsDirectory()) {
       return;
     }
 
-    const invocableScriptsDirectoryFullPath = join(this.app.vault.adapter.getBasePath(), this._settings.getInvocableScriptsDirectory());
+    const invocableScriptsDirectoryFullPath = join(this.app.vault.adapter.getBasePath(), this.settings.getInvocableScriptsDirectory());
 
     this._invocableScriptsDirectoryWatcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
       if (eventType === "rename") {

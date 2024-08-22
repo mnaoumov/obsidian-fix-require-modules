@@ -11,18 +11,6 @@ export default class FixRequireModulesPluginSettings {
     return this.getPathRelativeToModulesRoot(this.startupScriptPath);
   }
 
-  public static load(value: unknown): FixRequireModulesPluginSettings {
-    if (!value) {
-      return new FixRequireModulesPluginSettings();
-    }
-
-    return value as FixRequireModulesPluginSettings;
-  }
-
-  public static clone(settings?: FixRequireModulesPluginSettings): FixRequireModulesPluginSettings {
-    return Object.assign(new FixRequireModulesPluginSettings(), settings);
-  }
-
   private getPathRelativeToModulesRoot(path: string): string {
     if (!path) {
       return "";

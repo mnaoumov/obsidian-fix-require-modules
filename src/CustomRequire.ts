@@ -307,7 +307,7 @@ function initTsx(): void {
 }
 
 function getFakeRootPath(): string {
-  return join(app.vault.adapter.getBasePath(), plugin.settings.modulesRoot, "fakeRoot.js").replaceAll("\\", "/");
+  return join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, "fakeRoot.js").replaceAll("\\", "/");
 }
 
 function applyPatches(): void {

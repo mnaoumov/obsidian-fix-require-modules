@@ -1,60 +1,61 @@
 import {
   Notice,
-  PluginSettingTab,
   Setting,
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
+import type FixRequireModulesPluginSettings from "./FixRequireModulesPluginSettings.ts";
+import { PluginSettingsTabBase } from "obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase"
+import { appendCodeBlock } from "obsidian-dev-utils/DocumentFragment";
 
-export default class FixRequireModulesPluginSettingsTab extends PluginSettingTab {
-  public override plugin: FixRequireModulesPlugin;
-
-  public constructor(plugin: FixRequireModulesPlugin) {
-    super(plugin.app, plugin);
-    this.plugin = plugin;
-  }
-
+export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
   public override display(): void {
     this.containerEl.empty();
-    this.containerEl.createEl("h2", { text: "Fix Require Modules" });
 
-    const settings = this.plugin.settings;
+    const pluginSettings = this.plugin.settingsCopy;
 
     new Setting(this.containerEl)
       .setName("Script modules root")
-      .setDesc(createDocumentFragment(`Path to the directory that is considered as <b><code>/</code></b> in <b><code>require("/script.js")</code></b><br />
-Leave blank to use the root of the vault.
-`))
-      .addText(text =>
-        text
+      .setDesc(createFragment((f) => {
+        f.appendText("Path to the directory that is considered as ");
+        appendCodeBlock(f, "/");
+        f.appendText(" in ");
+        appendCodeBlock(f, "require(\"/script.js\")");
+        f.createEl("br");
+        f.appendText("Leave blank to use the root of the vault.");
+      }))
+      .addText((text) =>
+        this.bindValueComponent(text, "modulesRoot", { autoSave: false, pluginSettings })
           .setPlaceholder("path/to/script/modules/root")
-          .setValue(this.plugin.settings.modulesRoot)
-          .onChange((value) => settings.modulesRoot = value)
       );
 
     new Setting(this.containerEl)
       .setName("Invocable scripts directory")
-      .setDesc(createDocumentFragment(`Path to the directory with invocable scripts.<br />
-Should be a relative path to the <b><code>Script modules root</code></b><br />
-Leave blank if you don't use invocable scripts.
-`))
-      .addText(text =>
-        text
+      .setDesc(createFragment((f) => {
+        f.appendText("Path to the directory with invocable scripts.");
+        f.createEl("br");
+        f.appendText("Should be a relative path to the ");
+        appendCodeBlock(f, "Script modules root");
+        f.createEl("br");
+        f.appendText("Leave blank if you don't use invocable scripts.");
+      }))
+      .addText((text) =>
+        this.bindValueComponent(text, "invocableScriptsDirectory", { autoSave: false, pluginSettings })
           .setPlaceholder("path/to/invocable/scripts/directory")
-          .setValue(this.plugin.settings.invocableScriptsDirectory)
-          .onChange((value) => settings.invocableScriptsDirectory = value)
       );
 
     new Setting(this.containerEl)
       .setName("Startup script path")
-      .setDesc(createDocumentFragment(`Path to the invocable script executed on startup.<br />
-Should be a relative path to the <b><code>Script modules root</code></b><br />
-Leave blank if you don't use startup script.
-`))
-      .addText(text =>
-        text
+      .setDesc(createFragment((f) => {
+        f.appendText("Path to the invocable script executed on startup.");
+        f.createEl("br");
+        f.appendText("Should be a relative path to the ");
+        appendCodeBlock(f, "Script modules root");
+        f.createEl("br");
+        f.appendText("Leave blank if you don't use startup script.");
+      }))
+      .addText((text) =>
+        this.bindValueComponent(text, "startupScriptPath", { autoSave: false, pluginSettings })
           .setPlaceholder("path/to/startup.ts")
-          .setValue(this.plugin.settings.startupScriptPath)
-          .onChange((value) => settings.startupScriptPath = value)
       );
 
     new Setting(this.containerEl)
@@ -62,7 +63,7 @@ Leave blank if you don't use startup script.
         button
           .setButtonText("Save settings")
           .onClick(async () => {
-            await this.plugin.saveSettings(settings);
+            await this.plugin.saveSettings(pluginSettings);
             new Notice("Settings saved");
           })
       );
@@ -81,10 +82,4 @@ Leave blank if you don't use startup script.
           })
       );
   }
-}
-
-function createDocumentFragment(htmlString: string): DocumentFragment {
-  const template = createEl("template");
-  template.innerHTML = htmlString;
-  return template.content;
 }
