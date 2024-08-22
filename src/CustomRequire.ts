@@ -3,15 +3,14 @@ import {
   dirname,
   isAbsolute,
   join
-} from "path";
+} from "node:path";
 import {
   existsSync,
+  readFileSync,
   statSync
-} from "fs";
+} from "node:fs";
 import { register } from "tsx/cjs/api";
-import {
-  App,
-} from "obsidian";
+import { App } from "obsidian";
 import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import { convertPathToObsidianUrl } from "./util/obsidian.ts";
@@ -339,6 +338,11 @@ function specialModuleLoad(filename: string): unknown {
 
   if (filename === "obsidian/app") {
     return app;
+  }
+
+  if (filename.endsWith(".json")) {
+    const json = readFileSync(filename, "utf-8");
+    return JSON.parse(json);
   }
 
   return;
