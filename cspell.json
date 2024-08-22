@@ -10,6 +10,7 @@
     "codemirror",
     "collab",
     "dataviewjs",
+    "evaled",
     "hotreload",
     "lezer",
     "loong",
