@@ -38,7 +38,7 @@ export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Pr
   const scriptFile = await selectItem({
     app: app,
     items: scriptFiles,
-    itemTextFunc: script => script,
+    itemTextFunc: (script) => script,
     placeholder: "Choose a script to invoke"
   });
 
@@ -54,7 +54,7 @@ export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Pr
 
 export async function registerInvocableScripts(plugin: FixRequireModulesPlugin): Promise<void> {
   const COMMAND_NAME_PREFIX = "invokeScriptFile-";
-  const commands = plugin.app.commands.listCommands().filter(c => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
+  const commands = plugin.app.commands.listCommands().filter((c) => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
   for (const command of commands) {
     plugin.app.commands.removeCommand(command.id);
   }
@@ -101,7 +101,7 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
   const listedFiles = await adapter.list(`${scriptsDirectory}/${directory}`);
   for (const fileName of getSortedBaseNames(listedFiles.files)) {
     const lowerCasedFileName = fileName.toLowerCase();
-    if (extensions.some(ext => lowerCasedFileName.endsWith(ext))) {
+    if (extensions.some((ext) => lowerCasedFileName.endsWith(ext))) {
       files.push(directory ? `${directory}/${fileName}` : fileName);
     }
   }
@@ -114,7 +114,7 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
 }
 
 function getSortedBaseNames(fullNames: string[]): string[] {
-  return fullNames.map(file => basename(file)).sort((a, b) => a.localeCompare(b));
+  return fullNames.map((file) => basename(file)).sort((a, b) => a.localeCompare(b));
 }
 
 async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {

@@ -4,7 +4,7 @@ import {
 } from "obsidian";
 import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
 import type FixRequireModulesPluginSettings from "./FixRequireModulesPluginSettings.ts";
-import { PluginSettingsTabBase } from "obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase"
+import { PluginSettingsTabBase } from "obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase";
 import { appendCodeBlock } from "obsidian-dev-utils/DocumentFragment";
 
 export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
@@ -59,7 +59,7 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
       );
 
     new Setting(this.containerEl)
-      .addButton(button =>
+      .addButton((button) =>
         button
           .setButtonText("Save settings")
           .onClick(async () => {
@@ -71,7 +71,7 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
     new Setting(this.containerEl)
       .setName("Hotkeys")
       .setDesc("Hotkeys to invoke scripts")
-      .addButton(button =>
+      .addButton((button) =>
         button
           .setButtonText("Configure")
           .setTooltip("Configure Hotkeys")

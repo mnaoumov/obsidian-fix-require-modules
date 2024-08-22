@@ -1,6 +1,9 @@
 import type { Plugin } from "esbuild";
-import { readFile, writeFile } from "node:fs/promises";
-import { readNpmPackage } from "obsidian-dev-utils/Npm"
+import {
+  readFile,
+  writeFile
+} from "node:fs/promises";
+import { readNpmPackage } from "obsidian-dev-utils/Npm";
 
 export function fixRequireEsbuildPlugin(distPath: string): Plugin {
   return {
@@ -25,5 +28,5 @@ return {};
         await writeFile(distPath, contents, "utf-8");
       });
     }
-  }
+  };
 }

@@ -112,9 +112,9 @@ async function makeWrapperScript(source: string, sourceFileName: string, sourceD
 }
 
 function registerCodeHighlighting(): void {
-  window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "text/typescript"));
+  window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, "text/typescript"));
 }
 
 function unregisterCodeHighlighting(): void {
-  window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, config => window.CodeMirror.getMode(config, "null"));
+  window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, "null"));
 }

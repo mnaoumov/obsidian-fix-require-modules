@@ -6,6 +6,7 @@
     "build": "tsx scripts/build.ts",
     "dev": "tsx scripts/dev.ts",
     "lint": "obsidian-dev-utils lint",
+    "lint:fix": "obsidian-dev-utils lint:fix",
     "spellcheck": "obsidian-dev-utils spellcheck",
     "version": "obsidian-dev-utils version"
   },

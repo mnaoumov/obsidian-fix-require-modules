@@ -2,7 +2,7 @@ import { wrapCliTask } from "obsidian-dev-utils/bin/cli";
 import {
   buildObsidianPlugin,
   BuildMode
-} from "obsidian-dev-utils/bin/esbuild/ObsidianPluginBuilder"
+} from "obsidian-dev-utils/bin/esbuild/ObsidianPluginBuilder";
 import { fixRequireEsbuildPlugin } from "./fixRequireEsbuildPlugin.ts";
 import { resolvePathFromRoot } from "obsidian-dev-utils/Root";
 

@@ -115,8 +115,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
 
   try {
     return moduleRequire.call(module, scriptFullPath);
-  }
-  finally {
+  } finally {
     if (isRootRequire) {
       updatedModuleTimestamps.clear();
     }
