@@ -37,6 +37,11 @@ export const builtInModuleNames = [
   "@lezer/highlight"
 ];
 
+const specialModuleNames = [
+  ...builtInModuleNames,
+  "obsidian/app"
+];
+
 let app: App;
 let plugin: FixRequireModulesPlugin;
 let pluginRequire: NodeJS.Require;
@@ -129,7 +134,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return `${cleanFilename}?${query}`;
   }
 
-  if (builtInModuleNames.includes(request)) {
+  if (specialModuleNames.includes(request)) {
     return request;
   }
 
@@ -159,8 +164,9 @@ function customLoad(filename: string, module: Module): void {
 
   filename = filename.split("?")[0]!;
 
-  if (builtInModuleNames.includes(filename)) {
-    module.exports = pluginRequire(filename) as unknown;
+  const specialModule = specialModuleLoad(filename);
+  if (specialModule) {
+    module.exports = specialModule;
     module.loaded = true;
     return;
   }
@@ -322,4 +328,16 @@ function applyPatches(): void {
   function patchedLoad(this: Module, filename: string): void {
     return customLoad(filename, this);
   }
+}
+
+function specialModuleLoad(filename: string): unknown {
+  if (builtInModuleNames.includes(filename)) {
+    return pluginRequire(filename) as unknown;
+  }
+
+  if (filename === "obsidian/app") {
+    return app;
+  }
+
+  return;
 }
