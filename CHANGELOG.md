@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.9.1
+
+- Fix esbuild resolution
+
 ## 4.9.0
 
 - Handle folder imports
