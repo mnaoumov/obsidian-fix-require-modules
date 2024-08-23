@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 4.9.0
+
+- Handle folder imports
+- Preserve __esModule flag
+- Allow loading named modules from modulesRoot
+
 ## 4.8.0
 
 - Switch to obsidian-dev-utils
