@@ -148,6 +148,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
   const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
   options ??= {};
   options.paths ??= [];
+  options.paths.push(...parent.paths);
   options.paths.push(join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, "node_modules"));
   return moduleResolveFileName(path, parent, isMain, options);
 }
