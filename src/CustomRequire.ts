@@ -132,6 +132,10 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return `${cleanFilename}?${query}`;
   }
 
+  if (request === ".") {
+    request = "./index.js";
+  }
+
   if (specialModuleNames.includes(request)) {
     return request;
   }
