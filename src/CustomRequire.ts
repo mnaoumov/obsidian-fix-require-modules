@@ -181,7 +181,7 @@ function customLoad(filename: string, module: Module): void {
     const loadedModule = tsx.require(filename, filename) as MaybeEsModule;
     if (module.exports && loadedModule.__esModule) {
       Object.assign(module.exports, loadedModule);
-      (module.exports as MaybeEsModule).__esModule = true;
+      Object.defineProperty(module.exports, "__esModule", { value: true });
     } else {
       module.exports = loadedModule;
     }
