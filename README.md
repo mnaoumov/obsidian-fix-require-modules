@@ -118,6 +118,16 @@ require("path/to/script.cts");
 require("path/to/script.mts");
 ```
 
+### NPM Modules
+
+You can require NPM modules installed into your configured scripts root folder.
+
+```js
+require("npm-package-name");
+```
+
+See [Tips](#tips) how to avoid performance issues.
+
 ### Smart Caching
 
 Modules are cached for performance, but the cache is invalidated if the script or its dependencies change. Use a query string to skip cache invalidation:
