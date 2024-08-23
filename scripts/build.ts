@@ -1,4 +1,4 @@
-import { wrapCliTask } from "obsidian-dev-utils/bin/cli";
+import { wrapCliTask } from "obsidian-dev-utils/cli";
 import {
   buildObsidianPlugin,
   BuildMode
