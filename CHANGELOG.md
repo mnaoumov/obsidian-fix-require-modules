@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.0
+
+- Pass app to Invocables
+
 ## 4.9.1
 
 - Fix esbuild resolution
