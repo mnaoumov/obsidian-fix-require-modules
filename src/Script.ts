@@ -8,8 +8,9 @@ import selectItem from "./SelectModal.ts";
 import { printError } from "./util/Error.ts";
 import { basename } from "node:path";
 import { customRequire } from "./CustomRequire.ts";
+import type { MaybePromise } from "obsidian-dev-utils/Async";
 
-type Invocable = () => void | Promise<void>;
+type Invocable = (app: App) => MaybePromise<void>;
 type Script = Invocable | { default: Invocable };
 
 const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
@@ -129,7 +130,7 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
     if (typeof invocable !== "function") {
       throw new Error(`${scriptPath} does not export a function`);
     }
-    await invocable();
+    await invocable(app);
   } catch (error) {
     new Notice(`Error invoking ${scriptString} ${scriptPath}
 See console for details...`);
