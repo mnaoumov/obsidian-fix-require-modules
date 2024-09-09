@@ -1,33 +1,37 @@
-import { PluginSettingTab } from "obsidian";
+// eslint-disable-next-line import-x/no-nodejs-modules
+import type {
+  FSWatcher,
+  WatchEventType
+} from 'node:fs';
+// eslint-disable-next-line import-x/no-nodejs-modules
+import { watch } from 'node:fs';
+
+import { PluginSettingTab } from 'obsidian';
+import type { MaybePromise } from 'obsidian-dev-utils/Async';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
+import { join } from 'obsidian-dev-utils/Path';
+
+import { registerCodeButtonBlock } from './CodeButtonBlock.ts';
 import {
   builtInModuleNames,
   registerCustomRequire
-} from "./CustomRequire.ts";
-import FixRequireModulesPluginSettingsTab from "./FixRequireModulesPluginSettingsTab.ts";
-import FixRequireModulesPluginSettings from "./FixRequireModulesPluginSettings.ts";
+} from './CustomRequire.ts';
+import { registerDynamicImport } from './DynamicImport.ts';
+import { downloadEsbuild } from './esbuild.ts';
+import FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
+import FixRequireModulesPluginSettingsTab from './FixRequireModulesPluginSettingsTab.ts';
 import {
   invokeStartupScript,
   registerInvocableScripts,
   selectAndInvokeScript
-} from "./Script.ts";
-import { registerDynamicImport } from "./DynamicImport.ts";
-import { registerCodeButtonBlock } from "./CodeButtonBlock.ts";
-import { downloadEsbuild } from "./esbuild.ts";
-import {
-  watch,
-  type FSWatcher,
-  type WatchEventType
-} from "node:fs";
-import { printError } from "./util/Error.ts";
-import { join } from "node:path";
-import { PluginBase } from "obsidian-dev-utils/obsidian/Plugin/PluginBase";
-import type { MaybePromise } from "obsidian-dev-utils/Async";
+} from './Script.ts';
+import { printError } from './util/Error.ts';
 
 export default class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
   private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
 
-  protected override createDefaultPluginSettings(this: void): FixRequireModulesPluginSettings {
+  protected override createDefaultPluginSettings(): FixRequireModulesPluginSettings {
     return new FixRequireModulesPluginSettings();
   }
 
@@ -38,8 +42,8 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
   protected override onloadComplete(): MaybePromise<void> {
     registerCodeButtonBlock(this);
     this.addCommand({
-      id: "invokeScript",
-      name: "Invoke Script: <<Choose>>",
+      id: 'invokeScript',
+      name: 'Invoke Script: <<Choose>>',
       callback: () => selectAndInvokeScript(this)
     });
     this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
@@ -74,7 +78,7 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
     const invocableScriptsDirectoryFullPath = join(this.app.vault.adapter.getBasePath(), this.settings.getInvocableScriptsDirectory());
 
     this._invocableScriptsDirectoryWatcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
-      if (eventType === "rename") {
+      if (eventType === 'rename') {
         registerInvocableScripts(this).catch(printError);
       }
     });

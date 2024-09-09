@@ -1,9 +1,10 @@
 import {
   Platform,
   Plugin
-} from "obsidian";
-import { customRequire } from "./CustomRequire.ts";
-import { isUrl } from "obsidian-dev-utils/url";
+} from 'obsidian';
+import { isUrl } from 'obsidian-dev-utils/url';
+
+import { customRequire } from './CustomRequire.ts';
 
 declare global {
   interface Window {
@@ -17,7 +18,7 @@ export function registerDynamicImport(plugin: Plugin): void {
 }
 
 async function dynamicImport(moduleName: string, currentScriptPath?: string): Promise<unknown> {
-  const FILE_URL_PREFIX = "file:///";
+  const FILE_URL_PREFIX = 'file:///';
   if (moduleName.toLowerCase().startsWith(FILE_URL_PREFIX)) {
     moduleName = moduleName.substring(FILE_URL_PREFIX.length);
   } else if (moduleName.toLowerCase().startsWith(Platform.resourcePathPrefix)) {

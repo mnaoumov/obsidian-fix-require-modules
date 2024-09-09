@@ -4,11 +4,11 @@ export function printError(error: unknown): void {
   }
 
   if (!(error instanceof Error)) {
-    let str = "";
+    let str = '';
 
     if (error === null) {
-      str = "(null)";
-    } else if (typeof error === "string") {
+      str = '(null)';
+    } else if (typeof error === 'string') {
       str = error;
     } else {
       str = JSON.stringify(error);
@@ -27,7 +27,7 @@ export function printError(error: unknown): void {
   }
 
   if (error.cause !== undefined) {
-    console.error("Caused by:");
+    console.error('Caused by:');
     printError(error.cause);
   }
 }

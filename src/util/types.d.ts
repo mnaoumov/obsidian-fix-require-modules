@@ -1,3 +1,3 @@
-export type SourceMap = {
+export interface SourceMap {
   sources: string[];
-};
+}

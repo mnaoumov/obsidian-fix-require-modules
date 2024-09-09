@@ -1,44 +1,48 @@
-import Module from "node:module";
-import {
-  dirname,
-  isAbsolute,
-  join
-} from "node:path";
+// eslint-disable-next-line import-x/no-nodejs-modules
 import {
   existsSync,
   readFileSync,
   statSync
-} from "node:fs";
-import { register } from "tsx/cjs/api";
-import { App } from "obsidian";
-import { ESBUILD_MAIN_PATH } from "./esbuild.ts";
-import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
-import { convertPathToObsidianUrl } from "./util/obsidian.ts";
-import type { SourceMap } from "./util/types.js";
+} from 'node:fs';
+// eslint-disable-next-line import-x/no-nodejs-modules
+import Module from 'node:module';
 
-type MaybeEsModule = {
+import { App } from 'obsidian';
+import {
+  dirname,
+  isAbsolute,
+  join
+} from 'obsidian-dev-utils/Path';
+import { register } from 'tsx/cjs/api';
+
+import { ESBUILD_MAIN_PATH } from './esbuild.ts';
+import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
+import { convertPathToObsidianUrl } from './util/obsidian.ts';
+import type { SourceMap } from './util/types.js';
+
+interface MaybeEsModule {
   __esModule?: boolean;
-};
+}
 
 export const builtInModuleNames = [
-  "obsidian",
-  "@codemirror/autocomplete",
-  "@codemirror/collab",
-  "@codemirror/commands",
-  "@codemirror/language",
-  "@codemirror/lint",
-  "@codemirror/search",
-  "@codemirror/state",
-  "@codemirror/text",
-  "@codemirror/view",
-  "@lezer/common",
-  "@lezer/lr",
-  "@lezer/highlight"
+  'obsidian',
+  '@codemirror/autocomplete',
+  '@codemirror/collab',
+  '@codemirror/commands',
+  '@codemirror/language',
+  '@codemirror/lint',
+  '@codemirror/search',
+  '@codemirror/state',
+  '@codemirror/text',
+  '@codemirror/view',
+  '@lezer/common',
+  '@lezer/lr',
+  '@lezer/highlight'
 ];
 
 const specialModuleNames = [
   ...builtInModuleNames,
-  "obsidian/app"
+  'obsidian/app'
 ];
 
 let app: App;
@@ -73,17 +77,17 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
     module = window.module;
   }
 
-  if (id.endsWith(getNodeRequireCacheKey(""))) {
+  if (id.endsWith(getNodeRequireCacheKey(''))) {
     return moduleRequire.call(module, id);
   }
 
   let currentScriptFullPath = getFakeRootPath();
 
-  if (id.startsWith("./") || id.startsWith("../")) {
+  if (id.startsWith('./') || id.startsWith('../')) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
-  } else if (id.startsWith("//")) {
+  } else if (id.startsWith('//')) {
     id = join(app.vault.adapter.getBasePath(), id.substring(2));
-  } else if (id.startsWith("/")) {
+  } else if (id.startsWith('/')) {
     if (!existsSync(id)) {
       id = `.${id}`;
     }
@@ -122,34 +126,34 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
 }
 
 function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
-  if (request.endsWith(getNodeRequireCacheKey(""))) {
+  if (request.endsWith(getNodeRequireCacheKey(''))) {
     return tsxModuleResolveFileName(request, parent, isMain, options);
   }
 
-  const [cleanRequest = "", query = null] = request.split("?");
+  const [cleanRequest = '', query = null] = request.split('?');
   if (query != null) {
     const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
     return `${cleanFilename}?${query}`;
   }
 
-  if (request === ".") {
-    request = "./index.js";
+  if (request === '.') {
+    request = './index.js';
   }
 
   if (specialModuleNames.includes(request)) {
     return request;
   }
 
-  if (request === "esbuild") {
-    return join(app.vault.adapter.getBasePath(), plugin.manifest.dir!, ESBUILD_MAIN_PATH);
+  if (request === 'esbuild') {
+    return join(app.vault.adapter.getBasePath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
   }
 
-  const isRelative = request.startsWith("./") || request.startsWith("../");
+  const isRelative = request.startsWith('./') || request.startsWith('../');
   const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
   options ??= {};
   options.paths ??= [];
   options.paths.push(...parent.paths);
-  options.paths.push(join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, "node_modules"));
+  options.paths.push(join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
   return moduleResolveFileName(path, parent, isMain, options);
 }
 
@@ -157,46 +161,47 @@ function customCompile(content: string, filename: string, module: Module): unkno
   content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
     // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
     return `
-//#${""} sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
+//# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
   });
   return moduleCompile.call(module, content, filename);
 }
 
-function customLoad(filename: string, module: Module): void {
-  if (filename.endsWith(getNodeRequireCacheKey(""))) {
-    moduleLoad.call(module, filename);
+function customLoad(filename: string, nodeModule: Module): void {
+  if (filename.endsWith(getNodeRequireCacheKey(''))) {
+    moduleLoad.call(nodeModule, filename);
     return;
   }
 
-  filename = filename.split("?")[0]!;
+  filename = filename.split('?')[0] ?? '';
 
   const specialModule = specialModuleLoad(filename);
   if (specialModule) {
-    module.exports = specialModule;
-    module.loaded = true;
+    nodeModule.exports = specialModule;
+    nodeModule.loaded = true;
     return;
   }
 
   if (isAbsolute(filename)) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
     const loadedModule = tsx.require(filename, filename) as MaybeEsModule;
-    if (module.exports && loadedModule.__esModule) {
-      Object.assign(module.exports, loadedModule);
-      Object.defineProperty(module.exports, "__esModule", { value: true });
+    if (nodeModule.exports && loadedModule.__esModule) {
+      Object.assign(nodeModule.exports, loadedModule);
+      Object.defineProperty(nodeModule.exports, '__esModule', { value: true });
     } else {
-      module.exports = loadedModule;
+      nodeModule.exports = loadedModule;
     }
 
-    module.loaded = true;
+    nodeModule.loaded = true;
     return;
   }
 
-  moduleLoad.call(module, filename);
+  moduleLoad.call(nodeModule, filename);
 }
 
 function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?: Module): string {
   let ans: string | null = null;
-  if (module && module.filename) {
+  if (module?.filename) {
     ans = getFullPath(module.filename);
     if (!ans) {
       throw new Error(`Invalid module.filename ${module.filename}`);
@@ -223,11 +228,11 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
    * 3:     at functionName (path/to/caller.js:123:45)
    */
   const CALLER_LINE_INDEX = 3;
-  const callStackLines = new Error().stack?.split("\n") ?? [];
+  const callStackLines = new Error().stack?.split('\n') ?? [];
   console.debug(callStackLines);
-  const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^    at .+? \((.+?):\d+:\d+\)$/);
+  const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
   if (callStackMatch) {
-    const callerScriptPath = callStackMatch[1]!;
+    const callerScriptPath = callStackMatch[1] ?? '';
     ans = getFullPath(callerScriptPath);
     if (ans) {
       return ans;
@@ -236,7 +241,7 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
 
   const activeFile = app.workspace.getActiveFile();
   if (activeFile) {
-    return getFullPath(activeFile.path)!;
+    return getFullPath(activeFile.path) ?? '';
   } else {
     return getFakeRootPath();
   }
@@ -248,7 +253,7 @@ function getFullPath(path: string | null | undefined): string | null {
   }
 
   const fullPath = isAbsolute(path) ? path : join(app.vault.adapter.getBasePath(), path);
-  const cleanPath = fullPath.split("?")[0]!;
+  const cleanPath = fullPath.split('?')[0] ?? '';
   return existsSync(cleanPath) ? cleanPath : null;
 }
 
@@ -256,6 +261,7 @@ function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
   const timestamp = getRecursiveTimestamp(moduleName);
   if ((moduleTimestamps.get(moduleName) ?? 0) < timestamp) {
     moduleTimestamps.set(moduleName, timestamp);
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete nodeRequire.cache[moduleName];
     moduleDependencies.delete(moduleName);
   }
@@ -265,7 +271,7 @@ function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
 
 function getRecursiveTimestamp(moduleName: string): number {
   if (updatedModuleTimestamps.has(moduleName)) {
-    return updatedModuleTimestamps.get(moduleName)!;
+    return updatedModuleTimestamps.get(moduleName) ?? 0;
   }
 
   updatedModuleTimestamps.set(moduleName, 0);
@@ -301,10 +307,10 @@ function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object): v
 }
 
 function fixSourceMap(sourceMapBase64: string): string {
-  const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf8");
+  const sourceMapJson = Buffer.from(sourceMapBase64, 'base64').toString('utf8');
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
-  return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
+  return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
 }
 
 function initTsx(): void {
@@ -314,15 +320,15 @@ function initTsx(): void {
 }
 
 function getFakeRootPath(): string {
-  return join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, "fakeRoot.js").replaceAll("\\", "/");
+  return join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, 'fakeRoot.js').replaceAll('\\', '/');
 }
 
 function applyPatches(): void {
-  patch(window, "require", customRequire as NodeJS.Require);
-  patch(Module.prototype, "require", patchedModuleRequire as NodeJS.Require);
-  patch(Module.prototype, "_compile", patchedCompile);
-  patch(Module.prototype, "load", patchedLoad);
-  patch(Module, "_resolveFilename", customResolveFilename);
+  patch(window, 'require', customRequire as NodeJS.Require);
+  patch(Module.prototype, 'require', patchedModuleRequire as NodeJS.Require);
+  patch(Module.prototype, '_compile', patchedCompile);
+  patch(Module.prototype, 'load', patchedLoad);
+  patch(Module, '_resolveFilename', customResolveFilename);
 
   function patchedModuleRequire(this: Module, id: string): unknown {
     return customRequire(id, undefined, this);
@@ -333,7 +339,7 @@ function applyPatches(): void {
   }
 
   function patchedLoad(this: Module, filename: string): void {
-    return customLoad(filename, this);
+    customLoad(filename, this);
   }
 }
 
@@ -342,12 +348,12 @@ function specialModuleLoad(filename: string): unknown {
     return pluginRequire(filename) as unknown;
   }
 
-  if (filename === "obsidian/app") {
+  if (filename === 'obsidian/app') {
     return app;
   }
 
-  if (filename.endsWith(".json")) {
-    const json = readFileSync(filename, "utf-8");
+  if (filename.endsWith('.json')) {
+    const json = readFileSync(filename, 'utf-8');
     return JSON.parse(json);
   }
 

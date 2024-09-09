@@ -1,7 +1,7 @@
 export default class FixRequireModulesPluginSettings {
-  public modulesRoot: string = "";
-  public invocableScriptsDirectory: string = "";
-  public startupScriptPath: string = "";
+  public modulesRoot = '';
+  public invocableScriptsDirectory = '';
+  public startupScriptPath = '';
 
   public getInvocableScriptsDirectory(): string {
     return this.getPathRelativeToModulesRoot(this.invocableScriptsDirectory);
@@ -13,13 +13,13 @@ export default class FixRequireModulesPluginSettings {
 
   private getPathRelativeToModulesRoot(path: string): string {
     if (!path) {
-      return "";
+      return '';
     }
 
     if (!this.modulesRoot) {
       return path;
     }
 
-    return this.modulesRoot + "/" + path;
+    return this.modulesRoot + '/' + path;
   }
 }

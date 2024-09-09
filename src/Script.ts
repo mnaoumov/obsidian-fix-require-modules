@@ -1,23 +1,24 @@
-import {
-  Notice,
-  type App,
-  type DataAdapter,
-} from "obsidian";
-import type FixRequireModulesPlugin from "./FixRequireModulesPlugin.ts";
-import selectItem from "./SelectModal.ts";
-import { printError } from "./util/Error.ts";
-import { basename } from "node:path";
-import { customRequire } from "./CustomRequire.ts";
-import type { MaybePromise } from "obsidian-dev-utils/Async";
+import type {
+  App,
+  DataAdapter
+} from 'obsidian';
+import { Notice } from 'obsidian';
+import type { MaybePromise } from 'obsidian-dev-utils/Async';
+import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
+import { basename } from 'obsidian-dev-utils/Path';
+
+import { customRequire } from './CustomRequire.ts';
+import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
+import { printError } from './util/Error.ts';
 
 type Invocable = (app: App) => MaybePromise<void>;
 type Script = Invocable | { default: Invocable };
 
-const extensions = [".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"];
+const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 
 export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
   if (!plugin.settingsCopy.startupScriptPath) {
-    console.warn("No Startup script path specified in the settings");
+    console.warn('No Startup script path specified in the settings');
   } else {
     await invoke(plugin.app, plugin.settingsCopy.getStartupScriptPath(), true);
   }
@@ -29,32 +30,32 @@ export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Pr
   let scriptFiles: string[];
 
   if (!invocableScriptsDirectory) {
-    scriptFiles = ["Error: No Invocable scripts directory specified in the settings"];
+    scriptFiles = ['Error: No Invocable scripts directory specified in the settings'];
   } else if (!await app.vault.adapter.exists(invocableScriptsDirectory)) {
     scriptFiles = [`Error: Invocable scripts directory not found: ${invocableScriptsDirectory}`];
   } else {
-    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, "");
+    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, '');
   }
 
   const scriptFile = await selectItem({
     app: app,
     items: scriptFiles,
     itemTextFunc: (script) => script,
-    placeholder: "Choose a script to invoke"
+    placeholder: 'Choose a script to invoke'
   });
 
   if (scriptFile === null) {
-    console.debug("No script selected");
+    console.debug('No script selected');
     return;
   }
 
-  if (!scriptFile.startsWith("Error:")) {
+  if (!scriptFile.startsWith('Error:')) {
     await invoke(app, `${invocableScriptsDirectory}/${scriptFile}`);
   }
 }
 
 export async function registerInvocableScripts(plugin: FixRequireModulesPlugin): Promise<void> {
-  const COMMAND_NAME_PREFIX = "invokeScriptFile-";
+  const COMMAND_NAME_PREFIX = 'invokeScriptFile-';
   const commands = plugin.app.commands.listCommands().filter((c) => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
   for (const command of commands) {
     plugin.app.commands.removeCommand(command.id);
@@ -63,7 +64,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
   const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
 
   if (!invocableScriptsDirectory) {
-    const message = "No Invocable scripts directory specified in the settings";
+    const message = 'No Invocable scripts directory specified in the settings';
     new Notice(message);
     console.warn(message);
     return;
@@ -76,7 +77,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
     return;
   }
 
-  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsDirectory(), "");
+  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsDirectory(), '');
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
@@ -90,7 +91,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
 }
 
 function getInvocable(script: Script): Invocable {
-  if ("default" in script) {
+  if ('default' in script) {
     return script.default;
   }
 
@@ -119,7 +120,7 @@ function getSortedBaseNames(fullNames: string[]): string[] {
 }
 
 async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
-  const scriptString = isStartup ? "startup script" : "script";
+  const scriptString = isStartup ? 'startup script' : 'script';
   console.debug(`Invoking ${scriptString}: ${scriptPath}`);
   try {
     if (!await app.vault.adapter.exists(scriptPath)) {
@@ -127,7 +128,7 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
     }
     const script = customRequire(app.vault.adapter.getFullPath(scriptPath)) as Script;
     const invocable = getInvocable(script);
-    if (typeof invocable !== "function") {
+    if (typeof invocable !== 'function') {
       throw new Error(`${scriptPath} does not export a function`);
     }
     await invocable(app);

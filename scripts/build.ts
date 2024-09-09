@@ -1,16 +1,17 @@
-import { wrapCliTask } from "obsidian-dev-utils/cli";
+import { wrapCliTask } from 'obsidian-dev-utils/scripts/CliUtils';
 import {
-  buildObsidianPlugin,
-  BuildMode
-} from "obsidian-dev-utils/bin/esbuild/ObsidianPluginBuilder";
-import { fixRequireEsbuildPlugin } from "./fixRequireEsbuildPlugin.ts";
-import { resolvePathFromRoot } from "obsidian-dev-utils/Root";
+  BuildMode,
+  buildObsidianPlugin
+} from 'obsidian-dev-utils/scripts/esbuild/ObsidianPluginBuilder';
+import { resolvePathFromRoot } from 'obsidian-dev-utils/scripts/Root';
+
+import { fixRequireEsbuildPlugin } from './fixRequireEsbuildPlugin.ts';
 
 await wrapCliTask(async () => {
   return await buildObsidianPlugin({
     mode: BuildMode.Production,
     customEsbuildPlugins: [
-      fixRequireEsbuildPlugin(resolvePathFromRoot("dist/build/main.js"))
+      fixRequireEsbuildPlugin(resolvePathFromRoot('dist/build/main.js'))
     ]
   });
 });

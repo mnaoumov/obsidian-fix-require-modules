@@ -1,26 +1,24 @@
 import type {
   NodePath,
-  PluginObj,
-  PluginPass
-} from "@babel/core";
-
+  PluginObj
+} from '@babel/core';
+import type { Program } from '@babel/types';
 import {
   assignmentExpression,
   blockStatement,
   expressionStatement,
   functionExpression,
   identifier,
-  memberExpression,
-  type Program
-} from "@babel/types";
+  memberExpression
+} from '@babel/types';
 
-const fixSourceMapPlugin: PluginObj<PluginPass> = {
-  name: "wrap-in-default-async-function",
+const babelPluginWrapInDefaultAsyncFunction: PluginObj = {
+  name: 'wrap-in-default-async-function',
   visitor: {
     Program(path: NodePath<Program>) {
       const programBody = path.node.body;
       const wrapperFunction = functionExpression(
-        identifier("codeButtonBlockScriptWrapper"),
+        identifier('codeButtonBlockScriptWrapper'),
         [],
         blockStatement(programBody),
         false,
@@ -29,8 +27,8 @@ const fixSourceMapPlugin: PluginObj<PluginPass> = {
 
       const moduleExports = expressionStatement(
         assignmentExpression(
-          "=",
-          memberExpression(identifier("module"), identifier("exports")),
+          '=',
+          memberExpression(identifier('module'), identifier('exports')),
           wrapperFunction
         )
       );
@@ -40,4 +38,4 @@ const fixSourceMapPlugin: PluginObj<PluginPass> = {
   }
 };
 
-export default fixSourceMapPlugin;
+export default babelPluginWrapInDefaultAsyncFunction;

@@ -2,21 +2,21 @@ import type {
   NodePath,
   PluginObj,
   PluginPass
-} from "@babel/core";
+} from '@babel/core';
+import type { Program } from '@babel/types';
 
-import type { Program } from "@babel/types";
-import type { SourceMap } from "../util/types.js";
+import type { SourceMap } from '../util/types.js';
 
 interface FixSourceMapPluginState extends PluginPass {
-  opts: { sourceUrl: string }
+  opts: { sourceUrl: string };
 }
 
-type InputMap = {
-  sourcemap: SourceMap
-};
+interface InputMap {
+  sourcemap: SourceMap;
+}
 
-const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {
-  name: "fix-source-map",
+const babelPluginFixSourceMap: PluginObj<FixSourceMapPluginState> = {
+  name: 'fix-source-map',
   visitor: {
     Program(_: NodePath<Program>, state: FixSourceMapPluginState): void {
       const inputMap = state.file.inputMap as InputMap;
@@ -25,4 +25,4 @@ const fixSourceMapPlugin: PluginObj<FixSourceMapPluginState> = {
   }
 };
 
-export default fixSourceMapPlugin;
+export default babelPluginFixSourceMap;
