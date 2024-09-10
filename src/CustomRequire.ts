@@ -11,7 +11,8 @@ import { App } from 'obsidian';
 import {
   dirname,
   isAbsolute,
-  join
+  join,
+  toPosixPath
 } from 'obsidian-dev-utils/Path';
 import { register } from 'tsx/cjs/api';
 
@@ -81,12 +82,14 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
     return moduleRequire.call(module, id);
   }
 
+  id = toPosixPath(id);
+
   let currentScriptFullPath = getFakeRootPath();
 
   if (id.startsWith('./') || id.startsWith('../')) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
   } else if (id.startsWith('//')) {
-    id = join(app.vault.adapter.getBasePath(), id.substring(2));
+    id = join(getVaultPath(), id.substring(2));
   } else if (id.startsWith('/')) {
     if (!existsSync(id)) {
       id = `.${id}`;
@@ -136,6 +139,8 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return `${cleanFilename}?${query}`;
   }
 
+  request = toPosixPath(request);
+
   if (request === '.') {
     request = './index.js';
   }
@@ -145,7 +150,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
   }
 
   if (request === 'esbuild') {
-    return join(app.vault.adapter.getBasePath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
+    return join(getVaultPath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
   }
 
   const isRelative = request.startsWith('./') || request.startsWith('../');
@@ -153,8 +158,8 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
   options ??= {};
   options.paths ??= [];
   options.paths.push(...parent.paths);
-  options.paths.push(join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
-  return moduleResolveFileName(path, parent, isMain, options);
+  options.paths.push(join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
+  return toPosixPath(moduleResolveFileName(path, parent, isMain, options));
 }
 
 function customCompile(content: string, filename: string, module: Module): unknown {
@@ -167,6 +172,8 @@ function customCompile(content: string, filename: string, module: Module): unkno
 }
 
 function customLoad(filename: string, nodeModule: Module): void {
+  filename = toPosixPath(filename);
+
   if (filename.endsWith(getNodeRequireCacheKey(''))) {
     moduleLoad.call(nodeModule, filename);
     return;
@@ -251,8 +258,8 @@ function getFullPath(path: string | null | undefined): string | null {
   if (!path) {
     return null;
   }
-
-  const fullPath = isAbsolute(path) ? path : join(app.vault.adapter.getBasePath(), path);
+  path = toPosixPath(path);
+  const fullPath = isAbsolute(path) ? path : join(getVaultPath(), path);
   const cleanPath = fullPath.split('?')[0] ?? '';
   return existsSync(cleanPath) ? cleanPath : null;
 }
@@ -320,7 +327,7 @@ function initTsx(): void {
 }
 
 function getFakeRootPath(): string {
-  return join(app.vault.adapter.getBasePath(), plugin.settingsCopy.modulesRoot, 'fakeRoot.js').replaceAll('\\', '/');
+  return join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'fakeRoot.js');
 }
 
 function applyPatches(): void {
@@ -358,4 +365,8 @@ function specialModuleLoad(filename: string): unknown {
   }
 
   return;
+}
+
+function getVaultPath(): string {
+  return toPosixPath(app.vault.adapter.getBasePath());
 }
