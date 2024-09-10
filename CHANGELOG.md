@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.2
+
+- Fix posix paths on Windows
+
 ## 5.0.1
 
 - Fix build
