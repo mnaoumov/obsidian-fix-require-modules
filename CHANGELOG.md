@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 5.0.1
+
+- Fix build
+- Lint
+
 ## 5.0.0
 
 - Pass app to Invocables
