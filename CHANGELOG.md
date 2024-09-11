@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.3
+
+- Fix esbuild first load
+
 ## 5.0.2
 
 - Fix posix paths on Windows
