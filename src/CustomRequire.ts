@@ -130,7 +130,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
 
 function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
   if (request.endsWith(getNodeRequireCacheKey(''))) {
-    return tsxModuleResolveFileName(request, parent, isMain, options);
+    return toPosixPath(tsxModuleResolveFileName(request, parent, isMain, options));
   }
 
   const [cleanRequest = '', query = null] = request.split('?');
