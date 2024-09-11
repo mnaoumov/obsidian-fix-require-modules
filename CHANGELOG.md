@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.5
+
+- Fix caching path
+
 ## 5.0.4
 
 - Load plugin properly
