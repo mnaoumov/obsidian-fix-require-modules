@@ -23,7 +23,9 @@ var _requireEsbuild = () => {
     process.env["ESBUILD_WORKER_THREADS"] = "0";
     return require(esbuildPath);
   }
-  throw new Error("esbuild not found");
+
+  console.warn('esbuild not found, the plugin will download it shortly and reload itself');
+  return {};
 };
 `;
 
