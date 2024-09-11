@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.4
+
+- Load plugin properly
+
 ## 5.0.3
 
 - Fix esbuild first load
