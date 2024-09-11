@@ -12,28 +12,28 @@ export function fixRequireEsbuildPlugin(distPath: string): Plugin {
       const npmPackage = await readNpmPackage();
       build.initialOptions.banner ??= {};
       const jsBanner = build.initialOptions.banner['js'] ?? '';
-      build.initialOptions.banner['js'] = `${jsBanner}
-
-var _requireEsbuild = () => {
-  const { join } = require("node:path");
-  const { existsSync } = require("node:fs");
-  const vault = window.app.vault;
-  const esbuildPath = join(vault.adapter.getBasePath(), vault.configDir, "plugins/${npmPackage.name}/node_modules/esbuild/lib/main.js");
-  if (existsSync(esbuildPath)) {
-    process.env["ESBUILD_WORKER_THREADS"] = "0";
-    return require(esbuildPath);
-  }
-
-  console.warn('esbuild not found, the plugin will download it shortly and reload itself');
-  return {};
-};
-`;
+      build.initialOptions.banner['js'] = `${jsBanner}\nvar _requireEsbuild = ${_requireEsbuild.toString().replace('<% npmPackage.name %>', npmPackage.name)};\n`;
 
       build.onEnd(async () => {
         let contents = await readFile(distPath, 'utf-8');
         contents = contents.replaceAll('require("esbuild")', '_requireEsbuild()');
         await writeFile(distPath, contents, 'utf-8');
       });
+
+      function _requireEsbuild(): unknown {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        const app = window.app;
+        const adapter = app.vault.adapter;
+        const pluginDir = app.plugins.getPlugin('<% npmPackage.name %>')?.manifest.dir ?? '';
+        const esbuildPath = adapter.path.join(pluginDir, 'esbuild/lib/main.js');
+        if (adapter.fs?.existsSync(esbuildPath)) {
+          process.env['ESBUILD_WORKER_THREADS'] = '0';
+          return window.require(esbuildPath);
+        }
+
+        console.warn('esbuild not found, the plugin will download it shortly and reload itself');
+        return {};
+      }
     }
   };
 }
