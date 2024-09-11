@@ -24,8 +24,7 @@ export function fixRequireEsbuildPlugin(distPath: string): Plugin {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         const app = window.app;
         const adapter = app.vault.adapter;
-        const pluginDir = app.plugins.getPlugin('<% npmPackage.name %>')?.manifest.dir ?? '';
-        const esbuildPath = adapter.path.join(pluginDir, 'esbuild/lib/main.js');
+        const esbuildPath = adapter.path.join(adapter.getBasePath(), app.vault.configDir, 'plugins', '<% npmPackage.name %>', 'node_modules/esbuild/lib/main.js');
         if (adapter.fs?.existsSync(esbuildPath)) {
           process.env['ESBUILD_WORKER_THREADS'] = '0';
           return window.require(esbuildPath);
