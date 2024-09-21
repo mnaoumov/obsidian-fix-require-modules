@@ -11,35 +11,35 @@ This plugin heavily simplifies working with custom [`JavaScript`][JavaScript]/[`
 Certain built-in modules are available for import during plugin development but show `Uncaught Error: Cannot find module` if you try to [`require()`][require] them manually. This plugin fixes that problem, allowing the following [`require()`][require] calls to work properly:
 
 ```js
-require("obsidian");
-require("@codemirror/autocomplete");
-require("@codemirror/collab");
-require("@codemirror/commands");
-require("@codemirror/language");
-require("@codemirror/lint");
-require("@codemirror/search");
-require("@codemirror/state");
-require("@codemirror/text");
-require("@codemirror/view");
-require("@lezer/common");
-require("@lezer/lr");
-require("@lezer/highlight");
+require('obsidian');
+require('@codemirror/autocomplete');
+require('@codemirror/collab');
+require('@codemirror/commands');
+require('@codemirror/language');
+require('@codemirror/lint');
+require('@codemirror/search');
+require('@codemirror/state');
+require('@codemirror/text');
+require('@codemirror/view');
+require('@lezer/common');
+require('@lezer/lr');
+require('@lezer/highlight');
 ```
 
 Example usage:
 
 ```js
-const obsidian = require("obsidian");
-new obsidian.Notice("My notice");
+const obsidian = require('obsidian');
+new obsidian.Notice('My notice');
 
-const { Notice } = require("obsidian");
-new Notice("My notice");
+const { Notice } = require('obsidian');
+new Notice('My notice');
 ```
 
 Get the list of built-in module names fixed by the plugin:
 
 ```js
-app.plugins.getPlugin("fix-require-modules").builtInModuleNames;
+app.plugins.getPlugin('fix-require-modules').builtInModuleNames;
 ```
 
 ### `obsidian/app` module
@@ -55,7 +55,7 @@ Currently this global variable is still available, but it's better not rely on i
 This plugin gives you a safer alternative:
 
 ```js
-require("obsidian/app");
+require('obsidian/app');
 ```
 
 ### Relative Modules
@@ -63,15 +63,15 @@ require("obsidian/app");
 Fixes `Cannot find module` errors for relative paths:
 
 ```js
-require("./some/relative/path.js");
-require("../some/other/relative/path.js");
+require('./some/relative/path.js');
+require('../some/other/relative/path.js');
 ```
 
 Optionally provide the path to the current script/note if detection fails. Submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) if needed:
 
 ```js
-require("./some/relative/path.js", "path/to/current/script.js");
-require("./some/relative/path.js", "path/to/current/note.md");
+require('./some/relative/path.js', 'path/to/current/script.js');
+require('./some/relative/path.js', 'path/to/current/note.md');
 ```
 
 ### Root-relative Modules
@@ -79,7 +79,7 @@ require("./some/relative/path.js", "path/to/current/note.md");
 Adds support for root-relative paths:
 
 ```js
-require("/path/from/root.js");
+require('/path/from/root.js');
 ```
 
 The root `/` directory is configurable via settings.
@@ -89,7 +89,7 @@ The root `/` directory is configurable via settings.
 Adds support for vault-root-relative paths:
 
 ```js
-require("//path/from/vault/root.js");
+require('//path/from/vault/root.js');
 ```
 
 ### [`ECMAScript Modules` (`esm`)](https://nodejs.org/api/esm.html)
@@ -97,15 +97,15 @@ require("//path/from/vault/root.js");
 Originally, [`require()`][require] only supported [`CommonJS` (`cjs`)](https://nodejs.org/api/modules.html#modules-commonjs-modules) modules and would throw `require() of ES Module path/to/script.mjs not supported. Instead change the require of path/to/script.mjs to a dynamic import() which is available in all CommonJS modules`. This plugin adds support for ECMAScript modules:
 
 ```js
-require("path/to/script.mjs");
+require('path/to/script.mjs');
 ```
 
 Now you can use any type of JavaScript modules:
 
 ```js
-require("path/to/script.js");
-require("path/to/script.cjs");
-require("path/to/script.mjs");
+require('path/to/script.js');
+require('path/to/script.cjs');
+require('path/to/script.mjs');
 ```
 
 ### [`TypeScript`][TypeScript] Modules
@@ -113,9 +113,9 @@ require("path/to/script.mjs");
 Adds support for [`TypeScript`][TypeScript] modules:
 
 ```js
-require("path/to/script.ts");
-require("path/to/script.cts");
-require("path/to/script.mts");
+require('path/to/script.ts');
+require('path/to/script.cts');
+require('path/to/script.mts');
 ```
 
 ### NPM Modules
@@ -123,7 +123,7 @@ require("path/to/script.mts");
 You can require NPM modules installed into your configured scripts root folder.
 
 ```js
-require("npm-package-name");
+require('npm-package-name');
 ```
 
 See [Tips](#tips) how to avoid performance issues.
@@ -133,7 +133,7 @@ See [Tips](#tips) how to avoid performance issues.
 Modules are cached for performance, but the cache is invalidated if the script or its dependencies change. Use a query string to skip cache invalidation:
 
 ```js
-require("./someScript.js?someQuery");
+require('./someScript.js?someQuery');
 ```
 
 ### Source Maps
@@ -145,23 +145,23 @@ Manages source maps for compiled code, allowing seamless debugging in [`Obsidian
 Use `dynamicImport()` to extend the built-in [`import()`][import] function with all the features of [`require()`][require] and support for URLs:
 
 ```js
-await dynamicImport("obsidian");
-await dynamicImport("./some/relative/path.js");
-await dynamicImport("../some/other/relative/path.js");
-await dynamicImport("./some/relative/path.js", "path/to/current/script.js");
-await dynamicImport("./some/relative/path.js", "path/to/current/note.md");
-await dynamicImport("/path/from/root.js");
-await dynamicImport("//path/from/vault/root.js");
-await dynamicImport("path/to/script.js");
-await dynamicImport("path/to/script.cjs");
-await dynamicImport("path/to/script.mjs");
-await dynamicImport("path/to/script.ts");
-await dynamicImport("path/to/script.cts");
-await dynamicImport("path/to/script.mts");
-await dynamicImport("obsidian?someQuery");
-await dynamicImport("https://some-site.com/some-script.js");
-await dynamicImport("file:///C:/path/to/vault/then/to/script.js");
-await dynamicImport("app://obsidian-resource-path-prefix/C:/path/to/vault/then/to/script.js"); // See obsidian.Platform.resourcePathPrefix
+await dynamicImport('obsidian');
+await dynamicImport('./some/relative/path.js');
+await dynamicImport('../some/other/relative/path.js');
+await dynamicImport('./some/relative/path.js', 'path/to/current/script.js');
+await dynamicImport('./some/relative/path.js', 'path/to/current/note.md');
+await dynamicImport('/path/from/root.js');
+await dynamicImport('//path/from/vault/root.js');
+await dynamicImport('path/to/script.js');
+await dynamicImport('path/to/script.cjs');
+await dynamicImport('path/to/script.mjs');
+await dynamicImport('path/to/script.ts');
+await dynamicImport('path/to/script.cts');
+await dynamicImport('path/to/script.mts');
+await dynamicImport('obsidian?someQuery');
+await dynamicImport('https://some-site.com/some-script.js');
+await dynamicImport('file:///C:/path/to/vault/then/to/script.js');
+await dynamicImport('app://obsidian-resource-path-prefix/C:/path/to/vault/then/to/script.js'); // See obsidian.Platform.resourcePathPrefix
 ```
 
 ### Invocable Scripts
@@ -170,28 +170,28 @@ Make any script invocable by defining a module with a default export function (s
 
 ```ts
 // cjs sync
-module.exports = (app) => { console.log("cjs sync"); };
+module.exports = (app) => { console.log('cjs sync'); };
 
 // cjs async
-module.exports = async (app) => { console.log("cjs async"); await Promise.resolve(); };
+module.exports = async (app) => { console.log('cjs async'); await Promise.resolve(); };
 
 // mjs sync
-export default function invoke(app) { console.log("mjs sync"); };
+export default function invoke(app) { console.log('mjs sync'); };
 
 // mjs async
-export default async function invoke(app) { console.log("mjs async"); await Promise.resolve(); };
+export default async function invoke(app) { console.log('mjs async'); await Promise.resolve(); };
 
 // cts sync
-module.exports = (app: App): void => { console.log("cts sync"); };
+module.exports = (app: App): void => { console.log('cts sync'); };
 
 // cts async
-module.exports = async (app: App): Promise<void> => { console.log("cts async"); await Promise.resolve(); };
+module.exports = async (app: App): Promise<void> => { console.log('cts async'); await Promise.resolve(); };
 
 // mts sync
-export default function invoke(app: App): void { console.log("mts sync"); };
+export default function invoke(app: App): void { console.log('mts sync'); };
 
 // mts async
-export default async function invoke(app: App): Promise<void> { console.log("mts async"); await Promise.resolve(param1); };
+export default async function invoke(app: App): Promise<void> { console.log('mts async'); await Promise.resolve(param1); };
 ```
 
 ### Invoke Scripts
@@ -219,10 +219,10 @@ Create code buttons that execute [`JavaScript`][JavaScript]/[`TypeScript`][TypeS
 ````markdown
 ```code-button Click me!
 // CommonJS (cjs) style
-const { dependency1 } = require("./path/to/script1.js");
+const { dependency1 } = require('./path/to/script1.js');
 
 // ES Modules (esm) style
-import { dependency2 } from "./path/to/script2.js";
+import { dependency2 } from './path/to/script2.js';
 
 // Top-level await
 await Promise.resolve(42);
@@ -242,7 +242,7 @@ If you plan to use scripts extensively, consider putting them in a [`dot directo
 
 ### Dynamic [`import()`][import]
 
-Extending dynamic [`import()`][import] expressions to support `const obsidian = await import("obsidian")` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`dynamicImport()`](#dynamic-imports) as a workaround.
+Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`dynamicImport()`](#dynamic-imports) as a workaround.
 
 ## Installation
 
