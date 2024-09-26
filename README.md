@@ -246,7 +246,7 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 
 ## Installation
 
-- `Fix Require Modules` is available on [the official Community Plugins repository](https://obsidian.md/plugins).
+- `Fix Require Modules` is available on [the official Community Plugins repository]([https://obsidian.md/plugins](https://obsidian.md/plugins?id=fix-require-modules)).
 - Beta releases can be installed through [BRAT](https://github.com/TfTHacker/obsidian42-brat).
 
 ## Support
