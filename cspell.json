@@ -2,7 +2,8 @@
   "version": "0.2",
   "ignorePaths": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "tsconfig.tsbuildinfo"
   ],
   "dictionaryDefinitions": [],
   "dictionaries": [],
@@ -23,6 +24,7 @@
     "preversion",
     "riscv",
     "Templater",
+    "tsbuildinfo",
     "Unixlike"
   ],
   "ignoreWords": [],
