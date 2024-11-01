@@ -4,6 +4,7 @@
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
     "build": "tsx scripts/build.ts",
+    "build:validate": "obsidian-dev-utils build:validate",
     "dev": "tsx scripts/dev.ts",
     "lint": "obsidian-dev-utils lint",
     "lint:fix": "obsidian-dev-utils lint:fix",
