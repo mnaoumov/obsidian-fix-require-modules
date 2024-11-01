@@ -1,4 +1,5 @@
 import type { Plugin } from 'esbuild';
+import type { FileSystemAdapter } from 'obsidian';
 import {
   readFile,
   writeFile
@@ -23,8 +24,8 @@ export function fixRequireEsbuildPlugin(distPath: string): Plugin {
       function _requireEsbuild(): unknown {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         const app = window.app;
-        const adapter = app.vault.adapter;
-        const esbuildPath = adapter.path.join(adapter.getBasePath(), app.vault.configDir, 'plugins', '<% npmPackage.name %>', 'node_modules/esbuild/lib/main.js');
+        const adapter = app.vault.adapter as FileSystemAdapter;
+        const esbuildPath = adapter.path.join(adapter.basePath, app.vault.configDir, 'plugins', '<% npmPackage.name %>', 'node_modules/esbuild/lib/main.js');
         if (adapter.fs?.existsSync(esbuildPath)) {
           process.env['ESBUILD_WORKER_THREADS'] = '0';
           return window.require(esbuildPath);

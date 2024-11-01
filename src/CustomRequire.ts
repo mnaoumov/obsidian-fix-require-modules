@@ -368,5 +368,5 @@ function specialModuleLoad(filename: string): unknown {
 }
 
 function getVaultPath(): string {
-  return toPosixPath(app.vault.adapter.getBasePath());
+  return toPosixPath(app.vault.adapter.basePath);
 }

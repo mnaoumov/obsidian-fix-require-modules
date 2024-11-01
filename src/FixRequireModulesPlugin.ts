@@ -75,7 +75,7 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
       return;
     }
 
-    const invocableScriptsDirectoryFullPath = join(this.app.vault.adapter.getBasePath(), this.settings.getInvocableScriptsDirectory());
+    const invocableScriptsDirectoryFullPath = join(this.app.vault.adapter.basePath, this.settings.getInvocableScriptsDirectory());
 
     this._invocableScriptsDirectoryWatcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
       if (eventType === 'rename') {
