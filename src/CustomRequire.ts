@@ -21,8 +21,8 @@ import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 import type { SourceMap } from './util/types.js';
 
-interface MaybeEsModule {
-  __esModule?: boolean;
+interface EsModule {
+  __esModule: boolean;
 }
 
 export const builtInModuleNames = [
@@ -187,7 +187,7 @@ function customLoad(filename: string, nodeModule: Module): void {
   if (isAbsolute(filename)) {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete nodeRequire.cache[getNodeRequireCacheKey(filename)];
-    const loadedModule = tsx.require(filename, filename) as MaybeEsModule;
+    const loadedModule = tsx.require(filename, filename) as Partial<EsModule>;
     if (nodeModule.exports && loadedModule.__esModule) {
       Object.assign(nodeModule.exports, loadedModule);
       Object.defineProperty(nodeModule.exports, '__esModule', { value: true });
