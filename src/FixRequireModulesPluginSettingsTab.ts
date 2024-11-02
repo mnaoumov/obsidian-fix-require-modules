@@ -8,6 +8,7 @@ import { bindUiComponent } from 'obsidian-dev-utils/obsidian/Plugin/UIComponent'
 
 import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
 import type FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
+import { clearCache } from './CustomRequire.ts';
 
 export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
   public override display(): void {
@@ -79,6 +80,14 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
             hotkeysTab.searchComponent.setValue(`${this.plugin.manifest.name}:`);
             hotkeysTab.updateHotkeyVisibility();
           })
+      );
+
+    new Setting(this.containerEl)
+      .setName('Clear cache')
+      .setDesc('Clear all cached required modules')
+      .addButton((button) =>
+        button.setButtonText('Clear cache')
+          .onClick(clearCache)
       );
   }
 }

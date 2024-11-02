@@ -386,3 +386,18 @@ function splitQuery(str: string): SplitQueryResult {
 function safeExistsSync(path: string): boolean {
   return existsSync(splitQuery(path).cleanStr);
 }
+
+export function clearCache(): void {
+  moduleTimestamps.clear();
+  updatedModuleTimestamps.clear();
+  moduleDependencies.clear();
+
+  for (const key of Object.keys(nodeRequire.cache)) {
+    if (key.startsWith('electron') || key.includes('app.asar')) {
+      continue;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete nodeRequire.cache[key];
+  }
+}
