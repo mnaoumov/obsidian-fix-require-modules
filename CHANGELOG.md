@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 5.1.0
+
+- Add Clear cache button
+- Fix dependencies resolution
+
 ## 5.0.5
 
 - Fix caching path
