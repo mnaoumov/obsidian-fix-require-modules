@@ -99,12 +99,15 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   }
 
   const currentDirFullPath = dirname(currentScriptFullPath);
-  const scriptFullPath = isAbsolute(id) ? id : join(currentDirFullPath, id);
+  let scriptFullPath = isAbsolute(id) ? id : join(currentDirFullPath, id);
 
-  if (!safeExistsSync(scriptFullPath)) {
+  try {
+    scriptFullPath = customResolveFilename(scriptFullPath, module, false);
+  } catch {
     return moduleRequire.call(module, scriptFullPath);
   }
 
+  const cleanScriptFullPath = getFullPath(scriptFullPath) ?? scriptFullPath;
   const cleanModuleFullPath = getFullPath(module.filename);
   if (cleanModuleFullPath) {
     let currentModuleDependencies = moduleDependencies.get(cleanModuleFullPath);
@@ -113,7 +116,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
       moduleDependencies.set(cleanModuleFullPath, currentModuleDependencies);
     }
 
-    currentModuleDependencies.add(scriptFullPath);
+    currentModuleDependencies.add(cleanScriptFullPath);
   }
 
   const isRootRequire = updatedModuleTimestamps.size === 0;
@@ -159,7 +162,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
   options.paths ??= [];
   options.paths.push(...parent.paths);
   options.paths.push(join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
-  return toPosixPath(moduleResolveFileName(path, parent, isMain, options));
+  return splitQuery(toPosixPath(tsxModuleResolveFileName(path, parent, isMain, options))).cleanStr;
 }
 
 function customCompile(content: string, filename: string, module: Module): unknown {
@@ -287,9 +290,10 @@ function getRecursiveTimestamp(moduleName: string): number {
     return new Date().getTime();
   }
 
-  let ans = statSync(splitQuery(moduleName).cleanStr).mtimeMs;
+  const cleanModuleName = splitQuery(moduleName).cleanStr;
+  let ans = statSync(cleanModuleName).mtimeMs;
 
-  for (const childModule of moduleDependencies.get(moduleName) ?? []) {
+  for (const childModule of moduleDependencies.get(cleanModuleName) ?? []) {
     const childTimestamp = getRecursiveTimestampAndInvalidateCache(childModule);
     ans = Math.max(ans, childTimestamp);
   }
