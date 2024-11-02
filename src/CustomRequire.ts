@@ -52,7 +52,6 @@ let pluginRequire: NodeJS.Require;
 
 const nodeRequire = window.require;
 const moduleRequire = Module.prototype.require;
-const moduleResolveFileName = Module._resolveFilename.bind(Module);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const moduleCompile = Module.prototype._compile;
 // eslint-disable-next-line @typescript-eslint/unbound-method
