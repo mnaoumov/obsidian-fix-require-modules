@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.1.1
+
+- Fix chmod
+
 ## 5.1.0
 
 - Add Clear cache button
