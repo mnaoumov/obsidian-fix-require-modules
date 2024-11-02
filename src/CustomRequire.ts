@@ -91,7 +91,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   } else if (id.startsWith('//')) {
     id = join(getVaultPath(), id.substring(2));
   } else if (id.startsWith('/')) {
-    if (!existsSync(id)) {
+    if (!safeExistsSync(id)) {
       id = `.${id}`;
     }
   } else if (!isAbsolute(id)) {
@@ -101,7 +101,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   const currentDirFullPath = dirname(currentScriptFullPath);
   const scriptFullPath = isAbsolute(id) ? id : join(currentDirFullPath, id);
 
-  if (!existsSync(scriptFullPath)) {
+  if (!safeExistsSync(scriptFullPath)) {
     return moduleRequire.call(module, scriptFullPath);
   }
 
@@ -133,10 +133,10 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return toPosixPath(tsxModuleResolveFileName(request, parent, isMain, options));
   }
 
-  const [cleanRequest = '', query = null] = request.split('?');
-  if (query != null) {
+  const { cleanStr: cleanRequest, query } = splitQuery(request);
+  if (query) {
     const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
-    return `${cleanFilename}?${query}`;
+    return cleanFilename + query;
   }
 
   request = toPosixPath(request);
@@ -179,8 +179,8 @@ function customLoad(filename: string, nodeModule: Module): void {
     return;
   }
 
-  filename = filename.split('?')[0] ?? '';
-
+  const { cleanStr } = splitQuery(filename);
+  filename = cleanStr;
   const specialModule = specialModuleLoad(filename);
   if (specialModule) {
     nodeModule.exports = specialModule;
@@ -260,8 +260,8 @@ function getFullPath(path: string | null | undefined): string | null {
   }
   path = toPosixPath(path);
   const fullPath = isAbsolute(path) ? path : join(getVaultPath(), path);
-  const cleanPath = fullPath.split('?')[0] ?? '';
-  return existsSync(cleanPath) ? cleanPath : null;
+  const { cleanStr: cleanPath } = splitQuery(fullPath);
+  return safeExistsSync(cleanPath) ? cleanPath : null;
 }
 
 function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
@@ -287,11 +287,11 @@ function getRecursiveTimestamp(moduleName: string): number {
     return 0;
   }
 
-  if (!existsSync(moduleName)) {
+  if (!safeExistsSync(moduleName)) {
     return new Date().getTime();
   }
 
-  let ans = statSync(moduleName).mtimeMs;
+  let ans = statSync(splitQuery(moduleName).cleanStr).mtimeMs;
 
   for (const childModule of moduleDependencies.get(moduleName) ?? []) {
     const childTimestamp = getRecursiveTimestampAndInvalidateCache(childModule);
@@ -369,4 +369,21 @@ function specialModuleLoad(filename: string): unknown {
 
 function getVaultPath(): string {
   return toPosixPath(app.vault.adapter.basePath);
+}
+
+interface SplitQueryResult {
+  cleanStr: string;
+  query: string;
+}
+
+function splitQuery(str: string): SplitQueryResult {
+  const queryIndex = str.indexOf('?');
+  return {
+    cleanStr: queryIndex !== -1 ? str.slice(0, queryIndex) : str,
+    query: queryIndex !== -1 ? str.slice(queryIndex) : ''
+  };
+}
+
+function safeExistsSync(path: string): boolean {
+  return existsSync(splitQuery(path).cleanStr);
 }
