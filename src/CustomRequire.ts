@@ -163,11 +163,7 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
 }
 
 function customCompile(content: string, filename: string, module: Module): unknown {
-  content = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
-    // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
-    return `
-//# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64)}`;
-  });
+  content = content.replaceAll(/(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)/g, (_: string, prefix: string, sourceMapBase64: string): string => prefix + fixSourceMap(sourceMapBase64));
   return moduleCompile.call(module, content, filename);
 }
 
