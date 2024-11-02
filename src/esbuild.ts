@@ -10,8 +10,8 @@ import {
   dirname,
   join
 } from 'obsidian-dev-utils/Path';
+import { exec } from 'obsidian-dev-utils/scripts/Exec';
 import { process } from 'obsidian-dev-utils/scripts/NodeModules';
-import { execFromRoot } from 'obsidian-dev-utils/scripts/Root';
 
 const knownWindowsPackages: Record<string, string> = {
   'win32 arm64 LE': '@esbuild/win32-arm64',
@@ -90,7 +90,7 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
 
     if (fullPath.endsWith('esbuild')) {
       const fullRealPath = app.vault.adapter.getFullRealPath(fullPath);
-      await execFromRoot(['chmod', '+x', fullRealPath]);
+      await exec(['chmod', '+x', fullRealPath]);
     }
 
     notice.hide();
