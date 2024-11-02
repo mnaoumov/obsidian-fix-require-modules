@@ -14,6 +14,7 @@ import { join } from 'obsidian-dev-utils/Path';
 import { registerCodeButtonBlock } from './CodeButtonBlock.ts';
 import {
   builtInModuleNames,
+  clearCache,
   registerCustomRequire
 } from './CustomRequire.ts';
 import { registerDynamicImport } from './DynamicImport.ts';
@@ -47,6 +48,12 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
       callback: () => selectAndInvokeScript(this)
     });
     this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
+
+    this.addCommand({
+      id: 'clearCache',
+      name: 'Clear Cache',
+      callback: clearCache
+    });
   }
 
   public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {

@@ -136,6 +136,10 @@ Modules are cached for performance, but the cache is invalidated if the script o
 require('./someScript.js?someQuery');
 ```
 
+### Clear Cache
+
+If you need to clear the `require` cache, you can click the corresponding button in the settings or invoke the `Fix Require Modules: Clear Cache` command.
+
 ### Source Maps
 
 Manages source maps for compiled code, allowing seamless debugging in [`Obsidian`][Obsidian].
