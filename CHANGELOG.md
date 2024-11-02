@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.2.0
+
+- Add Clear Cache command
+
 ## 5.1.1
 
 - Fix chmod
