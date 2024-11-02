@@ -26,7 +26,7 @@ export function fixRequireEsbuildPlugin(distPath: string): Plugin {
         const app = window.app;
         const adapter = app.vault.adapter as FileSystemAdapter;
         const esbuildPath = adapter.path.join(adapter.basePath, app.vault.configDir, 'plugins', '<% npmPackage.name %>', 'node_modules/esbuild/lib/main.js');
-        if (adapter.fs?.existsSync(esbuildPath)) {
+        if (adapter.fs.existsSync(esbuildPath)) {
           process.env['ESBUILD_WORKER_THREADS'] = '0';
           return window.require(esbuildPath);
         }
