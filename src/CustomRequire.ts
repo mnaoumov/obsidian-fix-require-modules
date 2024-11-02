@@ -232,7 +232,7 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
    */
   const CALLER_LINE_INDEX = 3;
   const callStackLines = new Error().stack?.split('\n') ?? [];
-  console.debug(callStackLines);
+  console.debug('callStackLines', { callStackLines });
   const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
   if (callStackMatch) {
     const callerScriptPath = callStackMatch[1] ?? '';
