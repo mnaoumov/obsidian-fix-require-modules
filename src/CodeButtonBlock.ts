@@ -1,11 +1,12 @@
-import babel from '@babel/core';
-import babelPluginTransformModulesCommonJS from '@babel/plugin-transform-modules-commonjs';
-import babelPresetTypeScript from '@babel/preset-typescript';
 import type {
   App,
   MarkdownPostProcessorContext,
   Plugin
 } from 'obsidian';
+
+import babel from '@babel/core';
+import babelPluginTransformModulesCommonJS from '@babel/plugin-transform-modules-commonjs';
+import babelPresetTypeScript from '@babel/preset-typescript';
 import { join } from 'obsidian-dev-utils/Path';
 
 import babelPluginFixSourceMap from './babel/babelPluginFixSourceMap.ts';
@@ -37,11 +38,11 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
     const caption = match?.[1]?.trim() ?? '(no caption)';
 
     el.createEl('button', {
-      text: caption,
       cls: 'mod-cta',
       async onclick(): Promise<void> {
         await handleClick(app, resultEl, ctx.sourcePath, source);
-      }
+      },
+      text: caption
     });
   }
 
@@ -89,23 +90,23 @@ async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: strin
 async function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): Promise<string> {
   let result = await babel.transformAsync(source, {
     cwd: sourceDir,
-    presets: [
-      babelPresetTypeScript
-    ],
+    filename: sourceFileName,
     plugins: [
       babelPluginTransformModulesCommonJS
     ],
-    filename: sourceFileName,
+    presets: [
+      babelPresetTypeScript
+    ],
     sourceMaps: 'inline'
   });
 
   result = await babel.transformAsync(result?.code ?? '', {
     cwd: sourceDir,
+    filename: sourceFileName,
     plugins: [
       babelPluginWrapInDefaultAsyncFunction,
       [babelPluginFixSourceMap, { sourceUrl }]
     ],
-    filename: sourceFileName,
     sourceMaps: 'inline'
   });
 

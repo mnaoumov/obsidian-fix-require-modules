@@ -1,6 +1,5 @@
 // eslint-disable-next-line import-x/no-nodejs-modules
 import os from 'node:os';
-
 import {
   Notice,
   Plugin,
@@ -25,15 +24,15 @@ const knownUnixlikePackages: Record<string, string> = {
   'darwin x64 LE': '@esbuild/darwin-x64',
   'freebsd arm64 LE': '@esbuild/freebsd-arm64',
   'freebsd x64 LE': '@esbuild/freebsd-x64',
-  'linux arm LE': '@esbuild/linux-arm',
   'linux arm64 LE': '@esbuild/linux-arm64',
+  'linux arm LE': '@esbuild/linux-arm',
   'linux ia32 LE': '@esbuild/linux-ia32',
+  'linux loong64 LE': '@esbuild/linux-loong64',
   'linux mips64el LE': '@esbuild/linux-mips64el',
   'linux ppc64 LE': '@esbuild/linux-ppc64',
   'linux riscv64 LE': '@esbuild/linux-riscv64',
   'linux s390x BE': '@esbuild/linux-s390x',
   'linux x64 LE': '@esbuild/linux-x64',
-  'linux loong64 LE': '@esbuild/linux-loong64',
   'netbsd x64 LE': '@esbuild/netbsd-x64',
   'openbsd x64 LE': '@esbuild/openbsd-x64',
   'sunos x64 LE': '@esbuild/sunos-x64'

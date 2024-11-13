@@ -6,7 +6,6 @@ import {
 } from 'node:fs';
 // eslint-disable-next-line import-x/no-nodejs-modules
 import Module from 'node:module';
-
 import { App } from 'obsidian';
 import {
   dirname,
@@ -16,10 +15,11 @@ import {
 } from 'obsidian-dev-utils/Path';
 import { register } from 'tsx/cjs/api';
 
-import { ESBUILD_MAIN_PATH } from './esbuild.ts';
 import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
-import { convertPathToObsidianUrl } from './util/obsidian.ts';
 import type { SourceMap } from './util/types.js';
+
+import { ESBUILD_MAIN_PATH } from './esbuild.ts';
+import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 interface EsModule {
   __esModule: boolean;
@@ -205,7 +205,7 @@ function customLoad(filename: string, nodeModule: Module): void {
 }
 
 function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?: Module): string {
-  let ans: string | null = null;
+  let ans: null | string = null;
   if (module?.filename) {
     ans = getFullPath(module.filename);
     if (!ans) {
@@ -252,7 +252,7 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
   }
 }
 
-function getFullPath(path: string | null | undefined): string | null {
+function getFullPath(path: null | string | undefined): null | string {
   if (!path) {
     return null;
   }
@@ -304,7 +304,7 @@ function getNodeRequireCacheKey(moduleName: string): string {
   return `${moduleName}?namespace=${plugin.manifest.id}`;
 }
 
-function patch<T, K extends keyof T>(obj: T, key: K, newValue: T[K] & object): void {
+function patch<T, K extends keyof T>(obj: T, key: K, newValue: object & T[K]): void {
   const original = obj[key];
   obj[key] = Object.assign(newValue, original);
   plugin.register(() => {

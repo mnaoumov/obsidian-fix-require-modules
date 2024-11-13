@@ -6,9 +6,10 @@ import { appendCodeBlock } from 'obsidian-dev-utils/DocumentFragment';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { bindUiComponent } from 'obsidian-dev-utils/obsidian/Plugin/UIComponent';
 
-import { clearCache } from './CustomRequire.ts';
 import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
 import type FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
+
+import { clearCache } from './CustomRequire.ts';
 
 export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
   public override display(): void {

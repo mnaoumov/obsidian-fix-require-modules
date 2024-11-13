@@ -2,17 +2,19 @@ import type {
   App,
   DataAdapter
 } from 'obsidian';
-import { Notice } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
+
+import { Notice } from 'obsidian';
 import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
 import { basename } from 'obsidian-dev-utils/Path';
 
-import { customRequire } from './CustomRequire.ts';
 import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
+
+import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 
 type Invocable = (app: App) => MaybePromise<void>;
-type Script = Invocable | { default: Invocable };
+type Script = { default: Invocable } | Invocable;
 
 const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 
@@ -81,11 +83,11 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
-      id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
-      name: `Invoke Script: ${scriptFile}`,
       callback: async () => {
         await invoke(plugin.app, `${invocableScriptsDirectory}/${scriptFile}`);
-      }
+      },
+      id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
+      name: `Invoke Script: ${scriptFile}`
     });
   }
 }

@@ -1,5 +1,6 @@
 import type { Plugin } from 'esbuild';
 import type { FileSystemAdapter } from 'obsidian';
+
 import {
   readFile,
   writeFile

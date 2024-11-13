@@ -3,11 +3,11 @@ import type {
   FSWatcher,
   WatchEventType
 } from 'node:fs';
+import type { MaybePromise } from 'obsidian-dev-utils/Async';
+
 // eslint-disable-next-line import-x/no-nodejs-modules
 import { watch } from 'node:fs';
-
 import { PluginSettingTab } from 'obsidian';
-import type { MaybePromise } from 'obsidian-dev-utils/Async';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { join } from 'obsidian-dev-utils/Path';
 
@@ -29,37 +29,15 @@ import {
 import { printError } from './util/Error.ts';
 
 export default class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
-  public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
   private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
+  public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
 
   protected override createDefaultPluginSettings(): FixRequireModulesPluginSettings {
     return new FixRequireModulesPluginSettings();
   }
 
-  protected override createPluginSettingsTab(): PluginSettingTab | null {
+  protected override createPluginSettingsTab(): null | PluginSettingTab {
     return new FixRequireModulesPluginSettingsTab(this);
-  }
-
-  protected override onloadComplete(): MaybePromise<void> {
-    registerCodeButtonBlock(this);
-    this.addCommand({
-      id: 'invokeScript',
-      name: 'Invoke Script: <<Choose>>',
-      callback: () => selectAndInvokeScript(this)
-    });
-    this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
-
-    this.addCommand({
-      id: 'clearCache',
-      name: 'Clear Cache',
-      callback: clearCache
-    });
-  }
-
-  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
-    await registerInvocableScripts(this);
-    this.configureInvocableScriptsDirectoryWatcher();
   }
 
   protected override async onLayoutReady(): Promise<void> {
@@ -69,6 +47,22 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
 
     await this.saveSettings(this.settings);
     await invokeStartupScript(this);
+  }
+
+  protected override onloadComplete(): MaybePromise<void> {
+    registerCodeButtonBlock(this);
+    this.addCommand({
+      callback: () => selectAndInvokeScript(this),
+      id: 'invokeScript',
+      name: 'Invoke Script: <<Choose>>'
+    });
+    this.register(this.stopInvocableScriptsDirectoryWatcher.bind(this));
+
+    this.addCommand({
+      callback: clearCache,
+      id: 'clearCache',
+      name: 'Clear Cache'
+    });
   }
 
   /**
@@ -96,5 +90,11 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
       this._invocableScriptsDirectoryWatcher.close();
       this._invocableScriptsDirectoryWatcher = null;
     }
+  }
+
+  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    await registerInvocableScripts(this);
+    this.configureInvocableScriptsDirectoryWatcher();
   }
 }

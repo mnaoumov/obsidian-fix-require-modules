@@ -9,9 +9,9 @@ import { fixRequireEsbuildPlugin } from './fixRequireEsbuildPlugin.ts';
 
 await wrapCliTask(async () => {
   return await buildObsidianPlugin({
-    mode: BuildMode.Production,
     customEsbuildPlugins: [
       fixRequireEsbuildPlugin(resolvePathFromRoot('dist/build/main.js'))
-    ]
+    ],
+    mode: BuildMode.Production
   });
 });
