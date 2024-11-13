@@ -4,7 +4,7 @@ import {
 } from 'obsidian';
 import { appendCodeBlock } from 'obsidian-dev-utils/DocumentFragment';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
-import { bindUiComponent } from 'obsidian-dev-utils/obsidian/Plugin/UIComponent';
+import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
 
 import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
 import type FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
@@ -27,7 +27,7 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
         f.createEl('br');
         f.appendText('Leave blank to use the root of the vault.');
       }))
-      .addText((text) => bindUiComponent(this.plugin, text, 'modulesRoot', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', { autoSave: false, pluginSettings })
         .setPlaceholder('path/to/script/modules/root')
       );
 
@@ -41,7 +41,7 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
-      .addText((text) => bindUiComponent(this.plugin, text, 'invocableScriptsDirectory', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', { autoSave: false, pluginSettings })
         .setPlaceholder('path/to/invocable/scripts/directory')
       );
 
@@ -55,7 +55,7 @@ export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTa
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use startup script.');
       }))
-      .addText((text) => bindUiComponent(this.plugin, text, 'startupScriptPath', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', { autoSave: false, pluginSettings })
         .setPlaceholder('path/to/startup.ts')
       );
 
