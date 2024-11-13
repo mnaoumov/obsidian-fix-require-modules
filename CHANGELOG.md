@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.2.1
+
+- Update libs
+
 ## 5.2.0
 
 - Add Clear Cache command
