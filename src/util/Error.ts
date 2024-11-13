@@ -22,7 +22,7 @@ export function printError(error: unknown): void {
   console.error(`\x1b[0m${title}\x1b[0m`);
 
   if (error.stack) {
-    const restStack = error.stack.startsWith(title) ? error.stack.substring(title.length + 1) : error.stack;
+    const restStack = error.stack.startsWith(title) ? error.stack.slice(title.length + 1) : error.stack;
     console.error(`Error stack:\n${restStack}`);
   }
 

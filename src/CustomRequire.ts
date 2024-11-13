@@ -88,7 +88,7 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   if (id.startsWith('./') || id.startsWith('../')) {
     currentScriptFullPath = getCurrentScriptFullPath(currentScriptPath, module);
   } else if (id.startsWith('//')) {
-    id = join(getVaultPath(), id.substring(2));
+    id = join(getVaultPath(), id.slice(2));
   } else if (id.startsWith('/')) {
     if (!safeExistsSync(id)) {
       id = `.${id}`;

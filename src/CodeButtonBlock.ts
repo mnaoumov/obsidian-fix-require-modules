@@ -59,7 +59,7 @@ async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: strin
   const noteFile = app.vault.getAbstractFileByPath(sourcePath);
   const dir = noteFile?.parent;
   const dirPath = dir?.path ?? '';
-  const randomName = Math.random().toString(36).substring(2, 15);
+  const randomName = Math.random().toString(36).slice(2, 15);
   const codeButtonBlockScriptFileName = `.code-button-block-script-${randomName}.mts`;
   const codeButtonBlockScriptPath = join(dirPath, codeButtonBlockScriptFileName);
   await app.vault.create(codeButtonBlockScriptPath, source);

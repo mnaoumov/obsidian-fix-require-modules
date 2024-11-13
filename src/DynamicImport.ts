@@ -20,9 +20,9 @@ export function registerDynamicImport(plugin: Plugin): void {
 async function dynamicImport(moduleName: string, currentScriptPath?: string): Promise<unknown> {
   const FILE_URL_PREFIX = 'file:///';
   if (moduleName.toLowerCase().startsWith(FILE_URL_PREFIX)) {
-    moduleName = moduleName.substring(FILE_URL_PREFIX.length);
+    moduleName = moduleName.slice(FILE_URL_PREFIX.length);
   } else if (moduleName.toLowerCase().startsWith(Platform.resourcePathPrefix)) {
-    moduleName = moduleName.substring(Platform.resourcePathPrefix.length);
+    moduleName = moduleName.slice(Platform.resourcePathPrefix.length);
   } else if (isUrl(moduleName)) {
     return await import(moduleName) as unknown;
   }
