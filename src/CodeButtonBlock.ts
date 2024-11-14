@@ -7,6 +7,7 @@ import type {
 import babel from '@babel/core';
 import babelPluginTransformModulesCommonJS from '@babel/plugin-transform-modules-commonjs';
 import babelPresetTypeScript from '@babel/preset-typescript';
+import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
 import babelPluginFixSourceMap from './babel/babelPluginFixSourceMap.ts';
@@ -18,7 +19,6 @@ import { convertPathToObsidianUrl } from './util/obsidian.ts';
 type CodeButtonBlockScriptWrapper = () => Promise<void>;
 
 const CODE_BUTTON_BLOCK_LANGUAGE = 'code-button';
-const CODE_BUTTON_BLOCK_CAPTION_REG_EXP = new RegExp(`^\`{3,}${CODE_BUTTON_BLOCK_LANGUAGE}\\s*(.*)$`);
 
 export function registerCodeButtonBlock(plugin: Plugin): void {
   registerCodeHighlighting();
@@ -32,10 +32,9 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
   const sectionInfo = ctx.getSectionInfo(el);
 
   if (sectionInfo) {
-    const lines = sectionInfo.text.split('\n');
-    const codeBlockHeader = lines[sectionInfo.lineStart] ?? '';
-    const match = CODE_BUTTON_BLOCK_CAPTION_REG_EXP.exec(codeBlockHeader);
-    const caption = match?.[1]?.trim() ?? '(no caption)';
+    const [
+      caption = '(no caption)'
+    ] = getCodeBlockArguments(ctx, el);
 
     el.createEl('button', {
       cls: 'mod-cta',
