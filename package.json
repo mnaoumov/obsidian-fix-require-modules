@@ -1,6 +1,6 @@
 {
   "name": "fix-require-modules",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
     "build": "tsx scripts/build.ts",
