@@ -210,6 +210,10 @@ Configure a script directory so every script in it can be invoked using the [`Co
 
 Invoke any script when [`Obsidian`][Obsidian] loads via a configuration setting.
 
+You can add a `cleanup()` function to the startup script, which will be called when the plugin is unloaded.
+
+The function has the same signature as [`invoke()`](#invocable-scripts) function.
+
 ### Hotkeys
 
 Assign hotkeys to frequently used scripts:
@@ -259,7 +263,7 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 
 ## License
 
- © [Michael Naumov](https://github.com/mnaoumov/)
+© [Michael Naumov](https://github.com/mnaoumov/)
 
 [Command Palette]: https://help.obsidian.md/Plugins/Command+palette
 

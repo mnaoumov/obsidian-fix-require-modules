@@ -22,6 +22,7 @@ import { downloadEsbuild } from './esbuild.ts';
 import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
 import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
 import {
+  cleanupStartupScript,
   invokeStartupScript,
   registerInvocableScripts,
   selectAndInvokeScript
@@ -53,6 +54,7 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
 
     await this.saveSettings(this.settings);
     await invokeStartupScript(this);
+    this.register(() => cleanupStartupScript(this));
   }
 
   protected override onloadComplete(): MaybePromise<void> {

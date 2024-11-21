@@ -13,11 +13,25 @@ import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 
+interface CleanupScript extends Script {
+  cleanup(app: App): MaybePromise<void>;
+}
+
 interface Script {
   invoke(app: App): MaybePromise<void>;
 }
 
 const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
+
+export async function cleanupStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
+  if (!plugin.settingsCopy.startupScriptPath) {
+    return;
+  }
+
+  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
+  const script = customRequire(plugin.app.vault.adapter.getFullPath(startupScriptPath)) as Partial<CleanupScript>;
+  await script.cleanup?.(plugin.app);
+}
 
 export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
   if (!plugin.settingsCopy.startupScriptPath) {
