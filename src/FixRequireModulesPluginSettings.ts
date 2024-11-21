@@ -1,4 +1,4 @@
-export default class FixRequireModulesPluginSettings {
+export class FixRequireModulesPluginSettings {
   public invocableScriptsDirectory = '';
   public modulesRoot = '';
   public startupScriptPath = '';

@@ -15,7 +15,7 @@ import {
 } from 'obsidian-dev-utils/Path';
 import { register } from 'tsx/cjs/api';
 
-import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
+import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { SourceMap } from './util/types.js';
 
 import { ESBUILD_MAIN_PATH } from './esbuild.ts';

@@ -6,12 +6,12 @@ import { appendCodeBlock } from 'obsidian-dev-utils/DocumentFragment';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
 
-import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
-import type FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
+import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import type { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
 
 import { clearCache } from './CustomRequire.ts';
 
-export default class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
+export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
   public override display(): void {
     this.containerEl.empty();
 

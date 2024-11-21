@@ -15,7 +15,7 @@ interface InputMap {
   sourcemap: SourceMap;
 }
 
-const babelPluginFixSourceMap: PluginObj<FixSourceMapPluginState> = {
+export const babelPluginFixSourceMap: PluginObj<FixSourceMapPluginState> = {
   name: 'fix-source-map',
   visitor: {
     Program(_: NodePath<Program>, state: FixSourceMapPluginState): void {
@@ -24,5 +24,3 @@ const babelPluginFixSourceMap: PluginObj<FixSourceMapPluginState> = {
     }
   }
 };
-
-export default babelPluginFixSourceMap;

@@ -10,8 +10,8 @@ import babelPresetTypeScript from '@babel/preset-typescript';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
-import babelPluginFixSourceMap from './babel/babelPluginFixSourceMap.ts';
-import babelPluginWrapInDefaultAsyncFunction from './babel/babelPluginWrapInDefaultAsyncFunction.ts';
+import { babelPluginFixSourceMap } from './babel/babelPluginFixSourceMap.ts';
+import { babelPluginWrapInDefaultAsyncFunction } from './babel/babelPluginWrapInDefaultAsyncFunction.ts';
 import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';

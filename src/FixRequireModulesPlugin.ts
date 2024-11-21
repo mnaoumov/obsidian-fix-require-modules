@@ -19,8 +19,8 @@ import {
 } from './CustomRequire.ts';
 import { registerDynamicImport } from './DynamicImport.ts';
 import { downloadEsbuild } from './esbuild.ts';
-import FixRequireModulesPluginSettings from './FixRequireModulesPluginSettings.ts';
-import FixRequireModulesPluginSettingsTab from './FixRequireModulesPluginSettingsTab.ts';
+import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
+import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
 import {
   invokeStartupScript,
   registerInvocableScripts,
@@ -28,7 +28,7 @@ import {
 } from './Script.ts';
 import { printError } from './util/Error.ts';
 
-export default class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
+export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
   private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
 

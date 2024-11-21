@@ -13,7 +13,7 @@ import {
   memberExpression
 } from '@babel/types';
 
-const babelPluginWrapInDefaultAsyncFunction: PluginObj = {
+export const babelPluginWrapInDefaultAsyncFunction: PluginObj = {
   name: 'wrap-in-default-async-function',
   visitor: {
     Program(path: NodePath<Program>) {
@@ -38,5 +38,3 @@ const babelPluginWrapInDefaultAsyncFunction: PluginObj = {
     }
   }
 };
-
-export default babelPluginWrapInDefaultAsyncFunction;

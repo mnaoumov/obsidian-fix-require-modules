@@ -8,7 +8,7 @@ import { Notice } from 'obsidian';
 import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
 import { basename } from 'obsidian-dev-utils/Path';
 
-import type FixRequireModulesPlugin from './FixRequireModulesPlugin.ts';
+import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 
 import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
