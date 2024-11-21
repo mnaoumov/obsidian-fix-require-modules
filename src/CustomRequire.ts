@@ -64,12 +64,24 @@ const moduleDependencies = new Map<string, Set<string>>();
 let tsxModuleResolveFileName!: typeof Module._resolveFilename;
 let tsx: Tsx;
 
-export function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: NodeJS.Require): void {
-  plugin = plugin_;
-  app = plugin.app;
-  pluginRequire = pluginRequire_;
-  initTsx();
-  applyPatches();
+interface SplitQueryResult {
+  cleanStr: string;
+  query: string;
+}
+
+export function clearCache(): void {
+  moduleTimestamps.clear();
+  updatedModuleTimestamps.clear();
+  moduleDependencies.clear();
+
+  for (const key of Object.keys(nodeRequire.cache)) {
+    if (key.startsWith('electron') || key.includes('app.asar')) {
+      continue;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete nodeRequire.cache[key];
+  }
 }
 
 export function customRequire(id: string, currentScriptPath?: string, module?: Module): unknown {
@@ -130,38 +142,32 @@ export function customRequire(id: string, currentScriptPath?: string, module?: M
   }
 }
 
-function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
-  if (request.endsWith(getNodeRequireCacheKey(''))) {
-    return toPosixPath(tsxModuleResolveFileName(request, parent, isMain, options));
+export function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: NodeJS.Require): void {
+  plugin = plugin_;
+  app = plugin.app;
+  pluginRequire = pluginRequire_;
+  initTsx();
+  applyPatches();
+}
+
+function applyPatches(): void {
+  patch(window, 'require', customRequire as NodeJS.Require);
+  patch(Module.prototype, 'require', patchedModuleRequire as NodeJS.Require);
+  patch(Module.prototype, '_compile', patchedCompile);
+  patch(Module.prototype, 'load', patchedLoad);
+  patch(Module, '_resolveFilename', customResolveFilename);
+
+  function patchedModuleRequire(this: Module, id: string): unknown {
+    return customRequire(id, undefined, this);
   }
 
-  const { cleanStr: cleanRequest, query } = splitQuery(request);
-  if (query) {
-    const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
-    return cleanFilename + query;
+  function patchedCompile(this: Module, content: string, filename: string): unknown {
+    return customCompile(content, filename, this);
   }
 
-  request = toPosixPath(request);
-
-  if (request === '.') {
-    request = './index.js';
+  function patchedLoad(this: Module, filename: string): void {
+    customLoad(filename, this);
   }
-
-  if (specialModuleNames.includes(request)) {
-    return request;
-  }
-
-  if (request === 'esbuild') {
-    return join(getVaultPath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
-  }
-
-  const isRelative = request.startsWith('./') || request.startsWith('../');
-  const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
-  options ??= {};
-  options.paths ??= [];
-  options.paths.push(...parent.paths);
-  options.paths.push(join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
-  return splitQuery(toPosixPath(tsxModuleResolveFileName(path, parent, isMain, options))).cleanStr;
 }
 
 function customCompile(content: string, filename: string, module: Module): unknown {
@@ -202,6 +208,47 @@ function customLoad(filename: string, nodeModule: Module): void {
   }
 
   moduleLoad.call(nodeModule, filename);
+}
+
+function customResolveFilename(request: string, parent: Module, isMain: boolean, options?: { paths?: string[] }): string {
+  if (request.endsWith(getNodeRequireCacheKey(''))) {
+    return toPosixPath(tsxModuleResolveFileName(request, parent, isMain, options));
+  }
+
+  const { cleanStr: cleanRequest, query } = splitQuery(request);
+  if (query) {
+    const cleanFilename = customResolveFilename(cleanRequest, parent, isMain, options);
+    return cleanFilename + query;
+  }
+
+  request = toPosixPath(request);
+
+  if (request === '.') {
+    request = './index.js';
+  }
+
+  if (specialModuleNames.includes(request)) {
+    return request;
+  }
+
+  if (request === 'esbuild') {
+    return join(getVaultPath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
+  }
+
+  const isRelative = request.startsWith('./') || request.startsWith('../');
+  const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
+  options ??= {};
+  options.paths ??= [];
+  options.paths.push(...parent.paths);
+  options.paths.push(join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'node_modules'));
+  return splitQuery(toPosixPath(tsxModuleResolveFileName(path, parent, isMain, options))).cleanStr;
+}
+
+function fixSourceMap(sourceMapBase64: string): string {
+  const sourceMapJson = Buffer.from(sourceMapBase64, 'base64').toString('utf8');
+  const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
+  sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
+  return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
 }
 
 function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?: Module): string {
@@ -252,6 +299,10 @@ function getCurrentScriptFullPath(currentScriptPath: string | undefined, module?
   }
 }
 
+function getFakeRootPath(): string {
+  return join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'fakeRoot.js');
+}
+
 function getFullPath(path: null | string | undefined): null | string {
   if (!path) {
     return null;
@@ -262,16 +313,8 @@ function getFullPath(path: null | string | undefined): null | string {
   return safeExistsSync(cleanPath) ? cleanPath : null;
 }
 
-function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
-  const timestamp = getRecursiveTimestamp(moduleName);
-  if ((moduleTimestamps.get(moduleName) ?? 0) < timestamp) {
-    moduleTimestamps.set(moduleName, timestamp);
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete nodeRequire.cache[moduleName];
-    moduleDependencies.delete(moduleName);
-  }
-
-  return timestamp;
+function getNodeRequireCacheKey(moduleName: string): string {
+  return `${moduleName}?namespace=${plugin.manifest.id}`;
 }
 
 function getRecursiveTimestamp(moduleName: string): number {
@@ -300,8 +343,26 @@ function getRecursiveTimestamp(moduleName: string): number {
   return ans;
 }
 
-function getNodeRequireCacheKey(moduleName: string): string {
-  return `${moduleName}?namespace=${plugin.manifest.id}`;
+function getRecursiveTimestampAndInvalidateCache(moduleName: string): number {
+  const timestamp = getRecursiveTimestamp(moduleName);
+  if ((moduleTimestamps.get(moduleName) ?? 0) < timestamp) {
+    moduleTimestamps.set(moduleName, timestamp);
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete nodeRequire.cache[moduleName];
+    moduleDependencies.delete(moduleName);
+  }
+
+  return timestamp;
+}
+
+function getVaultPath(): string {
+  return toPosixPath(app.vault.adapter.basePath);
+}
+
+function initTsx(): void {
+  tsx = register({ namespace: plugin.manifest.id });
+  tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
+  plugin.register(tsx.unregister);
 }
 
 function patch<T, K extends keyof T>(obj: T, key: K, newValue: object & T[K]): void {
@@ -312,41 +373,8 @@ function patch<T, K extends keyof T>(obj: T, key: K, newValue: object & T[K]): v
   });
 }
 
-function fixSourceMap(sourceMapBase64: string): string {
-  const sourceMapJson = Buffer.from(sourceMapBase64, 'base64').toString('utf8');
-  const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
-  sourceMap.sources = sourceMap.sources.map(convertPathToObsidianUrl);
-  return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
-}
-
-function initTsx(): void {
-  tsx = register({ namespace: plugin.manifest.id });
-  tsxModuleResolveFileName = Module._resolveFilename.bind(Module);
-  plugin.register(tsx.unregister);
-}
-
-function getFakeRootPath(): string {
-  return join(getVaultPath(), plugin.settingsCopy.modulesRoot, 'fakeRoot.js');
-}
-
-function applyPatches(): void {
-  patch(window, 'require', customRequire as NodeJS.Require);
-  patch(Module.prototype, 'require', patchedModuleRequire as NodeJS.Require);
-  patch(Module.prototype, '_compile', patchedCompile);
-  patch(Module.prototype, 'load', patchedLoad);
-  patch(Module, '_resolveFilename', customResolveFilename);
-
-  function patchedModuleRequire(this: Module, id: string): unknown {
-    return customRequire(id, undefined, this);
-  }
-
-  function patchedCompile(this: Module, content: string, filename: string): unknown {
-    return customCompile(content, filename, this);
-  }
-
-  function patchedLoad(this: Module, filename: string): void {
-    customLoad(filename, this);
-  }
+function safeExistsSync(path: string): boolean {
+  return existsSync(splitQuery(path).cleanStr);
 }
 
 function specialModuleLoad(filename: string): unknown {
@@ -366,38 +394,10 @@ function specialModuleLoad(filename: string): unknown {
   return;
 }
 
-function getVaultPath(): string {
-  return toPosixPath(app.vault.adapter.basePath);
-}
-
-interface SplitQueryResult {
-  cleanStr: string;
-  query: string;
-}
-
 function splitQuery(str: string): SplitQueryResult {
   const queryIndex = str.indexOf('?');
   return {
     cleanStr: queryIndex !== -1 ? str.slice(0, queryIndex) : str,
     query: queryIndex !== -1 ? str.slice(queryIndex) : ''
   };
-}
-
-function safeExistsSync(path: string): boolean {
-  return existsSync(splitQuery(path).cleanStr);
-}
-
-export function clearCache(): void {
-  moduleTimestamps.clear();
-  updatedModuleTimestamps.clear();
-  moduleDependencies.clear();
-
-  for (const key of Object.keys(nodeRequire.cache)) {
-    if (key.startsWith('electron') || key.includes('app.asar')) {
-      continue;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete nodeRequire.cache[key];
-  }
 }

@@ -28,30 +28,6 @@ export function registerCodeButtonBlock(plugin: Plugin): void {
   );
 }
 
-function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
-  const sectionInfo = ctx.getSectionInfo(el);
-
-  if (sectionInfo) {
-    const [
-      caption = '(no caption)'
-    ] = getCodeBlockArguments(ctx, el);
-
-    el.createEl('button', {
-      cls: 'mod-cta',
-      async onclick(): Promise<void> {
-        await handleClick(app, resultEl, ctx.sourcePath, source);
-      },
-      text: caption
-    });
-  }
-
-  const resultEl = el.createEl('pre');
-
-  if (!sectionInfo) {
-    resultEl.textContent = 'Error! ❌\nCould not get code block info. Try to reopen the note...';
-  }
-}
-
 async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: string, source: string): Promise<void> {
   resultEl.empty();
   resultEl.setText('Executing...⌛');
@@ -110,6 +86,30 @@ async function makeWrapperScript(source: string, sourceFileName: string, sourceD
   });
 
   return result?.code ?? '';
+}
+
+function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
+  const sectionInfo = ctx.getSectionInfo(el);
+
+  if (sectionInfo) {
+    const [
+      caption = '(no caption)'
+    ] = getCodeBlockArguments(ctx, el);
+
+    el.createEl('button', {
+      cls: 'mod-cta',
+      async onclick(): Promise<void> {
+        await handleClick(app, resultEl, ctx.sourcePath, source);
+      },
+      text: caption
+    });
+  }
+
+  const resultEl = el.createEl('pre');
+
+  if (!sectionInfo) {
+    resultEl.textContent = 'Error! ❌\nCould not get code block info. Try to reopen the note...';
+  }
 }
 
 function registerCodeHighlighting(): void {

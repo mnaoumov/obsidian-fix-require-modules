@@ -26,36 +26,6 @@ export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Prom
   }
 }
 
-export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Promise<void> {
-  const app = plugin.app;
-  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
-  let scriptFiles: string[];
-
-  if (!invocableScriptsDirectory) {
-    scriptFiles = ['Error: No Invocable scripts directory specified in the settings'];
-  } else if (!await app.vault.adapter.exists(invocableScriptsDirectory)) {
-    scriptFiles = [`Error: Invocable scripts directory not found: ${invocableScriptsDirectory}`];
-  } else {
-    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, '');
-  }
-
-  const scriptFile = await selectItem({
-    app: app,
-    items: scriptFiles,
-    itemTextFunc: (script) => script,
-    placeholder: 'Choose a script to invoke'
-  });
-
-  if (scriptFile === null) {
-    console.debug('No script selected');
-    return;
-  }
-
-  if (!scriptFile.startsWith('Error:')) {
-    await invoke(app, `${invocableScriptsDirectory}/${scriptFile}`);
-  }
-}
-
 export async function registerInvocableScripts(plugin: FixRequireModulesPlugin): Promise<void> {
   const COMMAND_NAME_PREFIX = 'invokeScriptFile-';
   const commands = plugin.app.commands.listCommands().filter((c) => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
@@ -92,12 +62,34 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
   }
 }
 
-function getInvocable(script: Script): Invocable {
-  if ('default' in script) {
-    return script.default;
+export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Promise<void> {
+  const app = plugin.app;
+  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
+  let scriptFiles: string[];
+
+  if (!invocableScriptsDirectory) {
+    scriptFiles = ['Error: No Invocable scripts directory specified in the settings'];
+  } else if (!await app.vault.adapter.exists(invocableScriptsDirectory)) {
+    scriptFiles = [`Error: Invocable scripts directory not found: ${invocableScriptsDirectory}`];
+  } else {
+    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, '');
   }
 
-  return script;
+  const scriptFile = await selectItem({
+    app: app,
+    items: scriptFiles,
+    itemTextFunc: (script) => script,
+    placeholder: 'Choose a script to invoke'
+  });
+
+  if (scriptFile === null) {
+    console.debug('No script selected');
+    return;
+  }
+
+  if (!scriptFile.startsWith('Error:')) {
+    await invoke(app, `${invocableScriptsDirectory}/${scriptFile}`);
+  }
 }
 
 async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string, directory: string): Promise<string[]> {
@@ -115,6 +107,14 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
   }
 
   return files;
+}
+
+function getInvocable(script: Script): Invocable {
+  if ('default' in script) {
+    return script.default;
+  }
+
+  return script;
 }
 
 function getSortedBaseNames(fullNames: string[]): string[] {

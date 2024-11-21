@@ -29,8 +29,14 @@ import {
 import { printError } from './util/Error.ts';
 
 export default class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
-  private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
   public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
+  private _invocableScriptsDirectoryWatcher: FSWatcher | null = null;
+
+  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    await registerInvocableScripts(this);
+    this.configureInvocableScriptsDirectoryWatcher();
+  }
 
   protected override createDefaultPluginSettings(): FixRequireModulesPluginSettings {
     return new FixRequireModulesPluginSettings();
@@ -90,11 +96,5 @@ export default class FixRequireModulesPlugin extends PluginBase<FixRequireModule
       this._invocableScriptsDirectoryWatcher.close();
       this._invocableScriptsDirectoryWatcher = null;
     }
-  }
-
-  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
-    await registerInvocableScripts(this);
-    this.configureInvocableScriptsDirectoryWatcher();
   }
 }
