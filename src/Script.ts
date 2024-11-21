@@ -13,8 +13,9 @@ import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 
-type Invocable = (app: App) => MaybePromise<void>;
-type Script = { default: Invocable } | Invocable;
+interface Script {
+  invoke(app: App): MaybePromise<void>
+}
 
 const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 
@@ -109,14 +110,6 @@ async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string,
   return files;
 }
 
-function getInvocable(script: Script): Invocable {
-  if ('default' in script) {
-    return script.default;
-  }
-
-  return script;
-}
-
 function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map((file) => basename(file)).sort((a, b) => a.localeCompare(b));
 }
@@ -129,11 +122,11 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
       new Error(`Script not found: ${scriptPath}`);
     }
     const script = customRequire(app.vault.adapter.getFullPath(scriptPath)) as Script;
-    const invocable = getInvocable(script);
-    if (typeof invocable !== 'function') {
+    const invokeFn = script.invoke;
+    if (typeof invokeFn !== 'function') {
       throw new Error(`${scriptPath} does not export a function`);
     }
-    await invocable(app);
+    await invokeFn(app);
   } catch (error) {
     new Notice(`Error invoking ${scriptString} ${scriptPath}
 See console for details...`);
