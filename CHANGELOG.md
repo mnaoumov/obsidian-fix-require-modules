@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.2.3
+
+- Update libs
+
 ## 5.2.2
 
 - Fix (no caption)
