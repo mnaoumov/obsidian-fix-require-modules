@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.0.0
+
+- Force invoke name
+
 ## 5.2.3
 
 - Update libs
