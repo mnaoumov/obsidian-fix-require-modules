@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.1.0
+
+- Add cleanup() support
+
 ## 6.0.0
 
 - Force invoke name

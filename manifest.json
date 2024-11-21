@@ -1,7 +1,7 @@
 {
   "id": "fix-require-modules",
   "name": "Fix Require Modules",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "minAppVersion": "1.7.7",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "author": "mnaoumov",
