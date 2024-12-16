@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.2.0
+
+- Add support for '#privatePath' imports
+
 ## 6.1.0
 
 - Add cleanup() support
