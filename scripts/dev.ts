@@ -1,3 +1,4 @@
+import { throwExpression } from 'obsidian-dev-utils/Error';
 import { wrapCliTask } from 'obsidian-dev-utils/scripts/CliUtils';
 import {
   BuildMode,
@@ -10,7 +11,7 @@ import { fixRequireEsbuildPlugin } from './fixRequireEsbuildPlugin.ts';
 await wrapCliTask(async () => {
   return await buildObsidianPlugin({
     customEsbuildPlugins: [
-      fixRequireEsbuildPlugin(resolvePathFromRoot('dist/dev/main.js'))
+      fixRequireEsbuildPlugin(resolvePathFromRoot('dist/dev/main.js') ?? throwExpression(new Error('Could not resolve path')))
     ],
     mode: BuildMode.Development
   });

@@ -27,7 +27,7 @@ export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<Fi
         f.createEl('br');
         f.appendText('Leave blank to use the root of the vault.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', { pluginSettings, shouldAutoSave: false })
         .setPlaceholder('path/to/script/modules/root')
       );
 
@@ -41,7 +41,7 @@ export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<Fi
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', { pluginSettings, shouldAutoSave: false })
         .setPlaceholder('path/to/invocable/scripts/directory')
       );
 
@@ -55,7 +55,7 @@ export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<Fi
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use startup script.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', { autoSave: false, pluginSettings })
+      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', { pluginSettings, shouldAutoSave: false })
         .setPlaceholder('path/to/startup.ts')
       );
 

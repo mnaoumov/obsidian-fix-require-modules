@@ -1,9 +1,5 @@
-// eslint-disable-next-line import-x/no-nodejs-modules
-import {
-  existsSync,
-  readFileSync,
-  statSync
-} from 'node:fs';
+import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
+
 // eslint-disable-next-line import-x/no-nodejs-modules
 import Module from 'node:module';
 import { App } from 'obsidian';
@@ -13,6 +9,11 @@ import {
   join,
   toPosixPath
 } from 'obsidian-dev-utils/Path';
+import {
+  existsSync,
+  readFileSync,
+  statSync
+} from 'obsidian-dev-utils/scripts/NodeModules';
 import { register } from 'tsx/cjs/api';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';

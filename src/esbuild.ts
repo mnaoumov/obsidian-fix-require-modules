@@ -1,5 +1,3 @@
-// eslint-disable-next-line import-x/no-nodejs-modules
-import os from 'node:os';
 import {
   Notice,
   Plugin,
@@ -10,7 +8,11 @@ import {
   join
 } from 'obsidian-dev-utils/Path';
 import { exec } from 'obsidian-dev-utils/scripts/Exec';
-import { process } from 'obsidian-dev-utils/scripts/NodeModules';
+import {
+  arch,
+  endianness,
+  process
+} from 'obsidian-dev-utils/scripts/NodeModules';
 
 const knownWindowsPackages: Record<string, string> = {
   'win32 arm64 LE': '@esbuild/win32-arm64',
@@ -48,7 +50,7 @@ export async function downloadEsbuild(plugin: Plugin): Promise<void> {
   const app = plugin.app;
   const missingEsbuildFiles: string[] = [ESBUILD_MAIN_PATH];
 
-  const platformKey = `${process.platform} ${os.arch()} ${os.endianness()}`;
+  const platformKey = `${process.platform} ${arch()} ${endianness()}`;
 
   if (platformKey in knownWindowsPackages) {
     missingEsbuildFiles.push(`node_modules/${knownWindowsPackages[platformKey] ?? ''}/esbuild.exe`);

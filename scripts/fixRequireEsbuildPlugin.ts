@@ -5,16 +5,16 @@ import {
   readFile,
   writeFile
 } from 'obsidian-dev-utils/scripts/NodeModules';
-import { readNpmPackage } from 'obsidian-dev-utils/scripts/Npm';
+import { readPackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
 export function fixRequireEsbuildPlugin(distPath: string): Plugin {
   return {
     name: 'fix-require-esbuild',
     async setup(build): Promise<void> {
-      const npmPackage = await readNpmPackage();
+      const packageJson = await readPackageJson();
       build.initialOptions.banner ??= {};
       const jsBanner = build.initialOptions.banner['js'] ?? '';
-      build.initialOptions.banner['js'] = `${jsBanner}\nvar _requireEsbuild = ${_requireEsbuild.toString().replace('<% npmPackage.name %>', npmPackage.name)};\n`;
+      build.initialOptions.banner['js'] = `${jsBanner}\nvar _requireEsbuild = ${_requireEsbuild.toString().replace('<% npmPackage.name %>', packageJson.name ?? '')};\n`;
 
       build.onEnd(async () => {
         let contents = await readFile(distPath, 'utf-8');
