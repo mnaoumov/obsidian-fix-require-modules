@@ -16,15 +16,15 @@
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@babel/plugin-transform-modules-commonjs": "^7.25.9",
+    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
-    "@babel/types": "^7.26.0",
+    "@babel/types": "^7.26.3",
     "@tsconfig/strictest": "^2.0.5",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^22.9.1",
+    "@types/node": "^22.10.2",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^4.12.0",
-    "obsidian-typings": "^2.3.3",
+    "obsidian-dev-utils": "^6.1.0",
+    "obsidian-typings": "^2.6.0",
     "tsx": "^4.19.2"
   },
   "type": "module"
