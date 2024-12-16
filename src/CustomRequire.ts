@@ -1,5 +1,3 @@
-import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
-
 // eslint-disable-next-line import-x/no-nodejs-modules
 import Module from 'node:module';
 import { App } from 'obsidian';
@@ -14,6 +12,10 @@ import {
   readFileSync,
   statSync
 } from 'obsidian-dev-utils/scripts/NodeModules';
+import {
+  getPackageJsonPath,
+  readPackageJsonSync
+} from 'obsidian-dev-utils/scripts/Npm';
 import { register } from 'tsx/cjs/api';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
@@ -236,6 +238,13 @@ function customResolveFilename(request: string, parent: Module, isMain: boolean,
     return join(getVaultPath(), plugin.manifest.dir ?? '', ESBUILD_MAIN_PATH);
   }
 
+  if (request.startsWith('#')) {
+    const resolvedPath = resolvePrivateImportPath(request, parent.path);
+    if (resolvedPath) {
+      return customResolveFilename(resolvedPath, parent, isMain, options);
+    }
+  }
+
   const isRelative = request.startsWith('./') || request.startsWith('../');
   const path = isRelative && parent.filename ? join(dirname(parent.filename), request) : request;
   options ??= {};
@@ -372,6 +381,47 @@ function patch<T, K extends keyof T>(obj: T, key: K, newValue: object & T[K]): v
   plugin.register(() => {
     obj[key] = original;
   });
+}
+
+function resolvePrivateImportPath(request: string, parentPath: string): null | string {
+  const packageJsonDirPath = dirname(getPackageJsonPath(parentPath));
+  const packageJson = readPackageJsonSync(parentPath);
+  if (!packageJson.imports) {
+    return null;
+  }
+
+  const importMap = packageJson.imports;
+  const importsSetting = importMap[request as keyof typeof importMap];
+  if (!importsSetting) {
+    return null;
+  }
+
+  let pathOrConditions = importsSetting;
+
+  if (Array.isArray(importsSetting)) {
+    const maybePathOrConditions = importsSetting[0];
+    if (!maybePathOrConditions) {
+      return null;
+    }
+    pathOrConditions = maybePathOrConditions;
+  } else {
+    pathOrConditions = importsSetting;
+  }
+
+  if (typeof pathOrConditions === 'string') {
+    return join(packageJsonDirPath, pathOrConditions);
+  }
+
+  const path = pathOrConditions['node'] ?? pathOrConditions['require'] ?? pathOrConditions['default'];
+  if (!path) {
+    return null;
+  }
+
+  if (typeof path === 'string') {
+    return join(packageJsonDirPath, path);
+  }
+
+  return null;
 }
 
 function safeExistsSync(path: string): boolean {
