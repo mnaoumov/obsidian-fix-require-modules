@@ -39,8 +39,8 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
     this.configureInvocableScriptsDirectoryWatcher();
   }
 
-  protected override createDefaultPluginSettings(): FixRequireModulesPluginSettings {
-    return new FixRequireModulesPluginSettings();
+  protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {
+    return new FixRequireModulesPluginSettings(data);
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {

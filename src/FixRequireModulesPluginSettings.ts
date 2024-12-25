@@ -1,7 +1,14 @@
-export class FixRequireModulesPluginSettings {
+import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
+
+export class FixRequireModulesPluginSettings extends PluginSettingsBase {
   public invocableScriptsDirectory = '';
   public modulesRoot = '';
   public startupScriptPath = '';
+
+  public constructor(data: unknown) {
+    super();
+    this.init(data);
+  }
 
   public getInvocableScriptsDirectory(): string {
     return this.getPathRelativeToModulesRoot(this.invocableScriptsDirectory);
