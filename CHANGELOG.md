@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.2.1
+
+- Update libs
+
 ## 6.2.0
 
 - Add support for '#privatePath' imports
