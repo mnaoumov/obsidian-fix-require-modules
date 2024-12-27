@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.2.2
+
+- Update libs
+
 ## 6.2.1
 
 - Update libs
