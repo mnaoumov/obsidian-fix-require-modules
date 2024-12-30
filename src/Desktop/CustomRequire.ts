@@ -21,28 +21,13 @@ import { register } from 'tsx/cjs/api';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { SourceMap } from './util/types.js';
 
+import { builtInModuleNames } from '../BuiltInModuleNames.ts';
 import { ESBUILD_MAIN_PATH } from './esbuild.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 interface EsModule {
   __esModule: boolean;
 }
-
-export const builtInModuleNames = [
-  'obsidian',
-  '@codemirror/autocomplete',
-  '@codemirror/collab',
-  '@codemirror/commands',
-  '@codemirror/language',
-  '@codemirror/lint',
-  '@codemirror/search',
-  '@codemirror/state',
-  '@codemirror/text',
-  '@codemirror/view',
-  '@lezer/common',
-  '@lezer/lr',
-  '@lezer/highlight'
-];
 
 const specialModuleNames = [
   ...builtInModuleNames,
