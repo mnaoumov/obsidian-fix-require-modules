@@ -6,7 +6,9 @@ This is a plugin for [`Obsidian`][Obsidian] that fixes [`require()`][require] ca
 
 This plugin heavily simplifies working with custom [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] modules. You can work with them using [DevTools Console](https://developer.chrome.com/docs/devtools/console), [CustomJS](https://github.com/saml-dev/obsidian-custom-js) scripts, [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts, [Modules](https://github.com/polyipseity/obsidian-modules) scripts, [QuickAdd](https://quickadd.obsidian.guide/) scripts, [Templater](https://silentvoid13.github.io/Templater/) scripts, etc.
 
-### Built-in Modules
+However most of the features would be working on Desktop only.
+
+### Built-in Modules (Desktop & Mobile)
 
 Certain built-in modules are available for import during plugin development but show `Uncaught Error: Cannot find module` if you try to [`require()`][require] them manually. This plugin fixes that problem, allowing the following [`require()`][require] calls to work properly:
 
@@ -42,7 +44,7 @@ Get the list of built-in module names fixed by the plugin:
 app.plugins.getPlugin('fix-require-modules').builtInModuleNames;
 ```
 
-### `obsidian/app` module
+### `obsidian/app` module (Desktop & Mobile)
 
 There is a global variable `app` that gives access to obsidian `App` instance.
 
@@ -58,7 +60,7 @@ This plugin gives you a safer alternative:
 require('obsidian/app');
 ```
 
-### Relative Modules
+### Relative Modules (Desktop only)
 
 Fixes `Cannot find module` errors for relative paths:
 
@@ -74,7 +76,7 @@ require('./some/relative/path.js', 'path/to/current/script.js');
 require('./some/relative/path.js', 'path/to/current/note.md');
 ```
 
-### Root-relative Modules
+### Root-relative Modules (Desktop only)
 
 Adds support for root-relative paths:
 
@@ -84,7 +86,7 @@ require('/path/from/root.js');
 
 The root `/` directory is configurable via settings.
 
-### Vault-root-relative Modules
+### Vault-root-relative Modules (Desktop only)
 
 Adds support for vault-root-relative paths:
 
@@ -92,7 +94,7 @@ Adds support for vault-root-relative paths:
 require('//path/from/vault/root.js');
 ```
 
-### [`ECMAScript Modules` (`esm`)](https://nodejs.org/api/esm.html)
+### [`ECMAScript Modules` (`esm`)](https://nodejs.org/api/esm.html) (Desktop only)
 
 Originally, [`require()`][require] only supported [`CommonJS` (`cjs`)](https://nodejs.org/api/modules.html#modules-commonjs-modules) modules and would throw `require() of ES Module path/to/script.mjs not supported. Instead change the require of path/to/script.mjs to a dynamic import() which is available in all CommonJS modules`. This plugin adds support for ECMAScript modules:
 
@@ -108,7 +110,7 @@ require('path/to/script.cjs');
 require('path/to/script.mjs');
 ```
 
-### [`TypeScript`][TypeScript] Modules
+### [`TypeScript`][TypeScript] Modules (Desktop only)
 
 Adds support for [`TypeScript`][TypeScript] modules:
 
@@ -118,7 +120,7 @@ require('path/to/script.cts');
 require('path/to/script.mts');
 ```
 
-### NPM Modules
+### NPM Modules (Desktop only)
 
 You can require NPM modules installed into your configured scripts root folder.
 
@@ -128,7 +130,7 @@ require('npm-package-name');
 
 See [Tips](#tips) how to avoid performance issues.
 
-### Smart Caching
+### Smart Caching (Desktop only)
 
 Modules are cached for performance, but the cache is invalidated if the script or its dependencies change. Use a query string to skip cache invalidation:
 
@@ -136,15 +138,15 @@ Modules are cached for performance, but the cache is invalidated if the script o
 require('./someScript.js?someQuery');
 ```
 
-### Clear Cache
+### Clear Cache (Desktop only)
 
 If you need to clear the `require` cache, you can click the corresponding button in the settings or invoke the `Fix Require Modules: Clear Cache` command.
 
-### Source Maps
+### Source Maps (Desktop only)
 
 Manages source maps for compiled code, allowing seamless debugging in [`Obsidian`][Obsidian].
 
-### Dynamic Imports
+### Dynamic Imports (Desktop only)
 
 Use `dynamicImport()` to extend the built-in [`import()`][import] function with all the features of [`require()`][require] and support for URLs:
 
@@ -168,7 +170,7 @@ await dynamicImport('file:///C:/path/to/vault/then/to/script.js');
 await dynamicImport('app://obsidian-resource-path-prefix/C:/path/to/vault/then/to/script.js'); // See obsidian.Platform.resourcePathPrefix
 ```
 
-### Invocable Scripts
+### Invocable Scripts (Desktop only)
 
 Make any script invocable by defining a module that exports a function named `invoke` (sync or async) that accepts `app` argument
 
@@ -198,7 +200,7 @@ export function invoke(app: App): void { console.log('mts sync'); };
 export async function invoke(app: App): Promise<void> { console.log('mts async'); await Promise.resolve(); };
 ```
 
-### Invoke Scripts
+### Invoke Scripts (Desktop only)
 
 Configure a script directory so every script in it can be invoked using the [`Command Palette`][Command Palette]. Use `Fix Require Modules: Invoke Script: <<Choose>>` for more predictable lists:
 
@@ -206,7 +208,7 @@ Configure a script directory so every script in it can be invoked using the [`Co
 
 ![Chooser](images/chooser.png)
 
-### Startup Script
+### Startup Script (Desktop only)
 
 Invoke any script when [`Obsidian`][Obsidian] loads via a configuration setting.
 
@@ -220,7 +222,7 @@ Assign hotkeys to frequently used scripts:
 
 ![Hotkeys](images/hotkeys.png)
 
-### Code Buttons
+### Code Buttons (Desktop only)
 
 Create code buttons that execute [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript]:
 
