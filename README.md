@@ -214,7 +214,7 @@ Invoke any script when [`Obsidian`][Obsidian] loads via a configuration setting.
 
 You can add a `cleanup()` function to the startup script, which will be called when the plugin is unloaded.
 
-The function has the same signature as [`invoke()`](#invocable-scripts) function.
+The function has the same signature as [`invoke()`](#invocable-scripts-desktop-only) function.
 
 ### Hotkeys
 
@@ -252,7 +252,15 @@ If you plan to use scripts extensively, consider putting them in a [`dot directo
 
 ### Dynamic [`import()`][import]
 
-Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`dynamicImport()`](#dynamic-imports) as a workaround.
+Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`dynamicImport()`](#dynamic-imports-desktop-only) as a workaround.
+
+### Mobile support
+
+Features supported on mobile are very limited, as there is no Node.js module loader available.
+
+`require()` should be a synchronous function, but all file system operations on mobile can be asynchronous only.
+
+`dynamicImport()` is an asynchronous function but it still requires a way to read/parse/execute js/ts files and there is no an easy way to do that.
 
 ## Installation
 
