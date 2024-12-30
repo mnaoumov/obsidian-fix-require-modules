@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 7.0.0
+
+- Load/unload temp plugin
+- Add mobile version
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/11.2.0
+
 ## 6.2.2
 
 - Update libs
