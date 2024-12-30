@@ -227,7 +227,7 @@ Assign hotkeys to frequently used scripts:
 Create code buttons that execute [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript]:
 
 ````markdown
-```code-button Click me!
+```code-button "Click me!"
 // CommonJS (cjs) style
 const { dependency1 } = require('./path/to/script1.js');
 
@@ -243,6 +243,32 @@ function myTypeScriptFn(arg: string): void {}
 ````
 
 ![Code Button](images/code-button.png)
+
+### Temp Plugins (Desktop only)
+
+This plugin allows you to create temporary plugins.
+
+This is useful for quick plugin prototyping from inside the Obsidian itself.
+
+The key here is the function `registerTempPlugin()`, which is available in the script scope.
+
+````markdown
+```code-button "Click me!"
+import { Plugin } from 'obsidian';
+
+class MyPlugin extends Plugin {
+  onload() {
+    console.log('loading MyPlugin');
+  }
+}
+
+registerTempPlugin(MyPlugin);
+```
+````
+
+The loaded temp plugins can be unloaded using the `Fix Require Modules: Unload Temp Plugin: PluginName` / `Fix Require Modules: Unload Temp Plugins` commands.
+
+Also all temp plugins are unloaded when current plugin is unloaded.
 
 ## Tips
 
