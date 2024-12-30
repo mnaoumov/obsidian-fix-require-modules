@@ -11,7 +11,10 @@ import { PluginSettingTab } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { join } from 'obsidian-dev-utils/Path';
 
-import { registerCodeButtonBlock } from './CodeButtonBlock.ts';
+import {
+  registerCodeButtonBlock,
+  unloadTempPlugins
+} from './CodeButtonBlock.ts';
 import {
   clearCache,
   registerCustomRequire
@@ -68,6 +71,12 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
       callback: clearCache,
       id: 'clearCache',
       name: 'Clear Cache'
+    });
+
+    this.addCommand({
+      callback: unloadTempPlugins,
+      id: 'unload-temp-plugins',
+      name: 'Unload Temp Plugins'
     });
   }
 

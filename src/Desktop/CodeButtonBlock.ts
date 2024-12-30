@@ -1,12 +1,14 @@
 import type {
   App,
   MarkdownPostProcessorContext,
-  Plugin
+  PluginManifest
 } from 'obsidian';
+import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import babel from '@babel/core';
 import babelPluginTransformModulesCommonJS from '@babel/plugin-transform-modules-commonjs';
 import babelPresetTypeScript from '@babel/preset-typescript';
+import { Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
@@ -16,19 +18,29 @@ import { customRequire } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
-type CodeButtonBlockScriptWrapper = () => Promise<void>;
+type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn) => MaybePromise<void>;
+type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
+type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
 
 const CODE_BUTTON_BLOCK_LANGUAGE = 'code-button';
+const tempPlugins = new Map<string, Plugin>();
 
 export function registerCodeButtonBlock(plugin: Plugin): void {
   registerCodeHighlighting();
   plugin.register(unregisterCodeHighlighting);
   plugin.registerMarkdownCodeBlockProcessor(CODE_BUTTON_BLOCK_LANGUAGE,
-    (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => { processCodeButtonBlock(plugin.app, source, el, ctx); }
+    (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => { processCodeButtonBlock(plugin, source, el, ctx); }
   );
 }
 
-async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: string, source: string): Promise<void> {
+export function unloadTempPlugins(): void {
+  for (const tempPlugin of tempPlugins.values()) {
+    tempPlugin.unload();
+  }
+}
+
+async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath: string, source: string): Promise<void> {
+  const app = plugin.app;
   resultEl.empty();
   resultEl.setText('Executing...⌛');
 
@@ -48,7 +60,9 @@ async function handleClick(app: App, resultEl: HTMLPreElement, sourcePath: strin
     const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
     await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
     const codeButtonBlockScriptWrapper = customRequire(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper();
+    await codeButtonBlockScriptWrapper((tempPluginClass) => {
+      registerTempPlugin(plugin, tempPluginClass);
+    });
     resultEl.setText('Done! ✅');
   } catch (error) {
     resultEl.setText('Error! ❌\nSee console for details...');
@@ -88,7 +102,7 @@ async function makeWrapperScript(source: string, sourceFileName: string, sourceD
   return result?.code ?? '';
 }
 
-function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
+function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
   const sectionInfo = ctx.getSectionInfo(el);
 
   if (sectionInfo) {
@@ -99,7 +113,7 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
     el.createEl('button', {
       cls: 'mod-cta',
       async onclick(): Promise<void> {
-        await handleClick(app, resultEl, ctx.sourcePath, source);
+        await handleClick(plugin, resultEl, ctx.sourcePath, source);
       },
       text: caption
     });
@@ -114,6 +128,45 @@ function processCodeButtonBlock(app: App, source: string, el: HTMLElement, ctx: 
 
 function registerCodeHighlighting(): void {
   window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, 'text/typescript'));
+}
+
+function registerTempPlugin(plugin: Plugin, tempPluginClass: TempPluginClass): void {
+  const app = plugin.app;
+  const id = `__temp-plugin-${tempPluginClass.name}`;
+
+  const existingPlugin = tempPlugins.get(id);
+  if (existingPlugin) {
+    existingPlugin.unload();
+  }
+
+  const tempPlugin = new tempPluginClass(app, {
+    author: '__Temp Plugin created by Fix Require Modules',
+    description: '__Temp Plugin created by Fix Require Modules',
+    id,
+    minAppVersion: '0.0.1',
+    name: '__Temp Plugin ${name}',
+    version: '0.0.0'
+  });
+
+  const unloadCommandId = `unload-temp-plugin-${tempPluginClass.name}`;
+
+  tempPlugin.register(() => {
+    tempPlugins.delete(id);
+    plugin.removeCommand(unloadCommandId);
+    new Notice(`Unloaded Temp Plugin: ${tempPluginClass.name}`);
+  });
+
+  tempPlugins.set(id, tempPlugin);
+  plugin.addChild(tempPlugin);
+  new Notice(`Loaded Temp Plugin: ${tempPluginClass.name}`);
+
+  plugin.addCommand({
+    callback: () => {
+      tempPlugin.unload();
+    },
+    id: unloadCommandId,
+    name: `Unload Temp Plugin: ${tempPluginClass.name}`
+  });
 }
 
 function unregisterCodeHighlighting(): void {

@@ -20,7 +20,7 @@ export const babelPluginWrapInDefaultAsyncFunction: PluginObj = {
       const programBody = path.node.body;
       const wrapperFunction = functionExpression(
         identifier('codeButtonBlockScriptWrapper'),
-        [],
+        [identifier('registerTempPlugin')],
         blockStatement(programBody),
         false,
         true
