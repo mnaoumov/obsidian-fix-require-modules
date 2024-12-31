@@ -123,7 +123,7 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
         return modulesCache[resolvedId];
       case 'whenPossible':
         if (type === 'url' || !fileSystemWrapper.hasSyncMethods) {
-          console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible`);
+          console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
           return modulesCache[resolvedId];
         }
     }
