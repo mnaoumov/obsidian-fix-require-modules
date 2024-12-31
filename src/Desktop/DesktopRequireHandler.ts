@@ -1,11 +1,11 @@
-import type { FixRequireModulesPlugin } from "../FixRequireModulesPlugin.ts";
-import type { RequireHandler } from "../RequireHandler.ts";
+import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
-export class DesktopRequireHandler implements RequireHandler {
-  constructor(private readonly originalRequire: NodeRequire) { }
+let originalRequire: NodeRequire;
 
-  register(plugin: FixRequireModulesPlugin, customRequire: typeof window.require): void {
-    const Module = this.originalRequire('node:module') as typeof import('node:module');
+export const requireHandler = {
+  register(plugin: FixRequireModulesPlugin, originalRequire_: NodeRequire, customRequire: typeof window.require): void {
+    originalRequire = originalRequire_;
+    const Module = originalRequire('node:module') as typeof import('node:module');
     const originalProtoRequire = Module.prototype.require;
 
     plugin.register(() => {
@@ -13,5 +13,8 @@ export class DesktopRequireHandler implements RequireHandler {
     });
 
     Module.prototype.require = customRequire;
+  },
+  requireSpecialModule(id: string): unknown {
+    return id;
   }
-}
+};

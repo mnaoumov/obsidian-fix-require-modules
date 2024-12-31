@@ -1,9 +1,8 @@
-import type { RequireHandler } from "../RequireHandler.ts";
-
-export class MobileRequireHandler implements RequireHandler {
-  constructor() { }
-
+export const requireHandler = {
   register(): void {
-    // do nothing
+    return;
+  },
+  requireSpecialModule(): unknown {
+    return null;
   }
-}
+};

@@ -13,7 +13,7 @@ import {
 } from './CustomRequire.ts';
 import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
 import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
-import { getPlatformDependencies } from './PlatformDependencies.ts';
+import { getPlatformDependencies } from './PlatformDependenciesModule.ts';
 import {
   cleanupStartupScript,
   invokeStartupScript,
@@ -26,7 +26,7 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
 
   public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
     await super.saveSettings(newSettings);
-    this.platformDependencies.registerScriptDirectoryWatcher(this, () => registerInvocableScripts(this));
+    await this.platformDependencies.registerScriptDirectoryWatcher(this, () => registerInvocableScripts(this));
   }
 
   protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {

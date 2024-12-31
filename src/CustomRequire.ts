@@ -12,10 +12,10 @@ import { isUrl } from 'obsidian-dev-utils/url';
 
 import type { FileSystemWrapper } from './FileSystemWrapper.ts';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import type { RequireHandler } from './RequireHandler.ts';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
-import { getPlatformDependencies } from './PlatformDependencies.ts';
-import type { RequireHandler } from './RequireHandler.ts';
+import { getPlatformDependencies } from './PlatformDependenciesModule.ts';
 
 type RequireExFn = NodeRequire & typeof customRequire;
 type RequireFn = (id: string) => unknown;
@@ -65,12 +65,14 @@ export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pl
   plugin = plugin_;
   pluginRequire = pluginRequire_;
 
-  const platformDependencies = await getPlatformDependencies();
-  fileSystemWrapper = platformDependencies.getFileSystemWrapper(plugin.app);
   vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);
 
+  const platformDependencies = await getPlatformDependencies();
+  fileSystemWrapper = platformDependencies.fileSystemWrapper;
+  fileSystemWrapper.register(plugin.app);
+
   originalRequire = window.require;
-  requireHandler = platformDependencies.getRequireHandler(originalRequire);
+  requireHandler = platformDependencies.requireHandler;
 
   customRequireWithCache = Object.assign(customRequire, {
     cache: {}
@@ -79,7 +81,7 @@ export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pl
 
   window.require = customRequireWithCache;
   plugin.register(() => window.require = originalRequire);
-  requireHandler.register(plugin, customRequireWithCache);
+  requireHandler.register(plugin, originalRequire, customRequireWithCache);
 
   window.dynamicImport = dynamicImport;
   plugin.register(() => delete window.dynamicImport);
@@ -197,6 +199,11 @@ function requireSpecialModule(id: string): unknown {
 
   if (builtInModuleNames.includes(cleanId)) {
     return addToCacheAndReturn(id, pluginRequire(cleanId));
+  }
+
+  const module = requireHandler.requireSpecialModule(id);
+  if (module) {
+    return addToCacheAndReturn(id, module);
   }
 
   return null;

@@ -1,17 +1,11 @@
-import type { App } from 'obsidian';
+import type { PlatformDependencies } from '../PlatformDependencies.ts';
 
-import type { FileSystemWrapper } from '../FileSystemWrapper.ts';
+import { fileSystemWrapper } from './MobileFileSystemWrapper.ts';
+import { requireHandler } from './MobileRequireHandler.ts';
+import { registerScriptDirectoryWatcher } from './MobileScriptDirectoryWatcher.ts';
 
-import { MobileFileSystemWrapper } from './MobileFileSystemWrapper.ts';
-import type { RequireHandler } from '../RequireHandler.ts';
-import { MobileRequireHandler } from './MobileRequireHandler.ts';
-
-export { registerScriptDirectoryWatcher } from './MobileScriptDirectoryWatcher.ts';
-
-export function getFileSystemWrapper(app: App): FileSystemWrapper {
-  return new MobileFileSystemWrapper(app);
-}
-
-export function getRequireHandler(originalRequire: NodeRequire): RequireHandler {
-  return new MobileRequireHandler(originalRequire);
-}
+export const platformDependencies: PlatformDependencies = {
+  fileSystemWrapper,
+  registerScriptDirectoryWatcher,
+  requireHandler
+};
