@@ -7,8 +7,8 @@ interface PlatformDependenciesModule {
 }
 
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {
-  const module = (Platform.isMobile
-    ? await import('./Mobile/MobileDependencies.ts') as PlatformDependenciesModule
-    : await import('./Desktop/DesktopDependencies.ts') as PlatformDependenciesModule);
+  const module = Platform.isMobile
+    ? await import('./Mobile/Dependencies.ts') as PlatformDependenciesModule
+    : await import('./Desktop/Dependencies.ts') as PlatformDependenciesModule;
   return module.platformDependencies;
 }
