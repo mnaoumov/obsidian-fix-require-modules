@@ -38,6 +38,7 @@ let pluginRequire!: RequireFn;
 let originalRequire: RequireExFn;
 let requireHandler: RequireHandler;
 let customRequireWithCache: RequireExFn;
+let vaultAbsolutePath: string;
 
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
@@ -61,10 +62,12 @@ export function clearCache(): void {
 let fileSystemWrapper: FileSystemWrapper;
 
 export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: RequireFn): Promise<void> {
-  const platformDependencies = await getPlatformDependencies();
-  fileSystemWrapper = platformDependencies.getFileSystemWrapper(plugin_.app);
   plugin = plugin_;
   pluginRequire = pluginRequire_;
+
+  const platformDependencies = await getPlatformDependencies();
+  fileSystemWrapper = platformDependencies.getFileSystemWrapper(plugin.app);
+  vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);
 
   originalRequire = window.require;
   requireHandler = platformDependencies.getRequireHandler(originalRequire);
@@ -118,7 +121,7 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
 
   let parentPath = options.parentPath ? toPosixPath(options.parentPath) : getParentPathFromCallStack() ?? plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
   if (!isAbsolute(parentPath)) {
-    parentPath = join(plugin.app.vault.adapter.basePath, parentPath);
+    parentPath = join(vaultAbsolutePath, parentPath);
   }
   const parentDir = dirname(parentPath);
 
@@ -222,12 +225,12 @@ function resolve(id: string, parentDir: string): ResolvedId {
   const VAULT_ROOT_PREFIX = '//';
 
   if (id.startsWith(VAULT_ROOT_PREFIX)) {
-    return { id: join(plugin.app.vault.adapter.basePath, trimStart(id, VAULT_ROOT_PREFIX)), type: 'path' };
+    return { id: join(vaultAbsolutePath, trimStart(id, VAULT_ROOT_PREFIX)), type: 'path' };
   }
 
   const MODULES_ROOT_PATH_PREFIX = '/';
   if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
-    return { id: join(plugin.app.vault.adapter.basePath, plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), type: 'path' };
+    return { id: join(vaultAbsolutePath, plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), type: 'path' };
   }
 
   if (isAbsolute(id)) {
