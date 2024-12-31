@@ -1,42 +1,72 @@
-import type {
-  PluginManifest,
-  PluginSettingTab
-} from 'obsidian';
-
-import {
-  App,
-  Platform,
-  Plugin
-} from 'obsidian';
-import { EmptySettings } from 'obsidian-dev-utils/obsidian/Plugin/EmptySettings';
+import { PluginSettingTab } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import { builtInModuleNames } from './BuiltInModuleNames.ts';
+import type { PlatformDependencies } from './PlatformDependencies.ts';
 
-interface ChildPluginModule {
-  FixRequireModulesPlugin: new (app: App, manifest: PluginManifest) => Plugin;
-}
+import {
+  registerCodeButtonBlock,
+  unloadTempPlugins
+} from './CodeButtonBlock.ts';
+import {
+  clearCache,
+  registerCustomRequire
+} from './CustomRequire.ts';
+import { registerDynamicImport } from './DynamicImport.ts';
+import { downloadEsbuild } from './esbuild.ts';
+import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
+import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
+import { getPlatformDependencies } from './PlatformDependencies.ts';
+import {
+  cleanupStartupScript,
+  invokeStartupScript,
+  selectAndInvokeScript
+} from './Script.ts';
 
-export class FixRequireModulesPlugin extends PluginBase {
-  public readonly builtInModuleNames = Object.freeze(builtInModuleNames);
+export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
+  private platformDependencies!: PlatformDependencies;
 
-  protected override createPluginSettings(): EmptySettings {
-    return new EmptySettings();
+  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    this.platformDependencies.registerScriptDirectoryWatcher(this);
+  }
+
+  protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {
+    return new FixRequireModulesPluginSettings(data);
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return null;
+    return new FixRequireModulesPluginSettingsTab(this);
+  }
+
+  protected override async onLayoutReady(): Promise<void> {
+    await downloadEsbuild(this);
+    registerCustomRequire(this, require);
+    registerDynamicImport(this);
+
+    await this.saveSettings(this.settings);
+    await invokeStartupScript(this);
+    this.register(() => cleanupStartupScript(this));
   }
 
   protected override async onloadComplete(): Promise<void> {
-    let childPluginModule: ChildPluginModule;
-    if (Platform.isMobile) {
-      childPluginModule = await import('./Mobile/FixRequireModulesPlugin.ts') as ChildPluginModule;
-    } else {
-      childPluginModule = await import('./Desktop/FixRequireModulesPlugin.ts') as ChildPluginModule;
-    }
+    this.platformDependencies = await getPlatformDependencies();
+    registerCodeButtonBlock(this);
+    this.addCommand({
+      callback: () => selectAndInvokeScript(this),
+      id: 'invokeScript',
+      name: 'Invoke Script: <<Choose>>'
+    });
 
-    const childPlugin = new childPluginModule.FixRequireModulesPlugin(this.app, this.manifest);
-    this.addChild(childPlugin);
+    this.addCommand({
+      callback: clearCache,
+      id: 'clearCache',
+      name: 'Clear Cache'
+    });
+
+    this.addCommand({
+      callback: unloadTempPlugins,
+      id: 'unload-temp-plugins',
+      name: 'Unload Temp Plugins'
+    });
   }
 }
