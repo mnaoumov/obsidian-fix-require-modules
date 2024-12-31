@@ -97,7 +97,14 @@ export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<Fi
       .addText((text) => {
         extend(text).bind(this.plugin, 'mobileChangesCheckingIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
-          pluginSettingsToComponentValueConverter: (value: number) => value.toString()
+          pluginSettingsToComponentValueConverter: (value: number) => value.toString(),
+          valueValidator(value: string) {
+            const number = parseInt(value, 10);
+            if (isNaN(number) || number < 1) {
+              return 'Interval must be greater than 0';
+            }
+            return null;
+          }
         })
           .setPlaceholder('30');
 
