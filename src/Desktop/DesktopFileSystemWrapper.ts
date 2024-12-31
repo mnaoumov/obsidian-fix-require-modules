@@ -5,5 +5,7 @@ import type { FileSystemWrapper } from '../FileSystemWrapper.ts';
 export class DesktopFileSystemWrapper implements FileSystemWrapper {
   public readonly hasSyncMethods = true;
 
-  public constructor(private readonly app: App) { }
+  public constructor(private readonly app: App) {
+    console.log(this.app);
+  }
 }
