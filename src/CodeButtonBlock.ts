@@ -5,9 +5,7 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import babel from '@babel/core';
-import babelPluginTransformModulesCommonJS from '@babel/plugin-transform-modules-commonjs';
-import babelPresetTypeScript from '@babel/preset-typescript';
+import babel from '@babel/standalone';
 import { Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
@@ -57,7 +55,7 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   const sourceUrl = convertPathToObsidianUrl(app.vault.adapter.getFullPath(codeButtonBlockScriptPath));
 
   try {
-    const wrappedCode = await makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
+    const wrappedCode = makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
     await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
     const codeButtonBlockScriptWrapper = customRequire(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper((tempPluginClass) => {
@@ -76,20 +74,20 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   }
 }
 
-async function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): Promise<string> {
-  let result = await babel.transformAsync(source, {
+function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): string {
+  let result = babel.transform(source, {
     cwd: sourceDir,
     filename: sourceFileName,
     plugins: [
-      babelPluginTransformModulesCommonJS
+      'transform-modules-commonjs'
     ],
     presets: [
-      babelPresetTypeScript
+      'typescript'
     ],
     sourceMaps: 'inline'
   });
 
-  result = await babel.transformAsync(result?.code ?? '', {
+  result = babel.transform(result.code ?? '', {
     cwd: sourceDir,
     filename: sourceFileName,
     plugins: [
@@ -99,7 +97,7 @@ async function makeWrapperScript(source: string, sourceFileName: string, sourceD
     sourceMaps: 'inline'
   });
 
-  return result?.code ?? '';
+  return result.code ?? '';
 }
 
 function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {

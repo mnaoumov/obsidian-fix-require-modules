@@ -11,8 +11,6 @@ import {
   clearCache,
   registerCustomRequire
 } from './CustomRequire.ts';
-import { registerDynamicImport } from './DynamicImport.ts';
-import { downloadEsbuild } from './esbuild.ts';
 import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
 import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
@@ -39,9 +37,7 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
   }
 
   protected override async onLayoutReady(): Promise<void> {
-    await downloadEsbuild(this);
-    registerCustomRequire(this, require);
-    registerDynamicImport(this);
+    await registerCustomRequire(this, require);
 
     await this.saveSettings(this.settings);
     await invokeStartupScript(this);
