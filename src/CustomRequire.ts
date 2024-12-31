@@ -108,7 +108,7 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
     return specialModule;
   }
 
-  let parentPath = options.parentPath ? toPosixPath(options.parentPath) : getParentPathFromCallerStack() ?? plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
+  let parentPath = options.parentPath ? toPosixPath(options.parentPath) : getParentPathFromCallStack() ?? plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
   if (!isAbsolute(parentPath)) {
     parentPath = join(plugin.app.vault.adapter.basePath, parentPath);
   }
@@ -162,13 +162,13 @@ async function dynamicImport(id: string, options: Partial<CustomRequireOptions> 
   return await requireWrapper((require) => require(id, options));
 }
 
-function getParentPathFromCallerStack(): null | string {
+function getParentPathFromCallStack(): null | string {
   /**
  * The caller line index is 3 because the call stack is as follows:
  *
  * 0: Error
- * 1:     at getCurrentScriptFullPath
- * 2:     at getParentPathFromCallerStack
+ * 1:     at getParentPathFromCallerStack
+ * 2:     at at Module.customRequire [as require]
  * 3:     at functionName (path/to/caller.js:123:45)
  */
   const CALLER_LINE_INDEX = 3;
