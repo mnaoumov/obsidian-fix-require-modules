@@ -90,5 +90,19 @@ export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<Fi
         button.setButtonText('Clear cache')
           .onClick(clearCache)
       );
+
+    new Setting(this.containerEl)
+      .setName('Mobile changes checking interval')
+      .setDesc('Interval in seconds to check for changes in the invocable scripts directory (only on mobile)')
+      .addText((text) => {
+        extend(text).bind(this.plugin, 'mobileChangesCheckingIntervalInSeconds', {
+          componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
+          pluginSettingsToComponentValueConverter: (value: number) => value.toString()
+        })
+          .setPlaceholder('30');
+
+        text.inputEl.type = 'number';
+        text.inputEl.min = '1';
+      });
   }
 }

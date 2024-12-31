@@ -2,6 +2,7 @@ import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSet
 
 export class FixRequireModulesPluginSettings extends PluginSettingsBase {
   public invocableScriptsDirectory = '';
+  public mobileChangesCheckingIntervalInSeconds = 30;
   public modulesRoot = '';
   public startupScriptPath = '';
 
