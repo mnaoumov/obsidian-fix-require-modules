@@ -15,6 +15,7 @@ import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
+import type { RequireHandler } from './RequireHandler.ts';
 
 type RequireExFn = NodeRequire & typeof customRequire;
 type RequireFn = (id: string) => unknown;
@@ -34,7 +35,10 @@ function splitQuery(str: string): SplitQueryResult {
 
 let plugin!: FixRequireModulesPlugin;
 let pluginRequire!: RequireFn;
+let originalRequire: RequireExFn;
+let requireHandler: RequireHandler;
 let customRequireWithCache: RequireExFn;
+
 const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
 const moduleDependencies = new Map<string, Set<string>>();
@@ -57,11 +61,14 @@ export function clearCache(): void {
 let fileSystemWrapper: FileSystemWrapper;
 
 export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: RequireFn): Promise<void> {
-  fileSystemWrapper = (await getPlatformDependencies()).getFileSystemWrapper(plugin_.app);
+  const platformDependencies = await getPlatformDependencies();
+  fileSystemWrapper = platformDependencies.getFileSystemWrapper(plugin_.app);
   plugin = plugin_;
   pluginRequire = pluginRequire_;
 
-  const originalRequire = window.require;
+  originalRequire = window.require;
+  requireHandler = platformDependencies.getRequireHandler(originalRequire);
+
   customRequireWithCache = Object.assign(customRequire, {
     cache: {}
   }, originalRequire);
@@ -69,6 +76,7 @@ export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pl
 
   window.require = customRequireWithCache;
   plugin.register(() => window.require = originalRequire);
+  requireHandler.register(plugin, customRequireWithCache);
 
   window.dynamicImport = dynamicImport;
   plugin.register(() => delete window.dynamicImport);
