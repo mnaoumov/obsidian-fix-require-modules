@@ -3,9 +3,9 @@
   "version": "7.0.0",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
-    "build": "tsx scripts/build.ts",
+    "build": "obsidian-dev-utils build",
     "build:validate": "obsidian-dev-utils build:validate",
-    "dev": "tsx scripts/dev.ts",
+    "dev": "obsidian-dev-utils dev",
     "lint": "obsidian-dev-utils lint",
     "lint:fix": "obsidian-dev-utils lint:fix",
     "spellcheck": "obsidian-dev-utils spellcheck",
@@ -15,17 +15,13 @@
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
-    "@babel/preset-typescript": "^7.26.0",
+    "@babel/standalone": "^7.26.4",
     "@babel/types": "^7.26.3",
-    "@tsconfig/strictest": "^2.0.5",
-    "@types/babel__core": "^7.20.5",
+    "@types/babel__standalone": "^7.1.9",
     "@types/node": "^22.10.2",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^11.2.0",
-    "obsidian-typings": "^2.7.0",
-    "tsx": "^4.19.2"
+    "obsidian-dev-utils": "^11.3.0",
+    "obsidian-typings": "^2.8.0"
   },
   "type": "module"
 }
