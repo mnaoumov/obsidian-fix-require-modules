@@ -6,7 +6,7 @@ import { DesktopFileSystemWrapper } from './DesktopFileSystemWrapper.ts';
 import { DesktopRequireHandler } from './DesktopRequireHandler.ts';
 import type { RequireHandler } from '../RequireHandler.ts';
 
-export { registerScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
+export { registerScriptDirectoryWatcher } from './DesktopScriptDirectoryWatcher.ts';
 
 export function getFileSystemWrapper(app: App): FileSystemWrapper {
   return new DesktopFileSystemWrapper(app);

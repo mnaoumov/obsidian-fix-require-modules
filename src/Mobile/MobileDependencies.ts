@@ -6,7 +6,7 @@ import { MobileFileSystemWrapper } from './MobileFileSystemWrapper.ts';
 import type { RequireHandler } from '../RequireHandler.ts';
 import { MobileRequireHandler } from './MobileRequireHandler.ts';
 
-export { registerScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
+export { registerScriptDirectoryWatcher } from './MobileScriptDirectoryWatcher.ts';
 
 export function getFileSystemWrapper(app: App): FileSystemWrapper {
   return new MobileFileSystemWrapper(app);
