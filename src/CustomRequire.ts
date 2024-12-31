@@ -144,7 +144,7 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
 function addToCacheAndReturn(id: string, module: unknown): unknown {
   modulesCache[id] = {
     children: [],
-    exports: {},
+    exports: module,
     filename: '',
     id,
     isPreloading: false,
