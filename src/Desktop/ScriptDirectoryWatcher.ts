@@ -11,12 +11,10 @@ import { join } from 'obsidian-dev-utils/Path';
 
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
-import { registerInvocableScripts } from '../Script.ts';
-
 let invocableScriptsDirectoryWatcher: FSWatcher | null = null;
 let wasRegisteredInPlugin = false;
 
-export function registerScriptDirectoryWatcher(plugin: FixRequireModulesPlugin): void {
+export function registerScriptDirectoryWatcher(plugin: FixRequireModulesPlugin, onChange: () => Promise<void>): void {
   if (!wasRegisteredInPlugin) {
     plugin.register(stopInvocableScriptsDirectoryWatcher);
     wasRegisteredInPlugin = true;
@@ -31,7 +29,7 @@ export function registerScriptDirectoryWatcher(plugin: FixRequireModulesPlugin):
   const invocableScriptsDirectoryFullPath = join(plugin.app.vault.adapter.basePath, plugin.settingsCopy.getInvocableScriptsDirectory());
   invocableScriptsDirectoryWatcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
     if (eventType === 'rename') {
-      invokeAsyncSafely(() => registerInvocableScripts(plugin));
+      invokeAsyncSafely(() => onChange());
     }
   });
 }

@@ -17,6 +17,7 @@ import { getPlatformDependencies } from './PlatformDependencies.ts';
 import {
   cleanupStartupScript,
   invokeStartupScript,
+  registerInvocableScripts,
   selectAndInvokeScript
 } from './Script.ts';
 
@@ -25,7 +26,7 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
 
   public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
     await super.saveSettings(newSettings);
-    this.platformDependencies.registerScriptDirectoryWatcher(this);
+    this.platformDependencies.registerScriptDirectoryWatcher(this, () => registerInvocableScripts(this));
   }
 
   protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {
