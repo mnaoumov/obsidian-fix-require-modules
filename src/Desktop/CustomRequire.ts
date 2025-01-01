@@ -151,29 +151,29 @@ class CustomRequireImpl extends CustomRequire {
     return this.findExportsEntryPoint(packageJson.exports) ?? packageJson.main ?? 'index.js';
   }
 
-  private findExportsEntryPoint(_exports: PackageJson['exports'], isTopLevel = true): null | string {
-    if (!_exports) {
+  private findExportsEntryPoint(exportsNode: PackageJson['exports'], isTopLevel = true): null | string {
+    if (!exportsNode) {
       return null;
     }
 
-    if (typeof _exports === 'string') {
-      return _exports;
+    if (typeof exportsNode === 'string') {
+      return exportsNode;
     }
 
     let exportConditions;
 
-    if (Array.isArray(_exports)) {
-      if (!_exports[0]) {
+    if (Array.isArray(exportsNode)) {
+      if (!exportsNode[0]) {
         return null;
       }
 
-      if (typeof _exports[0] === 'string') {
-        return _exports[0];
+      if (typeof exportsNode[0] === 'string') {
+        return exportsNode[0];
       }
 
-      exportConditions = _exports[0];
+      exportConditions = exportsNode[0];
     } else {
-      exportConditions = _exports;
+      exportConditions = exportsNode;
     }
 
     const path = exportConditions['require'] ?? exportConditions['import'] ?? exportConditions['default'];
@@ -224,11 +224,11 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
       const moduleFn = new Function('require', 'module', 'exports', contentCommonJs ?? '') as ModuleFn;
-      const _exports = {};
-      const module = { exports: _exports };
+      const exports = {};
+      const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      moduleFn(childRequire, module, _exports);
-      this.addToModuleCache(path, _exports);
+      moduleFn(childRequire, module, exports);
+      this.addToModuleCache(path, exports);
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
     }
