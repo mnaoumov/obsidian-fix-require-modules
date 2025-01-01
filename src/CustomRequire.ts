@@ -128,7 +128,13 @@ export abstract class CustomRequire {
     const callStackLines = new Error().stack?.split('\n') ?? [];
     console.debug({ callStackLines });
     const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
-    return callStackMatch?.[1] ?? null;
+    const parentPath = callStackMatch?.[1] ?? null;
+
+    if (parentPath?.includes('<anonymous>')) {
+      return null;
+    }
+
+    return parentPath;
   }
 
   private require(id: string, options: Partial<CustomRequireOptions> = {}): unknown {
