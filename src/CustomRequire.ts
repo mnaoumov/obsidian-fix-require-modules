@@ -15,7 +15,7 @@ import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { RequireHandler } from './RequireHandler.ts';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
-import { getPlatformDependencies } from './PlatformDependenciesModule.ts';
+import { getPlatformDependencies } from './PlatformDependencies.ts';
 
 type RequireExFn = NodeRequire & typeof customRequire;
 type RequireFn = (id: string) => unknown;

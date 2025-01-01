@@ -13,7 +13,7 @@ import {
 } from './CustomRequire.ts';
 import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
 import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
-import { getPlatformDependencies } from './PlatformDependenciesModule.ts';
+import { getPlatformDependencies } from './PlatformDependencies.ts';
 import {
   cleanupStartupScript,
   invokeStartupScript,
