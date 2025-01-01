@@ -18,21 +18,24 @@ import type { RequireExFn } from './types.js';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 
+export interface CustomRequireOptions {
+  cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
+  parentPath?: string;
+}
+
 type PluginRequireFn = (id: string) => unknown;
+
+interface ResolvedId {
+  id: string;
+  type: 'module' | 'path' | 'url';
+}
 
 interface SplitQueryResult {
   cleanStr: string;
   query: string;
 }
 
-function splitQuery(str: string): SplitQueryResult {
-  const queryIndex = str.indexOf('?');
-  return {
-    cleanStr: queryIndex !== -1 ? str.slice(0, queryIndex) : str,
-    query: queryIndex !== -1 ? str.slice(queryIndex) : ''
-  };
-}
-
+let fileSystemWrapper: FileSystemWrapper;
 let plugin!: FixRequireModulesPlugin;
 let pluginRequire!: PluginRequireFn;
 let originalRequire: NodeRequire;
@@ -44,6 +47,7 @@ const moduleTimestamps = new Map<string, number>();
 const updatedModuleTimestamps = new Map<string, number>();
 const moduleDependencies = new Map<string, Set<string>>();
 let modulesCache: NodeJS.Dict<NodeModule>;
+
 export function clearCache(): void {
   moduleTimestamps.clear();
   updatedModuleTimestamps.clear();
@@ -57,18 +61,6 @@ export function clearCache(): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete modulesCache[key];
   }
-}
-
-let fileSystemWrapper: FileSystemWrapper;
-
-export interface CustomRequireOptions {
-  cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
-  parentPath?: string;
-}
-
-interface ResolvedId {
-  id: string;
-  type: 'module' | 'path' | 'url';
 }
 
 export function customRequire(id: string, options: Partial<CustomRequireOptions> = {}): unknown {
@@ -241,4 +233,12 @@ function resolve(id: string, parentDir: string): ResolvedId {
   }
 
   return { id, type: 'module' };
+}
+
+function splitQuery(str: string): SplitQueryResult {
+  const queryIndex = str.indexOf('?');
+  return {
+    cleanStr: queryIndex !== -1 ? str.slice(0, queryIndex) : str,
+    query: queryIndex !== -1 ? str.slice(queryIndex) : ''
+  };
 }
