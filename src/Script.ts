@@ -10,6 +10,7 @@ import { basename } from 'obsidian-dev-utils/Path';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 
+import { requireVaultScriptAsync } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 
 interface CleanupScript extends Script {
@@ -28,7 +29,7 @@ export async function cleanupStartupScript(plugin: FixRequireModulesPlugin): Pro
   }
 
   const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
-  const script = window.require(plugin.app.vault.adapter.getFullPath(startupScriptPath)) as Partial<CleanupScript>;
+  const script = await requireVaultScriptAsync(startupScriptPath) as Partial<CleanupScript>;
   await script.cleanup?.(plugin.app);
 }
 
@@ -132,9 +133,9 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
   console.debug(`Invoking ${scriptString}: ${scriptPath}`);
   try {
     if (!await app.vault.adapter.exists(scriptPath)) {
-      new Error(`Script not found: ${scriptPath}`);
+      throw new Error(`Script not found: ${scriptPath}`);
     }
-    const script = window.require(app.vault.adapter.getFullPath(scriptPath)) as Partial<Script>;
+    const script = await requireVaultScriptAsync(scriptPath) as Partial<Script>;
     const invokeFn = script.invoke?.bind(script);
     if (typeof invokeFn !== 'function') {
       throw new Error(`${scriptPath} does not export a function`);

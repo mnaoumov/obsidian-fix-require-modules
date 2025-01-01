@@ -45,6 +45,7 @@ interface SplitQueryResult {
 }
 
 export const MODULE_NAME_SEPARATOR = '*';
+const VAULT_ROOT_PREFIX = '//';
 
 export abstract class CustomRequire {
   protected readonly moduleDependencies = new Map<string, Set<string>>();
@@ -159,8 +160,6 @@ await requireAsyncWrapper((require) => {
       return { resolvedId: id, resolvedType: ResolvedType.Url };
     }
 
-    const VAULT_ROOT_PREFIX = '//';
-
     if (id.startsWith(VAULT_ROOT_PREFIX)) {
       return { resolvedId: join(this.vaultAbsolutePath, trimStart(id, VAULT_ROOT_PREFIX)), resolvedType: ResolvedType.Path };
     }
@@ -272,6 +271,14 @@ ${this.getRequireAsyncAdvice(true)}`);
   private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
     return await requireFn(this.requireWithCache);
   }
+}
+
+export function requireVaultScriptAsync(id: string): Promise<unknown> {
+  if (!window.requireAsync) {
+    throw new Error('requireAsync is not available');
+  }
+
+  return window.requireAsync(VAULT_ROOT_PREFIX + id);
 }
 
 function splitQuery(str: string): SplitQueryResult {

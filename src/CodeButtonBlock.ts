@@ -12,6 +12,7 @@ import { join } from 'obsidian-dev-utils/Path';
 
 import { babelPluginFixSourceMap } from './babel/babelPluginFixSourceMap.ts';
 import { babelPluginWrapInDefaultAsyncFunction } from './babel/babelPluginWrapInDefaultAsyncFunction.ts';
+import { requireVaultScriptAsync } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
@@ -56,7 +57,7 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   try {
     const wrappedCode = makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
     await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
-    const codeButtonBlockScriptWrapper = window.require(app.vault.adapter.getFullPath(codeButtonBlockScriptWrapperPath)) as CodeButtonBlockScriptWrapper;
+    const codeButtonBlockScriptWrapper = await requireVaultScriptAsync(codeButtonBlockScriptWrapperPath) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper((tempPluginClass) => {
       registerTempPlugin(plugin, tempPluginClass);
     });

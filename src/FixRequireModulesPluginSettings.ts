@@ -1,4 +1,5 @@
 import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
+import { join } from 'obsidian-dev-utils/Path';
 
 export class FixRequireModulesPluginSettings extends PluginSettingsBase {
   public invocableScriptsDirectory = '';
@@ -28,6 +29,6 @@ export class FixRequireModulesPluginSettings extends PluginSettingsBase {
       return path;
     }
 
-    return this.modulesRoot + '/' + path;
+    return join(this.modulesRoot, path);
   }
 }
