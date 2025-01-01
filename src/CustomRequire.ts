@@ -227,7 +227,7 @@ export abstract class CustomRequire {
     }
     const parentDir = dirname(parentPath);
 
-    if (id.startsWith('./') || !id.startsWith('../')) {
+    if (id.startsWith('./') || id.startsWith('../')) {
       return { id: join(parentDir, id), type: 'path' };
     }
 
