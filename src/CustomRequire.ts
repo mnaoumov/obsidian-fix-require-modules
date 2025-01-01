@@ -76,13 +76,7 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
     return specialModule;
   }
 
-  let parentPath = options.parentPath ? toPosixPath(options.parentPath) : getParentPathFromCallStack() ?? plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
-  if (!isAbsolute(parentPath)) {
-    parentPath = join(vaultAbsolutePath, parentPath);
-  }
-  const parentDir = dirname(parentPath);
-
-  const { id: resolvedId, type } = resolve(id, parentDir);
+  const { id: resolvedId, type } = resolve(id, options.parentPath);
   const hasCachedModule = Object.prototype.hasOwnProperty.call(modulesCache, resolvedId);
 
   if (hasCachedModule) {
@@ -197,7 +191,7 @@ async function requireWrapper<T>(requireFn: (require: RequireExFn) => MaybePromi
   return await requireFn(customRequireWithCache);
 }
 
-function resolve(id: string, parentDir: string): ResolvedId {
+function resolve(id: string, parentPath?: string): ResolvedId {
   id = toPosixPath(id);
 
   if (isUrl(id)) {
@@ -228,11 +222,17 @@ function resolve(id: string, parentDir: string): ResolvedId {
     return { id, type: 'path' };
   }
 
+  parentPath = parentPath ? toPosixPath(parentPath) : getParentPathFromCallStack() ?? plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
+  if (!isAbsolute(parentPath)) {
+    parentPath = join(vaultAbsolutePath, parentPath);
+  }
+  const parentDir = dirname(parentPath);
+
   if (id.startsWith('./') || !id.startsWith('../')) {
     return { id: join(parentDir, id), type: 'path' };
   }
 
-  return { id, type: 'module' };
+  return { id: `${parentDir}*${id}`, type: 'module' };
 }
 
 function splitQuery(str: string): SplitQueryResult {
