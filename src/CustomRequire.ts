@@ -15,18 +15,28 @@ import type { RequireExFn } from './types.js';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 
+export enum CacheInvalidationMode {
+  Always = 'always',
+  Never = 'never',
+  WhenPossible = 'whenPossible'
+}
+
+export enum ResolvedType {
+  Module = 'module',
+  Path = 'path',
+  Url = 'url'
+}
+
 export type PluginRequireFn = (id: string) => unknown;
 
 export interface RequireOptions {
-  cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
+  cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
 }
 
-export type ResolvedType = 'module' | 'path' | 'url';
-
-interface ResolvedId {
-  id: string;
-  type: ResolvedType;
+interface ResolveResult {
+  resolvedId: string;
+  resolvedType: ResolvedType;
 }
 
 interface SplitQueryResult {
@@ -101,6 +111,24 @@ export abstract class CustomRequire {
 
   protected abstract canRequireSync(type: ResolvedType): boolean;
 
+  protected getRequireAsyncAdvice(isNewSentence?: boolean): string {
+    let advice = `consider using
+
+const module = await requireAsync(id);
+
+or
+
+await requireAsyncWrapper((require) => {
+  const module = require(id);
+});`;
+
+    if (isNewSentence) {
+      advice = advice.charAt(0).toUpperCase() + advice.slice(1);
+    }
+
+    return advice;
+  }
+
   protected requireSpecialModule(id: string): unknown {
     if (id === 'obsidian/app') {
       return this.plugin.app;
@@ -113,7 +141,51 @@ export abstract class CustomRequire {
     return null;
   }
 
-  protected abstract requireSync(id: string, type: ResolvedType): unknown;
+  protected abstract requireSync(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
+
+  protected resolve(id: string, parentPath?: string): ResolveResult {
+    id = toPosixPath(id);
+
+    if (isUrl(id)) {
+      const FILE_URL_PREFIX = 'file:///';
+      if (id.toLowerCase().startsWith(FILE_URL_PREFIX)) {
+        return { resolvedId: id.slice(FILE_URL_PREFIX.length), resolvedType: ResolvedType.Path };
+      }
+
+      if (id.toLowerCase().startsWith(Platform.resourcePathPrefix)) {
+        return { resolvedId: id.slice(Platform.resourcePathPrefix.length), resolvedType: ResolvedType.Path };
+      }
+
+      return { resolvedId: id, resolvedType: ResolvedType.Url };
+    }
+
+    const VAULT_ROOT_PREFIX = '//';
+
+    if (id.startsWith(VAULT_ROOT_PREFIX)) {
+      return { resolvedId: join(this.vaultAbsolutePath, trimStart(id, VAULT_ROOT_PREFIX)), resolvedType: ResolvedType.Path };
+    }
+
+    const MODULES_ROOT_PATH_PREFIX = '/';
+    if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
+      return { resolvedId: join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), resolvedType: ResolvedType.Path };
+    }
+
+    if (isAbsolute(id)) {
+      return { resolvedId: id, resolvedType: ResolvedType.Path };
+    }
+
+    parentPath = parentPath ? toPosixPath(parentPath) : this.getParentPathFromCallStack() ?? this.plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
+    if (!isAbsolute(parentPath)) {
+      parentPath = join(this.vaultAbsolutePath, parentPath);
+    }
+    const parentDir = dirname(parentPath);
+
+    if (id.startsWith('./') || id.startsWith('../')) {
+      return { resolvedId: join(parentDir, id), resolvedType: ResolvedType.Path };
+    }
+
+    return { resolvedId: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, resolvedType: ResolvedType.Module };
+  }
 
   private getParentPathFromCallStack(): null | string {
     /**
@@ -140,9 +212,9 @@ export abstract class CustomRequire {
 
   private require(id: string, options: Partial<RequireOptions> = {}): unknown {
     const DEFAULT_OPTIONS: RequireOptions = {
-      cacheInvalidationMode: 'whenPossible'
+      cacheInvalidationMode: CacheInvalidationMode.WhenPossible
     };
-    options = {
+    const fullOptions = {
       ...DEFAULT_OPTIONS,
       ...options
     };
@@ -152,31 +224,32 @@ export abstract class CustomRequire {
       return specialModule;
     }
 
-    const { id: resolvedId, type } = this.resolve(id, options.parentPath);
+    const { resolvedId, resolvedType } = this.resolve(id, fullOptions.parentPath);
     const { cleanStr: cleanResolvedId, query } = splitQuery(resolvedId);
     const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
 
     if (hasCachedModule) {
-      switch (options.cacheInvalidationMode) {
-        case 'never':
+      switch (fullOptions.cacheInvalidationMode) {
+        case CacheInvalidationMode.Never:
           return this.modulesCache[resolvedId];
-        case 'whenPossible':
+        case CacheInvalidationMode.WhenPossible:
           if (query) {
             return this.modulesCache[resolvedId];
           }
 
-          if (!this.canRequireSync(type)) {
-            console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
+          if (!this.canRequireSync(resolvedType)) {
+            console.warn(`Cached module ${resolvedId} cannot be invalidated synchronously. The cached version will be used. `);
             return this.modulesCache[resolvedId];
           }
       }
     }
 
-    if (!this.canRequireSync(type)) {
-      throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait requireAsync('${resolvedId}');\nor\nawait requireAsyncWrapper((require) => {\n  // your code\n});`);
+    if (!this.canRequireSync(resolvedType)) {
+      throw new Error(`Cannot require '${resolvedId}' synchronously.
+${this.getRequireAsyncAdvice(true)}`);
     }
 
-    const module = this.requireSync(cleanResolvedId, type);
+    const module = this.requireSync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
     this.addToModuleCache(cleanResolvedId, module);
     return this.addToModuleCache(resolvedId, module);
   }
@@ -188,50 +261,6 @@ export abstract class CustomRequire {
 
   private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
     return await requireFn(this.requireWithCache);
-  }
-
-  private resolve(id: string, parentPath?: string): ResolvedId {
-    id = toPosixPath(id);
-
-    if (isUrl(id)) {
-      const FILE_URL_PREFIX = 'file:///';
-      if (id.toLowerCase().startsWith(FILE_URL_PREFIX)) {
-        return { id: id.slice(FILE_URL_PREFIX.length), type: 'path' };
-      }
-
-      if (id.toLowerCase().startsWith(Platform.resourcePathPrefix)) {
-        return { id: id.slice(Platform.resourcePathPrefix.length), type: 'path' };
-      }
-
-      return { id: id, type: 'url' };
-    }
-
-    const VAULT_ROOT_PREFIX = '//';
-
-    if (id.startsWith(VAULT_ROOT_PREFIX)) {
-      return { id: join(this.vaultAbsolutePath, trimStart(id, VAULT_ROOT_PREFIX)), type: 'path' };
-    }
-
-    const MODULES_ROOT_PATH_PREFIX = '/';
-    if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
-      return { id: join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), type: 'path' };
-    }
-
-    if (isAbsolute(id)) {
-      return { id, type: 'path' };
-    }
-
-    parentPath = parentPath ? toPosixPath(parentPath) : this.getParentPathFromCallStack() ?? this.plugin.app.workspace.getActiveFile()?.path ?? 'fakeRoot.js';
-    if (!isAbsolute(parentPath)) {
-      parentPath = join(this.vaultAbsolutePath, parentPath);
-    }
-    const parentDir = dirname(parentPath);
-
-    if (id.startsWith('./') || id.startsWith('../')) {
-      return { id: join(parentDir, id), type: 'path' };
-    }
-
-    return { id: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, type: 'module' };
   }
 }
 
