@@ -66,11 +66,7 @@ class CustomRequireImpl extends CustomRequire {
     return type !== ResolvedType.Url;
   }
 
-  protected override requireSpecialModule(id: string): unknown {
-    return super.requireSpecialModule(id) ?? this.electronModules.get(id) ?? this.requireNodeBuiltinModule(id);
-  }
-
-  protected override requireSync(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown {
+  protected override requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown {
     switch (type) {
       case ResolvedType.Module: {
         const [parentDir = '', moduleName = ''] = id.split(MODULE_NAME_SEPARATOR);
@@ -81,6 +77,10 @@ class CustomRequireImpl extends CustomRequire {
       case ResolvedType.Url:
         throw new Error('Cannot require synchronously from URL');
     }
+  }
+
+  protected override requireSpecialModule(id: string): unknown {
+    return super.requireSpecialModule(id) ?? this.electronModules.get(id) ?? this.requireNodeBuiltinModule(id);
   }
 
   private checkTimestampChangedAndReloadIfNeeded(path: string, cacheInvalidationMode: CacheInvalidationMode): boolean {

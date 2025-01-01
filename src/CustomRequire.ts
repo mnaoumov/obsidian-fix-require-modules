@@ -125,6 +125,8 @@ await requireAsyncWrapper((require) => {
     return advice;
   }
 
+  protected abstract requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
+
   protected requireSpecialModule(id: string): unknown {
     if (id === 'obsidian/app') {
       return this.plugin.app;
@@ -136,8 +138,6 @@ await requireAsyncWrapper((require) => {
 
     return null;
   }
-
-  protected abstract requireSync(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
 
   protected resolve(id: string, parentPath?: string): ResolveResult {
     id = toPosixPath(id);
@@ -253,7 +253,7 @@ await requireAsyncWrapper((require) => {
 ${this.getRequireAsyncAdvice(true)}`);
     }
 
-    const module = this.requireSync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
+    const module = this.requireNonCached(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
     this.addToModuleCache(cleanResolvedId, module);
     this.addToModuleCache(resolvedId, module);
     return module;
@@ -298,16 +298,10 @@ ${this.getRequireAsyncAdvice(true)}`);
       }
     }
 
-    const module = await this.requireAsyncInternal(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
+    const module = await this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
     this.addToModuleCache(cleanResolvedId, module);
     this.addToModuleCache(resolvedId, module);
     return module;
-  }
-
-  private async requireAsyncInternal(id: string, resolvedType: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
-    console.log('requireAsyncInternal', id, resolvedType, cacheInvalidationMode);
-    await Promise.resolve();
-    return null;
   }
 
   private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
@@ -317,6 +311,12 @@ ${this.getRequireAsyncAdvice(true)}`);
       await this.requireAsync(id, options);
     }
     return await requireFn(this.requireWithCache);
+  }
+
+  private async requireNonCachedAsync(id: string, resolvedType: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    console.log('requireAsyncInternal', id, resolvedType, cacheInvalidationMode);
+    await Promise.resolve();
+    return null;
   }
 }
 

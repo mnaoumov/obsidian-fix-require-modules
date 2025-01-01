@@ -5,7 +5,7 @@ class CustomRequireImpl extends CustomRequire {
     return false;
   }
 
-  protected override requireSync(): unknown {
+  protected override requireNonCached(): unknown {
     throw new Error('Cannot require synchronously on mobile');
   }
 }
