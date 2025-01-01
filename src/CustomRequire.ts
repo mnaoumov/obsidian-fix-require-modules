@@ -13,12 +13,12 @@ import { isUrl } from 'obsidian-dev-utils/url';
 import type { FileSystemWrapper } from './FileSystemWrapper.ts';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { RequireHandler } from './RequireHandler.ts';
+import type { RequireExFn } from './types.js';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 
-type RequireExFn = NodeRequire & typeof customRequire;
-type RequireFn = (id: string) => unknown;
+type PluginRequireFn = (id: string) => unknown;
 
 interface SplitQueryResult {
   cleanStr: string;
@@ -34,8 +34,8 @@ function splitQuery(str: string): SplitQueryResult {
 }
 
 let plugin!: FixRequireModulesPlugin;
-let pluginRequire!: RequireFn;
-let originalRequire: RequireExFn;
+let pluginRequire!: PluginRequireFn;
+let originalRequire: NodeRequire;
 let requireHandler: RequireHandler;
 let customRequireWithCache: RequireExFn;
 let vaultAbsolutePath: string;
@@ -61,44 +61,7 @@ export function clearCache(): void {
 
 let fileSystemWrapper: FileSystemWrapper;
 
-export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: RequireFn): Promise<void> {
-  plugin = plugin_;
-  pluginRequire = pluginRequire_;
-
-  vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);
-
-  const platformDependencies = await getPlatformDependencies();
-  fileSystemWrapper = platformDependencies.fileSystemWrapper;
-  fileSystemWrapper.register(plugin.app);
-
-  originalRequire = window.require;
-  requireHandler = platformDependencies.requireHandler;
-
-  customRequireWithCache = Object.assign(customRequire, {
-    cache: {}
-  }, originalRequire);
-  modulesCache = customRequireWithCache.cache;
-
-  window.require = customRequireWithCache;
-  plugin.register(() => window.require = originalRequire);
-  requireHandler.register(plugin, originalRequire, customRequireWithCache);
-
-  window.dynamicImport = dynamicImport;
-  plugin.register(() => delete window.dynamicImport);
-
-  window.requireWrapper = requireWrapper;
-  plugin.register(() => delete window.requireWrapper);
-}
-
-declare global {
-  interface Window {
-    dynamicImport?: typeof dynamicImport;
-    require?: RequireExFn;
-    requireWrapper?: typeof requireWrapper;
-  }
-}
-
-interface CustomRequireOptions {
+export interface CustomRequireOptions {
   cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
   parentPath?: string;
 }
@@ -152,6 +115,35 @@ export function customRequire(id: string, options: Partial<CustomRequireOptions>
 
   const module = null;
   return addToCacheAndReturn(resolvedId, module);
+}
+
+export async function registerCustomRequire(plugin_: FixRequireModulesPlugin, pluginRequire_: PluginRequireFn): Promise<void> {
+  plugin = plugin_;
+  pluginRequire = pluginRequire_;
+
+  vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);
+
+  const platformDependencies = await getPlatformDependencies();
+  fileSystemWrapper = platformDependencies.fileSystemWrapper;
+  fileSystemWrapper.register(plugin.app);
+
+  originalRequire = window.require;
+  requireHandler = platformDependencies.requireHandler;
+
+  customRequireWithCache = Object.assign(customRequire, {
+    cache: {}
+  }, originalRequire);
+  modulesCache = customRequireWithCache.cache;
+
+  window.require = customRequireWithCache;
+  plugin.register(() => window.require = originalRequire);
+  requireHandler.register(plugin, originalRequire, customRequireWithCache);
+
+  window.dynamicImport = dynamicImport;
+  plugin.register(() => delete window.dynamicImport);
+
+  window.requireWrapper = requireWrapper;
+  plugin.register(() => delete window.requireWrapper);
 }
 
 function addToCacheAndReturn(id: string, module: unknown): unknown {
