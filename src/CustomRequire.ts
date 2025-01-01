@@ -172,7 +172,7 @@ function getParentPathFromCallStack(): null | string {
 function requireSpecialModule(id: string): unknown {
   const cleanId = splitQuery(id).cleanStr;
   if (cleanId === 'obsidian/app') {
-    return addToCacheAndReturn(id, plugin.app);
+    return plugin.app;
   }
 
   if (builtInModuleNames.includes(cleanId)) {
@@ -181,7 +181,7 @@ function requireSpecialModule(id: string): unknown {
 
   const module = requireHandler.requireSpecialModule(id);
   if (module) {
-    return addToCacheAndReturn(id, module);
+    return module;
   }
 
   return null;
