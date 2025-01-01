@@ -37,13 +37,13 @@ interface SplitQueryResult {
 export const MODULE_NAME_SEPARATOR = '*';
 
 export abstract class CustomRequire {
+  protected readonly moduleDependencies = new Map<string, Set<string>>();
+  protected modulesCache!: NodeJS.Dict<NodeModule>;
+  protected readonly moduleTimestamps = new Map<string, number>();
   protected originalRequire!: NodeRequire;
   protected plugin!: FixRequireModulesPlugin;
   protected requireWithCache!: RequireExFn;
   protected vaultAbsolutePath!: string;
-  private moduleDependencies = new Map<string, Set<string>>();
-  private modulesCache!: NodeJS.Dict<NodeModule>;
-  private moduleTimestamps = new Map<string, number>();
   private pluginRequire!: PluginRequireFn;
   private updatedModuleTimestamps = new Map<string, number>();
 
@@ -83,6 +83,22 @@ export abstract class CustomRequire {
     plugin.register(() => delete window.requireAsyncWrapper);
   }
 
+  protected addToModuleCache(id: string, module: unknown): unknown {
+    this.modulesCache[id] = {
+      children: [],
+      exports: module,
+      filename: '',
+      id,
+      isPreloading: false,
+      loaded: true,
+      parent: null,
+      path: '',
+      paths: [],
+      require: this.requireWithCache
+    };
+    return module;
+  }
+
   protected abstract canRequireSync(type: ResolvedType): boolean;
 
   protected requireSpecialModule(id: string): unknown {
@@ -98,22 +114,6 @@ export abstract class CustomRequire {
   }
 
   protected abstract requireSync(id: string, type: ResolvedType): unknown;
-
-  private addToCacheAndReturn(id: string, module: unknown): unknown {
-    this.modulesCache[id] = {
-      children: [],
-      exports: module,
-      filename: '',
-      id,
-      isPreloading: false,
-      loaded: true,
-      parent: null,
-      path: '',
-      paths: [],
-      require: this.requireWithCache
-    };
-    return module;
-  }
 
   private getParentPathFromCallStack(): null | string {
     /**
@@ -177,8 +177,8 @@ export abstract class CustomRequire {
     }
 
     const module = this.requireSync(cleanResolvedId, type);
-    this.addToCacheAndReturn(cleanResolvedId, module);
-    return this.addToCacheAndReturn(resolvedId, module);
+    this.addToModuleCache(cleanResolvedId, module);
+    return this.addToModuleCache(resolvedId, module);
   }
 
   private async requireAsync(id: string, options: Partial<RequireOptions> = {}): Promise<unknown> {

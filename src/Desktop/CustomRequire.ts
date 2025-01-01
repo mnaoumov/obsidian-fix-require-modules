@@ -1,7 +1,10 @@
 import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
 import { FileSystemAdapter } from 'obsidian';
-import { join } from 'obsidian-dev-utils/Path';
+import {
+  basename,
+  join
+} from 'obsidian-dev-utils/Path';
 import { readPackageJsonSync } from 'obsidian-dev-utils/scripts/Npm';
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
@@ -12,10 +15,13 @@ import type {
 } from '../CustomRequire.ts';
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
+import { transformToCommonJs } from '../babel/Babel.ts';
 import {
   CustomRequire,
   MODULE_NAME_SEPARATOR
 } from '../CustomRequire.ts';
+
+type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => void;
 
 class CustomRequireImpl extends CustomRequire {
   private electronModules = new Map<string, unknown>();
@@ -73,6 +79,37 @@ class CustomRequireImpl extends CustomRequire {
     }
   }
 
+  private checkTimestampChangedAndReloadIfNeeded(path: string): boolean {
+    const timestamp = this.getTimestampSync(path);
+    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
+    if (timestamp !== cachedTimestamp) {
+      this.loadModuleSync(path);
+      this.moduleTimestamps.set(path, timestamp);
+      return true;
+    }
+
+    let ans = false;
+
+    const dependencies = this.moduleDependencies.get(path) ?? [];
+    for (const dependency of dependencies) {
+      if (this.checkTimestampChangedAndReloadIfNeeded(dependency)) {
+        ans = true;
+      }
+    }
+
+    return ans;
+  }
+
+  private childRequire(id: string, parentPath: string): unknown {
+    let dependencies = this.moduleDependencies.get(parentPath);
+    if (!dependencies) {
+      dependencies = new Set<string>();
+      this.moduleDependencies.set(parentPath, dependencies);
+    }
+    dependencies.add(id);
+    return window.require(id, { parentPath });
+  }
+
   private existsSync(path: string): boolean {
     return this.fs.existsSync(path);
   }
@@ -119,8 +156,32 @@ class CustomRequireImpl extends CustomRequire {
     return this.findExportsEntryPoint(exportConditions['.'], false);
   }
 
-  private getModificationTimeSync(path: string): number {
+  private getTimestampSync(path: string): number {
     return this.fs.statSync(path).mtimeMs;
+  }
+
+  private loadModuleSync(path: string): void {
+    const content = this.readFileSync(path);
+    const { code: contentCommonJs, hasTopLevelAwait } = transformToCommonJs(basename(path), content);
+    if (contentCommonJs === undefined) {
+      throw new Error('Failed to transform module to CommonJS');
+    }
+
+    if (hasTopLevelAwait) {
+      throw new Error('Top-level await is not supported.\nPlease use async/await inside a function or a block.\nOr use requireAsync() or requireAsyncWrapper((require) => {}) instead.');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const moduleFn = new Function('require', 'module', 'exports', contentCommonJs) as ModuleFn;
+    const _exports = {};
+    const module = { exports: _exports };
+    moduleFn(this.makeChildRequire(path), module, _exports);
+    this.addToModuleCache(path, _exports);
+  }
+
+  private makeChildRequire(parentPath: string): NodeRequire {
+    const childRequire = (id: string): unknown => this.childRequire(id, parentPath);
+    return Object.assign(childRequire, this.requireWithCache);
   }
 
   private readFileSync(path: string): string {
@@ -164,9 +225,8 @@ class CustomRequireImpl extends CustomRequire {
       throw new Error(`File not found: ${path}`);
     }
 
-    // const modificationTime = this.getModificationTimeSync(path);
-    // const content = this.readFileSync(path);
-    return '';
+    this.checkTimestampChangedAndReloadIfNeeded(path);
+    return this.modulesCache[path]?.exports;
   }
 }
 
