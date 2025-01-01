@@ -17,9 +17,8 @@ import type { PluginRequireFn } from '../CustomRequire.ts';
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
 import { transformToCommonJs } from '../babel/Babel.ts';
+import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
-  CacheInvalidationMode,
-
   CustomRequire,
   MODULE_NAME_SEPARATOR,
   ResolvedType

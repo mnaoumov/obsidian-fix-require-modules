@@ -18,7 +18,7 @@ import { nameof } from 'obsidian-dev-utils/Object';
 
 import type { RequireOptions } from '../CustomRequire.ts';
 
-import { CacheInvalidationMode } from '../CustomRequire.ts';
+import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 
 interface PluginState extends PluginPass {
   opts: {

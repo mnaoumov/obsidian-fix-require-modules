@@ -15,12 +15,7 @@ import type { RequireExFn } from './types.js';
 
 import { extractRequireArgsList } from './babel/babelPluginExtractRequireArgsList.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
-
-export enum CacheInvalidationMode {
-  Always = 'always',
-  Never = 'never',
-  WhenPossible = 'whenPossible'
-}
+import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 
 export enum ResolvedType {
   Module = 'module',
