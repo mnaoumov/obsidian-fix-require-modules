@@ -13,6 +13,7 @@ import { isUrl } from 'obsidian-dev-utils/url';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { RequireExFn } from './types.js';
 
+import { extractRequireArgsList } from './babel/babelPluginExtractRequireArgsList.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 
 export enum CacheInvalidationMode {
@@ -94,7 +95,7 @@ export abstract class CustomRequire {
     plugin.register(() => delete window.requireAsyncWrapper);
   }
 
-  protected addToModuleCache(id: string, module: unknown): unknown {
+  protected addToModuleCache(id: string, module: unknown): void {
     this.modulesCache[id] = {
       children: [],
       exports: module,
@@ -107,7 +108,6 @@ export abstract class CustomRequire {
       paths: [],
       require: this.requireWithCache
     };
-    return module;
   }
 
   protected abstract canRequireSync(type: ResolvedType): boolean;
@@ -260,15 +260,67 @@ ${this.getRequireAsyncAdvice(true)}`);
 
     const module = this.requireSync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
     this.addToModuleCache(cleanResolvedId, module);
-    return this.addToModuleCache(resolvedId, module);
+    this.addToModuleCache(resolvedId, module);
+    return module;
   }
 
   private async requireAsync(id: string, options: Partial<RequireOptions> = {}): Promise<unknown> {
-    // eslint-disable-next-line import-x/no-dynamic-require
-    return await this.requireAsyncWrapper((require) => require(id, options));
+    const DEFAULT_OPTIONS: RequireOptions = {
+      cacheInvalidationMode: CacheInvalidationMode.WhenPossible
+    };
+    const fullOptions = {
+      ...DEFAULT_OPTIONS,
+      ...options
+    };
+    const cleanId = splitQuery(id).cleanStr;
+    const specialModule = this.requireSpecialModule(cleanId);
+    if (specialModule) {
+      return specialModule;
+    }
+
+    const { resolvedId, resolvedType } = this.resolve(id, fullOptions.parentPath);
+
+    let cleanResolvedId: string;
+    let query: string;
+
+    if (resolvedType !== ResolvedType.Url) {
+      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
+    } else {
+      cleanResolvedId = resolvedId;
+      query = '';
+    }
+
+    const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
+
+    if (hasCachedModule) {
+      switch (fullOptions.cacheInvalidationMode) {
+        case CacheInvalidationMode.Never:
+          return this.modulesCache[resolvedId];
+        case CacheInvalidationMode.WhenPossible:
+          if (query) {
+            return this.modulesCache[resolvedId];
+          }
+      }
+    }
+
+    const module = await this.requireAsyncInternal(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
+    this.addToModuleCache(cleanResolvedId, module);
+    this.addToModuleCache(resolvedId, module);
+    return module;
+  }
+
+  private async requireAsyncInternal(id: string, resolvedType: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    console.log('requireAsyncInternal', id, resolvedType, cacheInvalidationMode);
+    await Promise.resolve();
+    return null;
   }
 
   private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
+    const requireArgsList = extractRequireArgsList(requireFn.toString());
+    for (const requireArgs of requireArgsList) {
+      const { id, options } = requireArgs;
+      await this.requireAsync(id, options);
+    }
     return await requireFn(this.requireWithCache);
   }
 }
