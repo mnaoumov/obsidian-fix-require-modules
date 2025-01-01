@@ -15,12 +15,12 @@ import type { RequireExFn } from './types.js';
 
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 
-export interface CustomRequireOptions {
+export type PluginRequireFn = (id: string) => unknown;
+
+export interface RequireOptions {
   cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
   parentPath?: string;
 }
-
-export type PluginRequireFn = (id: string) => unknown;
 
 export type ResolvedType = 'module' | 'path' | 'url';
 
@@ -74,11 +74,11 @@ export abstract class CustomRequire {
     window.require = this.requireWithCache;
     plugin.register(() => window.require = this.originalRequire);
 
-    window.dynamicImport = this.dynamicImport.bind(this);
-    plugin.register(() => delete window.dynamicImport);
+    window.requireAsync = this.requireAsync.bind(this);
+    plugin.register(() => delete window.requireAsync);
 
-    window.requireWrapper = this.requireWrapper.bind(this);
-    plugin.register(() => delete window.requireWrapper);
+    window.requireAsyncWrapper = this.requireAsyncWrapper.bind(this);
+    plugin.register(() => delete window.requireAsyncWrapper);
   }
 
   protected abstract canRequireSync(type: ResolvedType): boolean;
@@ -113,11 +113,6 @@ export abstract class CustomRequire {
     return module;
   }
 
-  private async dynamicImport(id: string, options: Partial<CustomRequireOptions> = {}): Promise<unknown> {
-    // eslint-disable-next-line import-x/no-dynamic-require
-    return await this.requireWrapper((require) => require(id, options));
-  }
-
   private getParentPathFromCallStack(): null | string {
     /**
      * The caller line index is 4 because the call stack is as follows:
@@ -141,8 +136,8 @@ export abstract class CustomRequire {
     return parentPath;
   }
 
-  private require(id: string, options: Partial<CustomRequireOptions> = {}): unknown {
-    const DEFAULT_OPTIONS: CustomRequireOptions = {
+  private require(id: string, options: Partial<RequireOptions> = {}): unknown {
+    const DEFAULT_OPTIONS: RequireOptions = {
       cacheInvalidationMode: 'whenPossible'
     };
     options = {
@@ -175,10 +170,15 @@ export abstract class CustomRequire {
       return this.requireSync(resolvedId, type);
     }
 
-    throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait dynamicImport('${resolvedId}');\nor\nawait requireWrapper((require) => {\n  // your code\n});`);
+    throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait requireAsync('${resolvedId}');\nor\nawait requireAsyncWrapper((require) => {\n  // your code\n});`);
   }
 
-  private async requireWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
+  private async requireAsync(id: string, options: Partial<RequireOptions> = {}): Promise<unknown> {
+    // eslint-disable-next-line import-x/no-dynamic-require
+    return await this.requireAsyncWrapper((require) => require(id, options));
+  }
+
+  private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
     return await requireFn(this.requireWithCache);
   }
 

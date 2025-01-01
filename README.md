@@ -148,26 +148,26 @@ Manages source maps for compiled code, allowing seamless debugging in [`Obsidian
 
 ### Dynamic Imports (Desktop only)
 
-Use `dynamicImport()` to extend the built-in [`import()`][import] function with all the features of [`require()`][require] and support for URLs:
+Use `requireAsync()` to extend the built-in [`import()`][import] function with all the features of [`require()`][require] and support for URLs:
 
 ```js
-await dynamicImport('obsidian');
-await dynamicImport('./some/relative/path.js');
-await dynamicImport('../some/other/relative/path.js');
-await dynamicImport('./some/relative/path.js', 'path/to/current/script.js');
-await dynamicImport('./some/relative/path.js', 'path/to/current/note.md');
-await dynamicImport('/path/from/root.js');
-await dynamicImport('//path/from/vault/root.js');
-await dynamicImport('path/to/script.js');
-await dynamicImport('path/to/script.cjs');
-await dynamicImport('path/to/script.mjs');
-await dynamicImport('path/to/script.ts');
-await dynamicImport('path/to/script.cts');
-await dynamicImport('path/to/script.mts');
-await dynamicImport('obsidian?someQuery');
-await dynamicImport('https://some-site.com/some-script.js');
-await dynamicImport('file:///C:/path/to/vault/then/to/script.js');
-await dynamicImport('app://obsidian-resource-path-prefix/C:/path/to/vault/then/to/script.js'); // See obsidian.Platform.resourcePathPrefix
+await requireAsync('obsidian');
+await requireAsync('./some/relative/path.js');
+await requireAsync('../some/other/relative/path.js');
+await requireAsync('./some/relative/path.js', 'path/to/current/script.js');
+await requireAsync('./some/relative/path.js', 'path/to/current/note.md');
+await requireAsync('/path/from/root.js');
+await requireAsync('//path/from/vault/root.js');
+await requireAsync('path/to/script.js');
+await requireAsync('path/to/script.cjs');
+await requireAsync('path/to/script.mjs');
+await requireAsync('path/to/script.ts');
+await requireAsync('path/to/script.cts');
+await requireAsync('path/to/script.mts');
+await requireAsync('obsidian?someQuery');
+await requireAsync('https://some-site.com/some-script.js');
+await requireAsync('file:///C:/path/to/vault/then/to/script.js');
+await requireAsync('app://obsidian-resource-path-prefix/C:/path/to/vault/then/to/script.js'); // See obsidian.Platform.resourcePathPrefix
 ```
 
 ### Invocable Scripts (Desktop only)
@@ -278,7 +278,7 @@ If you plan to use scripts extensively, consider putting them in a [`dot directo
 
 ### Dynamic [`import()`][import]
 
-Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`dynamicImport()`](#dynamic-imports-desktop-only) as a workaround.
+Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`requireAsync()`](#dynamic-imports-desktop-only) as a workaround.
 
 ### Mobile support
 
@@ -286,7 +286,7 @@ Features supported on mobile are very limited, as there is no Node.js module loa
 
 `require()` should be a synchronous function, but all file system operations on mobile can be asynchronous only.
 
-`dynamicImport()` is an asynchronous function but it still requires a way to read/parse/execute js/ts files and there is no an easy way to do that.
+`requireAsync()` is an asynchronous function but it still requires a way to read/parse/execute js/ts files and there is no an easy way to do that.
 
 ## Installation
 

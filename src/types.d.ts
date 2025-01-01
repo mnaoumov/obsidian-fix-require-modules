@@ -1,16 +1,16 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import type { CustomRequireOptions } from './CustomRequire.ts';
+import type { RequireOptions } from './CustomRequire.ts';
 
-type CustomRequireFn = (id: string, options: Partial<CustomRequireOptions>) => unknown;
-type DynamicImportFn = (id: string, options: Partial<CustomRequireOptions>) => Promise<unknown>;
-type RequireExFn = CustomRequireFn & NodeRequire;
-type RequireWrapperFn<T> = (requireFn: (require: RequireExFn) => MaybePromise<T>) => Promise<T>;
+type RequireAsyncFn = (id: string, options: Partial<RequireOptions>) => Promise<unknown>;
+type RequireAsyncWrapperFn<T> = (requireFn: (require: RequireExFn) => MaybePromise<T>) => Promise<T>;
+type RequireExFn = NodeRequire & RequireFn;
+type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
 declare global {
   interface Window {
-    dynamicImport?: DynamicImportFn;
     require?: RequireExFn;
-    requireWrapper?: RequireWrapperFn<unknown>;
+    requireAsync?: RequireAsyncFn;
+    requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
   }
 }
