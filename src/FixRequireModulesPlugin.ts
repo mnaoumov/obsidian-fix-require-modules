@@ -26,7 +26,7 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
 
   public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
     await super.saveSettings(newSettings);
-    await this.platformDependencies.registerScriptDirectoryWatcher(this, () => registerInvocableScripts(this));
+    await this.platformDependencies.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
   }
 
   protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {

@@ -2,6 +2,7 @@ import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 import type { RequireExFn } from '../types.js';
 
 let originalRequire: NodeRequire;
+const electronModules = new Map<string, unknown>();
 
 export const requireHandler = {
   register(plugin: FixRequireModulesPlugin, originalRequire_: NodeRequire, customRequire: RequireExFn): void {
@@ -14,8 +15,14 @@ export const requireHandler = {
     });
 
     Module.prototype.require = customRequire;
+
+    for (const [key, value] of Object.entries(originalRequire.cache)) {
+      if ((key.startsWith('electron') || key.includes('app.asar')) && value?.exports) {
+        electronModules.set(key, value.exports);
+      }
+    }
   },
   requireSpecialModule(id: string): unknown {
-    return id;
+    return electronModules.get(id);
   }
 };
