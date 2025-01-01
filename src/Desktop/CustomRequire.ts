@@ -8,15 +8,16 @@ import { CustomRequire } from '../CustomRequire.ts';
 class CustomRequireImpl extends CustomRequire {
   private electronModules = new Map<string, unknown>();
   private nodeBuiltinModules = new Set<string>();
+  private originalProtoRequire!: NodeRequire;
 
   public override register(plugin: FixRequireModulesPlugin, pluginRequire: PluginRequireFn): void {
     super.register(plugin, pluginRequire);
 
     const Module = this.originalRequire('node:module') as typeof import('node:module');
-    const originalProtoRequire = Module.prototype.require;
+    this.originalProtoRequire = Module.prototype.require;
 
     plugin.register(() => {
-      Module.prototype.require = originalProtoRequire;
+      Module.prototype.require = this.originalProtoRequire;
     });
 
     Module.prototype.require = this.requireWithCache;
@@ -42,7 +43,7 @@ class CustomRequireImpl extends CustomRequire {
     const NODE_BUILTIN_MODULE_PREFIX = 'node:';
     id = trimStart(id, NODE_BUILTIN_MODULE_PREFIX);
     if (this.nodeBuiltinModules.has(id)) {
-      return this.originalRequire(id);
+      return this.originalProtoRequire(id);
     }
 
     return null;
