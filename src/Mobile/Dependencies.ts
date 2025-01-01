@@ -1,11 +1,9 @@
 import type { PlatformDependencies } from '../PlatformDependencies.ts';
 
-import { fileSystemWrapper } from './FileSystemWrapper.ts';
-import { requireHandler } from './RequireHandler.ts';
+import { customRequire } from './CustomRequire.ts';
 import { scriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
 
 export const platformDependencies: PlatformDependencies = {
-  fileSystemWrapper,
-  requireHandler,
+  customRequire,
   scriptDirectoryWatcher
 };
