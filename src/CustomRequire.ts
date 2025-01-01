@@ -34,16 +34,18 @@ interface SplitQueryResult {
   query: string;
 }
 
+export const MODULE_NAME_SEPARATOR = '*';
+
 export abstract class CustomRequire {
   protected originalRequire!: NodeRequire;
+  protected plugin!: FixRequireModulesPlugin;
   protected requireWithCache!: RequireExFn;
+  protected vaultAbsolutePath!: string;
   private moduleDependencies = new Map<string, Set<string>>();
   private modulesCache!: NodeJS.Dict<NodeModule>;
   private moduleTimestamps = new Map<string, number>();
-  private plugin!: FixRequireModulesPlugin;
   private pluginRequire!: PluginRequireFn;
   private updatedModuleTimestamps = new Map<string, number>();
-  private vaultAbsolutePath!: string;
 
   public clearCache(): void {
     this.moduleTimestamps.clear();
@@ -151,6 +153,7 @@ export abstract class CustomRequire {
     }
 
     const { id: resolvedId, type } = this.resolve(id, options.parentPath);
+    const { cleanStr: cleanResolvedId, query } = splitQuery(resolvedId);
     const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
 
     if (hasCachedModule) {
@@ -158,19 +161,24 @@ export abstract class CustomRequire {
         case 'never':
           return this.modulesCache[resolvedId];
         case 'whenPossible':
-          if (this.canRequireSync(type)) {
-            return this.requireSync(resolvedId, type);
+          if (query) {
+            return this.modulesCache[resolvedId];
           }
-          console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
-          return this.modulesCache[resolvedId];
+
+          if (!this.canRequireSync(type)) {
+            console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
+            return this.modulesCache[resolvedId];
+          }
       }
     }
 
-    if (this.canRequireSync(type)) {
-      return this.requireSync(resolvedId, type);
+    if (!this.canRequireSync(type)) {
+      throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait requireAsync('${resolvedId}');\nor\nawait requireAsyncWrapper((require) => {\n  // your code\n});`);
     }
 
-    throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait requireAsync('${resolvedId}');\nor\nawait requireAsyncWrapper((require) => {\n  // your code\n});`);
+    const module = this.requireSync(cleanResolvedId, type);
+    this.addToCacheAndReturn(cleanResolvedId, module);
+    return this.addToCacheAndReturn(resolvedId, module);
   }
 
   private async requireAsync(id: string, options: Partial<RequireOptions> = {}): Promise<unknown> {
@@ -223,7 +231,7 @@ export abstract class CustomRequire {
       return { id: join(parentDir, id), type: 'path' };
     }
 
-    return { id: `${parentDir}*${id}`, type: 'module' };
+    return { id: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, type: 'module' };
   }
 }
 
