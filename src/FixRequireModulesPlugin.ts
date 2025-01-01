@@ -1,8 +1,6 @@
 import { PluginSettingTab } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import type { PlatformDependencies } from './PlatformDependencies.ts';
-
 import {
   registerCodeButtonBlock,
   unloadTempPlugins
@@ -20,13 +18,14 @@ import {
   registerInvocableScripts,
   selectAndInvokeScript
 } from './Script.ts';
+import type { ScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
 
 export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
-  private platformDependencies!: PlatformDependencies;
+  private scriptDirectoryWatcher!: ScriptDirectoryWatcher;
 
   public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
     await super.saveSettings(newSettings);
-    await this.platformDependencies.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
+    await this.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
   }
 
   protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {
@@ -46,7 +45,8 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
   }
 
   protected override async onloadComplete(): Promise<void> {
-    this.platformDependencies = await getPlatformDependencies();
+    const platformDependencies = await getPlatformDependencies();
+    this.scriptDirectoryWatcher = platformDependencies.scriptDirectoryWatcher;
     registerCodeButtonBlock(this);
     this.addCommand({
       callback: () => selectAndInvokeScript(this),
