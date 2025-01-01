@@ -22,9 +22,11 @@ export interface CustomRequireOptions {
 
 export type PluginRequireFn = (id: string) => unknown;
 
+export type ResolvedType = 'module' | 'path' | 'url';
+
 interface ResolvedId {
   id: string;
-  type: 'module' | 'path' | 'url';
+  type: ResolvedType;
 }
 
 interface SplitQueryResult {
@@ -79,7 +81,7 @@ export abstract class CustomRequire {
     plugin.register(() => delete window.requireWrapper);
   }
 
-  protected abstract canReadFileSync(): boolean;
+  protected abstract canRequireSync(type: ResolvedType): boolean;
 
   protected requireSpecialModule(id: string): unknown {
     if (id === 'obsidian/app') {
@@ -92,6 +94,8 @@ export abstract class CustomRequire {
 
     return null;
   }
+
+  protected abstract requireSync(id: string, type: ResolvedType): unknown;
 
   private addToCacheAndReturn(id: string, module: unknown): unknown {
     this.modulesCache[id] = {
@@ -159,23 +163,19 @@ export abstract class CustomRequire {
         case 'never':
           return this.modulesCache[resolvedId];
         case 'whenPossible':
-          if (type === 'url' || !this.canReadFileSync()) {
-            console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
-            return this.modulesCache[resolvedId];
+          if (this.canRequireSync(type)) {
+            return this.requireSync(resolvedId, type);
           }
+          console.warn(`Using cached module ${resolvedId} and it cannot be invalidated when cacheInvalidationMode=whenPossible. Consider using cacheInvalidationMode=always if you need ensure you are using the latest version of the module.`);
+          return this.modulesCache[resolvedId];
       }
     }
 
-    if (!this.canReadFileSync()) {
-      throw new Error(`Cannot resolve module '${resolvedId}'\nConsider using\nawait dynamicImport('${resolvedId}');\nor\nawait requireWrapper((require) => {\n  // your code\n});`);
+    if (this.canRequireSync(type)) {
+      return this.requireSync(resolvedId, type);
     }
 
-    if (type === 'module') {
-      // TODO
-    }
-
-    const module = null;
-    return this.addToCacheAndReturn(resolvedId, module);
+    throw new Error(`Cannot require '${resolvedId}' synchronously.\nConsider using\nawait dynamicImport('${resolvedId}');\nor\nawait requireWrapper((require) => {\n  // your code\n});`);
   }
 
   private async requireWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {

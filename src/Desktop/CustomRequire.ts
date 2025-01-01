@@ -1,6 +1,9 @@
 import { trimStart } from 'obsidian-dev-utils/String';
 
-import type { PluginRequireFn } from '../CustomRequire.ts';
+import type {
+  PluginRequireFn,
+  ResolvedType
+} from '../CustomRequire.ts';
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
 import { CustomRequire } from '../CustomRequire.ts';
@@ -8,8 +11,8 @@ import { CustomRequire } from '../CustomRequire.ts';
 class CustomRequireImpl extends CustomRequire {
   private electronModules = new Map<string, unknown>();
   private nodeBuiltinModules = new Set<string>();
-  private originalProtoRequire!: NodeRequire;
 
+  private originalProtoRequire!: NodeRequire;
   public override register(plugin: FixRequireModulesPlugin, pluginRequire: PluginRequireFn): void {
     super.register(plugin, pluginRequire);
 
@@ -31,12 +34,20 @@ class CustomRequireImpl extends CustomRequire {
     this.nodeBuiltinModules = new Set(Module.builtinModules);
   }
 
-  protected override canReadFileSync(): boolean {
-    return true;
+  protected override canRequireSync(type: ResolvedType): boolean {
+    return type !== 'url';
   }
 
   protected override requireSpecialModule(id: string): unknown {
     return super.requireSpecialModule(id) ?? this.electronModules.get(id) ?? this.requireNodeBuiltinModule(id);
+  }
+
+  protected override requireSync(id: string, type: ResolvedType): unknown {
+    if (type === 'url') {
+      throw new Error('Cannot require synchronously from URL');
+    }
+
+    return '';
   }
 
   private requireNodeBuiltinModule(id: string): unknown {

@@ -1,8 +1,12 @@
 import { CustomRequire } from '../CustomRequire.ts';
 
 class CustomRequireImpl extends CustomRequire {
-  protected override canReadFileSync(): boolean {
+  protected override canRequireSync(): boolean {
     return false;
+  }
+
+  protected override requireSync(): unknown {
+    throw new Error('Cannot require synchronously on mobile');
   }
 }
 
