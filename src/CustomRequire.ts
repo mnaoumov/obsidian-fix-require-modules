@@ -116,16 +116,17 @@ export abstract class CustomRequire {
 
   private getParentPathFromCallStack(): null | string {
     /**
-     * The caller line index is 3 because the call stack is as follows:
+     * The caller line index is 4 because the call stack is as follows:
      *
      * 0: Error
-     * 1:     at getParentPathFromCallerStack
-     * 2:     at at Module.customRequire [as require]
- * 3:     at functionName (path/to/caller.js:123:45)
- */
-    const CALLER_LINE_INDEX = 3;
+     * 1:     at CustomRequireImpl.getParentPathFromCallStack (plugin:fix-require-modules:?:?)
+     * 2:     at CustomRequireImpl.resolve (plugin:fix-require-modules:?:?)
+     * 3:     at CustomRequireImpl.require (plugin:fix-require-modules:?:?)
+     * 4:     at functionName (path/to/caller.js:?:?)
+     */
+    const CALLER_LINE_INDEX = 4;
     const callStackLines = new Error().stack?.split('\n') ?? [];
-    console.debug('callStackLines', { callStackLines });
+    console.debug({ callStackLines });
     const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
     return callStackMatch?.[1] ?? null;
   }
