@@ -164,19 +164,23 @@ class CustomRequireImpl extends CustomRequire {
     const content = this.readFileSync(path);
     const { code: contentCommonJs, hasTopLevelAwait } = transformToCommonJs(basename(path), content);
     if (contentCommonJs === undefined) {
-      throw new Error('Failed to transform module to CommonJS');
+      throw new Error(`Failed to transform module to CommonJS: ${path}`);
     }
 
     if (hasTopLevelAwait) {
-      throw new Error('Top-level await is not supported.\nPlease use async/await inside a function or a block.\nOr use requireAsync() or requireAsyncWrapper((require) => {}) instead.');
+      throw new Error(`Cannot load module: ${path}.\nTop-level await is not supported.\nPlease use async/await inside a function or a block.\nOr use requireAsync() or requireAsyncWrapper((require) => {}) instead.`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    const moduleFn = new Function('require', 'module', 'exports', contentCommonJs) as ModuleFn;
-    const _exports = {};
-    const module = { exports: _exports };
-    moduleFn(this.makeChildRequire(path), module, _exports);
-    this.addToModuleCache(path, _exports);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const moduleFn = new Function('require', 'module', 'exports', contentCommonJs) as ModuleFn;
+      const _exports = {};
+      const module = { exports: _exports };
+      moduleFn(this.makeChildRequire(path), module, _exports);
+      this.addToModuleCache(path, _exports);
+    } catch (e) {
+      throw new Error(`Failed to load module: ${path}.`, { cause: e });
+    }
   }
 
   private makeChildRequire(parentPath: string): NodeRequire {
@@ -207,7 +211,7 @@ class CustomRequireImpl extends CustomRequire {
       }
     }
 
-    throw new Error(`Could not resolve ${moduleName}`);
+    throw new Error(`Could not resolve module: ${moduleName}`);
   }
 
   private requireNodeBuiltinModule(id: string): unknown {

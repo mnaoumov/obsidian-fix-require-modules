@@ -4,38 +4,43 @@ import { babelPluginDetectTopLevelAwait } from './babelPluginDetectTopLevelAwait
 
 interface TransformCodeToCommonJsResult {
   code?: string;
+  error?: Error;
   hasTopLevelAwait?: boolean;
 }
 
 export function transformToCommonJs(filename: string, code: string): TransformCodeToCommonJsResult {
-  let result = transform(code, {
-    filename,
-    plugins: [
-      'transform-modules-commonjs'
-    ],
-    presets: ['typescript']
-  });
+  try {
+    let result = transform(code, {
+      filename,
+      plugins: [
+        'transform-modules-commonjs'
+      ],
+      presets: ['typescript']
+    });
 
-  if (!result.code) {
-    return {};
+    if (!result.code) {
+      return { error: new Error('Unknown error') };
+    }
+
+    const hasTopLevelAwaitWrapper = {
+      hasTopLevelAwait: false
+    };
+
+    result = transform(result.code, {
+      plugins: [
+        [babelPluginDetectTopLevelAwait, hasTopLevelAwaitWrapper]
+      ]
+    });
+
+    if (!result.code) {
+      return { error: new Error('Unknown error') };
+    }
+
+    return {
+      code: result.code,
+      hasTopLevelAwait: hasTopLevelAwaitWrapper.hasTopLevelAwait
+    };
+  } catch (e) {
+    return { error: e as Error };
   }
-
-  const hasTopLevelAwaitWrapper = {
-    hasTopLevelAwait: false
-  };
-
-  result = transform(result.code, {
-    plugins: [
-      [babelPluginDetectTopLevelAwait, hasTopLevelAwaitWrapper]
-    ]
-  });
-
-  if (!result.code) {
-    return {};
-  }
-
-  return {
-    code: result.code,
-    hasTopLevelAwait: hasTopLevelAwaitWrapper.hasTopLevelAwait
-  };
 }
