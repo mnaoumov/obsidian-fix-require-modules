@@ -225,7 +225,17 @@ await requireAsyncWrapper((require) => {
     }
 
     const { resolvedId, resolvedType } = this.resolve(id, fullOptions.parentPath);
-    const { cleanStr: cleanResolvedId, query } = splitQuery(resolvedId);
+
+    let cleanResolvedId: string;
+    let query: string;
+
+    if (resolvedType !== ResolvedType.Url) {
+      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
+    } else {
+      cleanResolvedId = resolvedId;
+      query = '';
+    }
+
     const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
 
     if (hasCachedModule) {
