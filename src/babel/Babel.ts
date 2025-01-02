@@ -1,7 +1,5 @@
 import { transform } from '@babel/standalone';
 
-import { babelPluginDetectTopLevelAwait } from './babelPluginDetectTopLevelAwait.ts';
-
 interface TransformCodeToCommonJsResult {
   code?: string;
   error?: Error;
@@ -10,7 +8,8 @@ interface TransformCodeToCommonJsResult {
 
 export function transformToCommonJs(filename: string, code: string): TransformCodeToCommonJsResult {
   try {
-    let result = transform(code, {
+    const result = transform(code, {
+      ast: true,
       filename,
       plugins: [
         'transform-modules-commonjs'
@@ -18,27 +17,13 @@ export function transformToCommonJs(filename: string, code: string): TransformCo
       presets: ['typescript']
     });
 
-    if (!result.code) {
-      return { error: new Error('Unknown error') };
-    }
-
-    const hasTopLevelAwaitWrapper = {
-      hasTopLevelAwait: false
-    };
-
-    result = transform(result.code, {
-      plugins: [
-        [babelPluginDetectTopLevelAwait, hasTopLevelAwaitWrapper]
-      ]
-    });
-
-    if (!result.code) {
+    if (result.code === null || result.code === undefined) {
       return { error: new Error('Unknown error') };
     }
 
     return {
       code: result.code,
-      hasTopLevelAwait: hasTopLevelAwaitWrapper.hasTopLevelAwait
+      hasTopLevelAwait: result.ast?.program.extra?.['topLevelAwait'] as boolean | undefined ?? false
     };
   } catch (e) {
     return { error: e as Error };
