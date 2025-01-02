@@ -5,13 +5,17 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import babel from '@babel/standalone';
 import { Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
-import { babelPluginFixSourceMap } from './babel/babelPluginFixSourceMap.ts';
-import { babelPluginWrapInDefaultAsyncFunction } from './babel/babelPluginWrapInDefaultAsyncFunction.ts';
+import {
+  ParallelBabelPlugin,
+  SequentialBabelPlugin
+} from './babel/CombineBabelPlugins.ts';
+import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
+import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
+import { WrapInDefaultAsyncFunctionBabelPlugin } from './babel/WrapInDefaultAsyncFunctionBabelPlugin.ts';
 import { requireVaultScriptAsync } from './CustomRequire.ts';
 import { printError } from './util/Error.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
@@ -75,29 +79,19 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
 }
 
 function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): string {
-  let result = babel.transform(source, {
-    cwd: sourceDir,
-    filename: sourceFileName,
-    plugins: [
-      'transform-modules-commonjs'
-    ],
-    presets: [
-      'typescript'
-    ],
-    sourceMaps: 'inline'
-  });
+  const result = new SequentialBabelPlugin([
+    new ConvertToCommonJsBabelPlugin(),
+    new ParallelBabelPlugin([
+      new WrapInDefaultAsyncFunctionBabelPlugin(),
+      new FixSourceMapBabelPlugin(sourceUrl)
+    ])
+  ]).transform(source, sourceFileName, sourceDir);
 
-  result = babel.transform(result.code ?? '', {
-    cwd: sourceDir,
-    filename: sourceFileName,
-    plugins: [
-      babelPluginWrapInDefaultAsyncFunction,
-      [babelPluginFixSourceMap, { sourceUrl }]
-    ],
-    sourceMaps: 'inline'
-  });
+  if (result.error) {
+    throw result.error;
+  }
 
-  return result.code ?? '';
+  return result.transformedCode;
 }
 
 function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {

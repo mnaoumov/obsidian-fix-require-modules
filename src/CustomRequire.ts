@@ -15,8 +15,10 @@ import { isUrl } from 'obsidian-dev-utils/url';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { RequireExFn } from './types.js';
 
-import { transformToCommonJs } from './babel/Babel.ts';
-import { extractRequireArgsList } from './babel/babelPluginExtractRequireArgsList.ts';
+import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
+import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
+import { ExtractRequireArgsListBabelPlugin } from './babel/ExtractRequireArgsListBabelPlugin.ts';
+import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionBabelPlugin.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 
@@ -460,7 +462,8 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
-    const requireArgsList = extractRequireArgsList(requireFn.toString());
+    const result = new ExtractRequireArgsListBabelPlugin().transform(requireFn.toString(), 'extract-requires.js');
+    const requireArgsList = result.data.requireArgsList;
     for (const requireArgs of requireArgsList) {
       const { id, options } = requireArgs;
       await this.requireAsync(id, options);
@@ -512,19 +515,24 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
-    const fileName = isUrl(path) ? 'from-url.ts' : basename(path);
-    const { transformedCode, error } = transformToCommonJs(fileName, content);
-    if (error) {
-      throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
+    const filename = isUrl(path) ? 'from-url.ts' : basename(path);
+    const dir = isUrl(path) ? '' : dirname(path);
+    const result = new SequentialBabelPlugin([
+      new ConvertToCommonJsBabelPlugin(),
+      new WrapInRequireFunctionBabelPlugin(true)
+    ]).transform(content, filename, dir);
+
+    if (result.error) {
+      throw result.error;
     }
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper(async (require) => {\n${transformedCode ?? ''}\n});`) as ModuleFnAsync;
+      const moduleFnAsyncWrapper = new Function(result.transformedCode) as () => ModuleFnAsync;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      await moduleFnAsync(childRequire, module, exports);
+      await moduleFnAsyncWrapper()(childRequire, module, exports);
       this.addToModuleCache(path, exports);
       return exports;
     } catch (e) {

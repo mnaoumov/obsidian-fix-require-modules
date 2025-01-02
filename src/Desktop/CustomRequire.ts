@@ -1,6 +1,7 @@
 import { FileSystemAdapter } from 'obsidian';
 import {
   basename,
+  dirname,
   join
 } from 'obsidian-dev-utils/Path';
 import {
@@ -13,7 +14,9 @@ import { trimStart } from 'obsidian-dev-utils/String';
 import type { PluginRequireFn } from '../CustomRequire.ts';
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
-import { transformToCommonJs } from '../babel/Babel.ts';
+import { SequentialBabelPlugin } from '../babel/CombineBabelPlugins.ts';
+import { ConvertToCommonJsBabelPlugin } from '../babel/ConvertToCommonJsBabelPlugin.ts';
+import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
   CustomRequire,
@@ -206,12 +209,16 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireString(content: string, path: string): unknown {
-    const { transformedCode, error, opts: { hasTopLevelAwait } } = transformToCommonJs(basename(path), content);
-    if (error) {
-      throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
+    const result = new SequentialBabelPlugin([
+      new ConvertToCommonJsBabelPlugin(),
+      new WrapInRequireFunctionBabelPlugin(false)
+    ]).transform(content, basename(path), dirname(path));
+
+    if (result.error) {
+      throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: result.error });
     }
 
-    if (hasTopLevelAwait) {
+    if (result.data.hasTopLevelAwait) {
       throw new Error(`Cannot load module: ${path}.
 Top-level await is not supported in sync require.
 Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
@@ -219,11 +226,11 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFn = new Function('require', 'module', 'exports', transformedCode) as ModuleFn;
+      const moduleFnWrapper = new Function(result.transformedCode) as () => ModuleFn;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      moduleFn(childRequire, module, exports);
+      moduleFnWrapper()(childRequire, module, exports);
       this.addToModuleCache(path, exports);
       return exports;
     } catch (e) {
