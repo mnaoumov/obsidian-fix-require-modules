@@ -130,7 +130,7 @@ This plugin gives you a safer alternative:
 require('obsidian/app');
 ```
 
-### Relative Modules
+### Relative path
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -151,7 +151,7 @@ require('./some/relative/path.js', { parentPath: 'path/to/current/script.js' });
 require('./some/relative/path.js', { parentPath: 'path/to/current/note.md' });
 ```
 
-### Root-relative Modules
+### Root-relative path
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -166,7 +166,22 @@ require('/path/from/root.js');
 
 The root `/` directory is configurable via settings.
 
-### Vault-root-relative Modules
+### System root path (Linux, MacOS)
+
+|                      | Desktop | Mobile |
+| -------------------- | ------- | ------ |
+| **`require()`**      | ✅      | ❌     |
+| **`requireAsync()`** | ✅      | ✅     |
+
+On Linux and MacOS, the system root path is `/path/from/system/root.js`.
+
+In order to distinguish them from [root-relative path](#root-relative-path), you need to prepend `~` to the path.
+
+```js
+require('~/path/from/system/root.js');
+```
+
+### Vault-root-relative path
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -200,7 +215,7 @@ require('path/to/script.cjs');
 require('path/to/script.mjs');
 ```
 
-### [`TypeScript`][TypeScript] Modules
+### [`TypeScript`][TypeScript] modules
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -215,7 +230,7 @@ require('path/to/script.cts');
 require('path/to/script.mts');
 ```
 
-### NPM Modules
+### NPM modules
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -282,7 +297,7 @@ await Promise.resolve();
 export const dep = 42;
 ```
 
-### Smart Caching
+### Smart caching
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
@@ -310,7 +325,7 @@ require('./someScript.js?someQuery'); // cacheInvalidationMode: 'never'
 require('https://some-site.com/some-script.js?someQuery'); // cacheInvalidationMode: 'whenPossible'
 ```
 
-### Clear Cache
+### Clear cache
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -318,7 +333,7 @@ require('https://some-site.com/some-script.js?someQuery'); // cacheInvalidationM
 
 If you need to clear the `require` cache, you can invoke the `Fix Require Modules: Clear Cache` command.
 
-### Source Maps
+### Source maps
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -327,7 +342,7 @@ If you need to clear the `require` cache, you can invoke the `Fix Require Module
 Manages source maps for compiled code, allowing seamless debugging in [`Obsidian`][Obsidian].
 
 
-### Invocable Scripts
+### Invocable scripts
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -361,7 +376,7 @@ export function invoke(app: App): void { console.log('mts sync'); };
 export async function invoke(app: App): Promise<void> { console.log('mts async'); await Promise.resolve(); };
 ```
 
-### Invoke Scripts
+### Invoke scripts
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -373,7 +388,7 @@ Configure a script directory so every script in it can be invoked using the [`Co
 
 ![Chooser](images/chooser.png)
 
-### Startup Script
+### Startup script
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -396,7 +411,7 @@ Assign hotkeys to frequently used scripts:
 
 ![Hotkeys](images/hotkeys.png)
 
-### Code Buttons
+### Code buttons
 
 | Desktop | Mobile |
 | ------- | ------ |
@@ -422,7 +437,7 @@ function myTypeScriptFn(arg: string): void {}
 
 ![Code Button](images/code-button.png)
 
-### Temp Plugins
+### Temp plugins
 
 | Desktop | Mobile |
 | ------- | ------ |
