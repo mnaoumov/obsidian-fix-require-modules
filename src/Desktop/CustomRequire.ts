@@ -47,7 +47,7 @@ class CustomRequireImpl extends CustomRequire {
       Module.prototype.require = this.originalProtoRequire;
     });
 
-    Module.prototype.require = this.requireWithCache;
+    Module.prototype.require = this.requireEx;
 
     for (const [key, value] of Object.entries(this.originalRequire.cache)) {
       if ((key.startsWith('electron') || key.includes('app.asar')) && value?.exports) {

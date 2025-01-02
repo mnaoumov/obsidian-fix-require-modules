@@ -56,7 +56,8 @@ export abstract class CustomRequire {
   protected readonly moduleTimestamps = new Map<string, number>();
   protected originalRequire!: NodeRequire;
   protected plugin!: FixRequireModulesPlugin;
-  protected requireWithCache!: RequireExFn;
+  protected requireEx!: RequireExFn;
+  protected requireWithCacheWithoutInvalidation!: RequireExFn;
   protected vaultAbsolutePath!: string;
   private pluginRequire!: PluginRequireFn;
   private updatedModuleTimestamps = new Map<string, number>();
@@ -82,12 +83,16 @@ export abstract class CustomRequire {
     this.vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);
     this.originalRequire = window.require;
 
-    this.requireWithCache = Object.assign(this.require.bind(this), {
+    this.requireEx = Object.assign(this.require.bind(this), {
       cache: {}
     }, this.originalRequire);
-    this.modulesCache = this.requireWithCache.cache;
+    this.modulesCache = this.requireEx.cache;
 
-    window.require = this.requireWithCache;
+    this.requireWithCacheWithoutInvalidation = Object.assign(this.requireWithoutInvalidation.bind(this), {
+      cache: {}
+    }, this.requireEx);
+
+    window.require = this.requireEx;
     plugin.register(() => window.require = this.originalRequire);
 
     window.requireAsync = this.requireAsync.bind(this);
@@ -108,7 +113,7 @@ export abstract class CustomRequire {
       parent: null,
       path: '',
       paths: [],
-      require: this.requireWithCache
+      require: this.requireEx
     };
   }
 
@@ -142,7 +147,7 @@ await requireAsyncWrapper((require) => {
 
   protected makeChildRequire(parentPath: string): NodeRequire {
     const childRequire = (id: string): unknown => this.childRequire(id, parentPath);
-    return Object.assign(childRequire, this.requireWithCache);
+    return Object.assign(childRequire, this.requireEx);
   }
 
   protected abstract readFileAsync(path: string): Promise<string>;
@@ -455,7 +460,7 @@ ${this.getRequireAsyncAdvice(true)}`);
       const { id, options } = requireArgs;
       await this.requireAsync(id, options);
     }
-    return await requireFn(this.requireWithCache);
+    return await requireFn(this.requireWithCacheWithoutInvalidation);
   }
 
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
@@ -525,6 +530,14 @@ ${this.getRequireAsyncAdvice(true)}`);
   private async requireUrlAsync(url: string): Promise<unknown> {
     const response = await requestUrl(url);
     return this.requireStringAsync(response.text, url);
+  }
+
+  private requireWithoutInvalidation(id: string, options: Partial<RequireOptions> = {}): unknown {
+    const optionsWithoutInvalidation = {
+      ...options,
+      cacheInvalidationMode: CacheInvalidationMode.Never
+    };
+    return this.require(id, optionsWithoutInvalidation);
   }
 }
 
