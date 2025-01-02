@@ -35,7 +35,7 @@ export interface RequireOptions {
   parentPath?: string;
 }
 
-type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => (() => Promise<void>);
+type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => Promise<void>;
 
 interface ResolveResult {
   resolvedId: string;
@@ -508,11 +508,11 @@ ${this.getRequireAsyncAdvice(true)}`);
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper((require) => {\n${contentCommonJs ?? ''}\n});`) as ModuleFnAsync;
+      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper(async (require) => {\n${contentCommonJs ?? ''}\n});`) as ModuleFnAsync;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      await moduleFnAsync(childRequire, module, exports)();
+      await moduleFnAsync(childRequire, module, exports);
       this.addToModuleCache(path, exports);
       return exports;
     } catch (e) {
