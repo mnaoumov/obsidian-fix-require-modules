@@ -206,7 +206,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireString(content: string, path: string): unknown {
-    const { code: contentCommonJs, error, hasTopLevelAwait } = transformToCommonJs(basename(path), content);
+    const { transformedCode, error, opts: { hasTopLevelAwait } } = transformToCommonJs(basename(path), content);
     if (error) {
       throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
     }
@@ -219,7 +219,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFn = new Function('require', 'module', 'exports', contentCommonJs ?? '') as ModuleFn;
+      const moduleFn = new Function('require', 'module', 'exports', transformedCode) as ModuleFn;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);

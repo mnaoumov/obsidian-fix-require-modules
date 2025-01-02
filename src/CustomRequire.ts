@@ -513,14 +513,14 @@ ${this.getRequireAsyncAdvice(true)}`);
 
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
     const fileName = isUrl(path) ? 'from-url.ts' : basename(path);
-    const { code: contentCommonJs, error } = transformToCommonJs(fileName, content);
+    const { transformedCode, error } = transformToCommonJs(fileName, content);
     if (error) {
       throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
     }
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper(async (require) => {\n${contentCommonJs ?? ''}\n});`) as ModuleFnAsync;
+      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper(async (require) => {\n${transformedCode ?? ''}\n});`) as ModuleFnAsync;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
