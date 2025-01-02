@@ -18,10 +18,10 @@
     "@babel/standalone": "^7.26.4",
     "@babel/types": "^7.26.3",
     "@types/babel__standalone": "^7.1.9",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.3",
     "obsidian": "^1.7.2",
     "obsidian-dev-utils": "^11.3.0",
-    "obsidian-typings": "^2.8.0"
+    "obsidian-typings": "^2.8.1"
   },
   "type": "module"
 }
