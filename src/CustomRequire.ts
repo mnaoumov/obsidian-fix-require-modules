@@ -186,6 +186,11 @@ await requireAsyncWrapper((require) => {
       return { resolvedId: join(this.vaultAbsolutePath, trimStart(id, VAULT_ROOT_PREFIX)), resolvedType: ResolvedType.Path };
     }
 
+    const SYSTEM_ROOT_PATH_PREFIX = '~/';
+    if (id.startsWith(SYSTEM_ROOT_PATH_PREFIX)) {
+      return { resolvedId: '/' + trimStart(id, SYSTEM_ROOT_PATH_PREFIX), resolvedType: ResolvedType.Path };
+    }
+
     const MODULES_ROOT_PATH_PREFIX = '/';
     if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
       return { resolvedId: join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), resolvedType: ResolvedType.Path };
