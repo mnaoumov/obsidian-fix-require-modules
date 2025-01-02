@@ -1,7 +1,9 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
+import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
 import { Platform } from 'obsidian';
 import {
+  basename,
   dirname,
   isAbsolute,
   join,
@@ -13,6 +15,7 @@ import { isUrl } from 'obsidian-dev-utils/url';
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 import type { RequireExFn } from './types.js';
 
+import { transformToCommonJs } from './babel/Babel.ts';
 import { extractRequireArgsList } from './babel/babelPluginExtractRequireArgsList.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
@@ -23,12 +26,16 @@ export enum ResolvedType {
   Url = 'url'
 }
 
+const PACKAGE_JSON = 'package.json';
+
 export type PluginRequireFn = (id: string) => unknown;
 
 export interface RequireOptions {
   cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
 }
+
+type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => (() => Promise<void>);
 
 interface ResolveResult {
   resolvedId: string;
@@ -105,7 +112,13 @@ export abstract class CustomRequire {
     };
   }
 
-  protected abstract canRequireSync(type: ResolvedType): boolean;
+  protected abstract canRequireNonCached(type: ResolvedType): boolean;
+
+  protected abstract existsAsync(path: string): Promise<boolean>;
+
+  protected findEntryPoint(packageJson: PackageJson): string {
+    return this.findExportsEntryPoint(packageJson.exports) ?? packageJson.main ?? 'index.js';
+  }
 
   protected getRequireAsyncAdvice(isNewSentence?: boolean): string {
     let advice = `consider using
@@ -124,6 +137,15 @@ await requireAsyncWrapper((require) => {
 
     return advice;
   }
+
+  protected abstract getTimestampAsync(path: string): Promise<number>;
+
+  protected makeChildRequire(parentPath: string): NodeRequire {
+    const childRequire = (id: string): unknown => this.childRequire(id, parentPath);
+    return Object.assign(childRequire, this.requireWithCache);
+  }
+
+  protected abstract readFileAsync(path: string): Promise<string>;
 
   protected abstract requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
 
@@ -181,6 +203,106 @@ await requireAsyncWrapper((require) => {
     return { resolvedId: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, resolvedType: ResolvedType.Module };
   }
 
+  private async checkTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<boolean> {
+    const timestamp = await this.getTimestampAsync(path);
+    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
+    if (timestamp !== cachedTimestamp) {
+      const content = await this.readFileAsync(path);
+      const module = await this.requireStringAsync(content, path);
+      this.addToModuleCache(path, module);
+      this.moduleTimestamps.set(path, timestamp);
+      return true;
+    }
+
+    let ans = false;
+
+    const dependencies = this.moduleDependencies.get(path) ?? [];
+    for (const dependency of dependencies) {
+      const { resolvedId, resolvedType } = this.resolve(dependency, path);
+      switch (resolvedType) {
+        case ResolvedType.Module:
+          for (const rootDir of await this.getRootDirsAsync(path)) {
+            const packageJsonPath = this.getPackageJsonPath(rootDir);
+            if (!await this.existsAsync(packageJsonPath)) {
+              continue;
+            }
+
+            if (await this.checkTimestampChangedAndReloadIfNeededAsync(packageJsonPath, cacheInvalidationMode)) {
+              ans = true;
+            }
+          }
+          break;
+        case ResolvedType.Path:
+          if (await this.checkTimestampChangedAndReloadIfNeededAsync(resolvedId, cacheInvalidationMode)) {
+            ans = true;
+          }
+          break;
+        case ResolvedType.Url: {
+          if (cacheInvalidationMode === CacheInvalidationMode.Never) {
+            continue;
+          }
+
+          ans = true;
+          break;
+        }
+      }
+    }
+
+    return ans;
+  }
+
+  private childRequire(id: string, parentPath: string): unknown {
+    let dependencies = this.moduleDependencies.get(parentPath);
+    if (!dependencies) {
+      dependencies = new Set<string>();
+      this.moduleDependencies.set(parentPath, dependencies);
+    }
+    dependencies.add(id);
+    return window.require(id, { parentPath });
+  }
+
+  private findExportsEntryPoint(exportsNode: PackageJson['exports'], isTopLevel = true): null | string {
+    if (!exportsNode) {
+      return null;
+    }
+
+    if (typeof exportsNode === 'string') {
+      return exportsNode;
+    }
+
+    let exportConditions;
+
+    if (Array.isArray(exportsNode)) {
+      if (!exportsNode[0]) {
+        return null;
+      }
+
+      if (typeof exportsNode[0] === 'string') {
+        return exportsNode[0];
+      }
+
+      exportConditions = exportsNode[0];
+    } else {
+      exportConditions = exportsNode;
+    }
+
+    const path = exportConditions['require'] ?? exportConditions['import'] ?? exportConditions['default'];
+
+    if (typeof path === 'string') {
+      return path;
+    }
+
+    if (!isTopLevel) {
+      return null;
+    }
+
+    return this.findExportsEntryPoint(exportConditions['.'], false);
+  }
+
+  private getPackageJsonPath(packageDir: string): string {
+    return join(packageDir, PACKAGE_JSON);
+  }
+
   private getParentPathFromCallStack(): null | string {
     /**
      * The caller line index is 4 because the call stack is as follows:
@@ -202,6 +324,27 @@ await requireAsyncWrapper((require) => {
     }
 
     return parentPath;
+  }
+
+  private async getRootDirAsync(cwd: string): Promise<null | string> {
+    let currentDir = toPosixPath(cwd);
+    while (currentDir !== '.' && currentDir !== '/') {
+      if (await this.existsAsync(this.getPackageJsonPath(currentDir))) {
+        return toPosixPath(currentDir);
+      }
+      currentDir = dirname(currentDir);
+    }
+    return null;
+  }
+
+  private async getRootDirsAsync(dir: string): Promise<string[]> {
+    const modulesRootDir = this.plugin.settingsCopy.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot) : null;
+    return [await this.getRootDirAsync(dir), modulesRootDir].filter((dir): dir is string => dir !== null);
+  }
+
+  private async readPackageJsonAsync(path: string): Promise<PackageJson> {
+    const content = await this.readFileAsync(path);
+    return JSON.parse(content) as PackageJson;
   }
 
   private require(id: string, options: Partial<RequireOptions> = {}): unknown {
@@ -241,14 +384,14 @@ await requireAsyncWrapper((require) => {
             return this.modulesCache[resolvedId];
           }
 
-          if (!this.canRequireSync(resolvedType)) {
+          if (!this.canRequireNonCached(resolvedType)) {
             console.warn(`Cached module ${resolvedId} cannot be invalidated synchronously. The cached version will be used. `);
             return this.modulesCache[resolvedId];
           }
       }
     }
 
-    if (!this.canRequireSync(resolvedType)) {
+    if (!this.canRequireNonCached(resolvedType)) {
       throw new Error(`Cannot require '${resolvedId}' synchronously.
 ${this.getRequireAsyncAdvice(true)}`);
     }
@@ -313,10 +456,73 @@ ${this.getRequireAsyncAdvice(true)}`);
     return await requireFn(this.requireWithCache);
   }
 
-  private async requireNonCachedAsync(id: string, resolvedType: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
-    console.log('requireAsyncInternal', id, resolvedType, cacheInvalidationMode);
-    await Promise.resolve();
-    return null;
+  private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    for (const rootDir of await this.getRootDirsAsync(parentDir)) {
+      const packageDir = join(rootDir, 'node_modules', moduleName);
+      if (!await this.existsAsync(packageDir)) {
+        continue;
+      }
+
+      const packageJsonPath = this.getPackageJsonPath(packageDir);
+      if (!await this.existsAsync(packageJsonPath)) {
+        continue;
+      }
+
+      const packageJson = await this.readPackageJsonAsync(packageJsonPath);
+      const entryPoint = this.findEntryPoint(packageJson);
+      const entryPointPath = join(packageDir, entryPoint);
+      return this.requirePathAsync(entryPointPath, cacheInvalidationMode);
+    }
+
+    throw new Error(`Could not resolve module: ${moduleName}`);
+  }
+
+  private async requireNonCachedAsync(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    switch (type) {
+      case ResolvedType.Module: {
+        const [parentDir = '', moduleName = ''] = id.split(MODULE_NAME_SEPARATOR);
+        return this.requireModuleAsync(moduleName, parentDir, cacheInvalidationMode);
+      }
+      case ResolvedType.Path:
+        return this.requirePathAsync(id, cacheInvalidationMode);
+      case ResolvedType.Url:
+        return this.requireUrlAsync(id);
+    }
+  }
+
+  private async requirePathAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    if (!await this.existsAsync(path)) {
+      throw new Error(`File not found: ${path}`);
+    }
+
+    await this.checkTimestampChangedAndReloadIfNeededAsync(path, cacheInvalidationMode);
+    return this.modulesCache[path]?.exports;
+  }
+
+  private async requireStringAsync(content: string, path: string): Promise<unknown> {
+    const fileName = isUrl(path) ? 'from-url.ts' : basename(path);
+    const { code: contentCommonJs, error } = transformToCommonJs(fileName, content);
+    if (error) {
+      throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const moduleFnAsync = new Function('require', 'module', 'exports', `return requireAsyncWrapper((require) => {\n${contentCommonJs ?? ''}\n});`) as ModuleFnAsync;
+      const exports = {};
+      const module = { exports };
+      const childRequire = this.makeChildRequire(path);
+      await moduleFnAsync(childRequire, module, exports)();
+      this.addToModuleCache(path, exports);
+      return exports;
+    } catch (e) {
+      throw new Error(`Failed to load module: ${path}`, { cause: e });
+    }
+  }
+
+  private async requireUrlAsync(url: string): Promise<unknown> {
+    const response = await requestUrl(url);
+    return this.requireStringAsync(response.text, url);
   }
 }
 

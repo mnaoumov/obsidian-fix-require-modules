@@ -1,7 +1,4 @@
-import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
-
 import { FileSystemAdapter } from 'obsidian';
-import { ObsidianPluginRepoPaths } from 'obsidian-dev-utils/obsidian/Plugin/ObsidianPluginRepoPaths';
 import {
   basename,
   join
@@ -30,15 +27,14 @@ type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: un
 class CustomRequireImpl extends CustomRequire {
   private electronModules = new Map<string, unknown>();
   private nodeBuiltinModules = new Set<string>();
-
   private originalProtoRequire!: NodeRequire;
-  private get fs(): typeof import('node:fs') {
+  private get fileSystemAdapter(): FileSystemAdapter {
     const adapter = this.plugin.app.vault.adapter;
     if (!(adapter instanceof FileSystemAdapter)) {
       throw new Error('Vault adapter is not a FileSystemAdapter');
     }
 
-    return adapter.fs;
+    return adapter;
   }
 
   public override register(plugin: FixRequireModulesPlugin, pluginRequire: PluginRequireFn): void {
@@ -62,18 +58,30 @@ class CustomRequireImpl extends CustomRequire {
     this.nodeBuiltinModules = new Set(Module.builtinModules);
   }
 
-  protected override canRequireSync(type: ResolvedType): boolean {
+  protected override canRequireNonCached(type: ResolvedType): boolean {
     return type !== ResolvedType.Url;
+  }
+
+  protected override async existsAsync(path: string): Promise<boolean> {
+    return await Promise.resolve(this.exists(path));
+  }
+
+  protected override async getTimestampAsync(path: string): Promise<number> {
+    return (await this.fileSystemAdapter.fsPromises.stat(path)).mtimeMs;
+  }
+
+  protected override async readFileAsync(path: string): Promise<string> {
+    return this.fileSystemAdapter.fsPromises.readFile(path, 'utf8');
   }
 
   protected override requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown {
     switch (type) {
       case ResolvedType.Module: {
         const [parentDir = '', moduleName = ''] = id.split(MODULE_NAME_SEPARATOR);
-        return this.requireModuleSync(moduleName, parentDir, cacheInvalidationMode);
+        return this.requireModule(moduleName, parentDir, cacheInvalidationMode);
       }
       case ResolvedType.Path:
-        return this.requirePathSync(id, cacheInvalidationMode);
+        return this.requirePath(id, cacheInvalidationMode);
       case ResolvedType.Url:
         throw new Error('Cannot require synchronously from URL');
     }
@@ -84,10 +92,12 @@ class CustomRequireImpl extends CustomRequire {
   }
 
   private checkTimestampChangedAndReloadIfNeeded(path: string, cacheInvalidationMode: CacheInvalidationMode): boolean {
-    const timestamp = this.getTimestampSync(path);
+    const timestamp = this.getTimestamp(path);
     const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
     if (timestamp !== cachedTimestamp) {
-      this.loadModuleSync(path);
+      const content = this.readFile(path);
+      const module = this.requireString(content, path);
+      this.addToModuleCache(path, module);
       this.moduleTimestamps.set(path, timestamp);
       return true;
     }
@@ -101,7 +111,7 @@ class CustomRequireImpl extends CustomRequire {
         case ResolvedType.Module:
           for (const rootDir of this.getRootDirs(path)) {
             const packageJsonPath = getPackageJsonPath(rootDir);
-            if (!this.existsSync(packageJsonPath)) {
+            if (!this.exists(packageJsonPath)) {
               continue;
             }
 
@@ -132,60 +142,8 @@ class CustomRequireImpl extends CustomRequire {
     return ans;
   }
 
-  private childRequire(id: string, parentPath: string): unknown {
-    let dependencies = this.moduleDependencies.get(parentPath);
-    if (!dependencies) {
-      dependencies = new Set<string>();
-      this.moduleDependencies.set(parentPath, dependencies);
-    }
-    dependencies.add(id);
-    return window.require(id, { parentPath });
-  }
-
-  private existsSync(path: string): boolean {
-    return this.fs.existsSync(path);
-  }
-
-  private findEntryPoint(packageJson: PackageJson): string {
-    return this.findExportsEntryPoint(packageJson.exports) ?? packageJson.main ?? 'index.js';
-  }
-
-  private findExportsEntryPoint(exportsNode: PackageJson['exports'], isTopLevel = true): null | string {
-    if (!exportsNode) {
-      return null;
-    }
-
-    if (typeof exportsNode === 'string') {
-      return exportsNode;
-    }
-
-    let exportConditions;
-
-    if (Array.isArray(exportsNode)) {
-      if (!exportsNode[0]) {
-        return null;
-      }
-
-      if (typeof exportsNode[0] === 'string') {
-        return exportsNode[0];
-      }
-
-      exportConditions = exportsNode[0];
-    } else {
-      exportConditions = exportsNode;
-    }
-
-    const path = exportConditions['require'] ?? exportConditions['import'] ?? exportConditions['default'];
-
-    if (typeof path === 'string') {
-      return path;
-    }
-
-    if (!isTopLevel) {
-      return null;
-    }
-
-    return this.findExportsEntryPoint(exportConditions['.'], false);
+  private exists(path: string): boolean {
+    return this.fileSystemAdapter.fs.existsSync(path);
   }
 
   private getRootDirs(dir: string): string[] {
@@ -193,8 +151,8 @@ class CustomRequireImpl extends CustomRequire {
     return [getRootDir(dir), modulesRootDir].filter((dir): dir is string => dir !== null);
   }
 
-  private getTimestampSync(path: string): number {
-    return this.fs.statSync(path).mtimeMs;
+  private getTimestamp(path: string): number {
+    return this.fileSystemAdapter.fs.statSync(path).mtimeMs;
   }
 
   private getUrlDependencyErrorMessage(path: string, resolvedId: string, cacheInvalidationMode: CacheInvalidationMode): string {
@@ -203,12 +161,51 @@ URL dependencies validation is not supported when cacheInvalidationMode=${cacheI
 Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.getRequireAsyncAdvice()}`;
   }
 
-  private loadModuleSync(path: string): void {
-    if (basename(path) === ObsidianPluginRepoPaths.PackageJson as string) {
-      return;
+  private readFile(path: string): string {
+    return this.fileSystemAdapter.fs.readFileSync(path, 'utf8');
+  }
+
+  private requireModule(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
+    for (const rootDir of this.getRootDirs(parentDir)) {
+      const packageDir = join(rootDir, 'node_modules', moduleName);
+      if (!this.exists(packageDir)) {
+        continue;
+      }
+
+      const packageJsonPath = getPackageJsonPath(packageDir);
+      if (!this.exists(packageJsonPath)) {
+        continue;
+      }
+
+      const packageJson = readPackageJsonSync(packageJsonPath);
+      const entryPoint = this.findEntryPoint(packageJson);
+      const entryPointPath = join(packageDir, entryPoint);
+      return this.requirePath(entryPointPath, cacheInvalidationMode);
     }
 
-    const content = this.readFileSync(path);
+    throw new Error(`Could not resolve module: ${moduleName}`);
+  }
+
+  private requireNodeBuiltinModule(id: string): unknown {
+    const NODE_BUILTIN_MODULE_PREFIX = 'node:';
+    id = trimStart(id, NODE_BUILTIN_MODULE_PREFIX);
+    if (this.nodeBuiltinModules.has(id)) {
+      return this.originalProtoRequire(id);
+    }
+
+    return null;
+  }
+
+  private requirePath(path: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
+    if (!this.exists(path)) {
+      throw new Error(`File not found: ${path}`);
+    }
+
+    this.checkTimestampChangedAndReloadIfNeeded(path, cacheInvalidationMode);
+    return this.modulesCache[path]?.exports;
+  }
+
+  private requireString(content: string, path: string): unknown {
     const { code: contentCommonJs, error, hasTopLevelAwait } = transformToCommonJs(basename(path), content);
     if (error) {
       throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: error });
@@ -228,58 +225,10 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
       const childRequire = this.makeChildRequire(path);
       moduleFn(childRequire, module, exports);
       this.addToModuleCache(path, exports);
+      return exports;
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
     }
-  }
-
-  private makeChildRequire(parentPath: string): NodeRequire {
-    const childRequire = (id: string): unknown => this.childRequire(id, parentPath);
-    return Object.assign(childRequire, this.requireWithCache);
-  }
-
-  private readFileSync(path: string): string {
-    return this.fs.readFileSync(path, 'utf8');
-  }
-
-  private requireModuleSync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
-    for (const rootDir of this.getRootDirs(parentDir)) {
-      const packageDir = join(rootDir, 'node_modules', moduleName);
-      if (!this.existsSync(packageDir)) {
-        continue;
-      }
-
-      const packageJsonPath = getPackageJsonPath(packageDir);
-      if (!this.existsSync(packageJsonPath)) {
-        continue;
-      }
-
-      const packageJson = readPackageJsonSync(packageJsonPath);
-      const entryPoint = this.findEntryPoint(packageJson);
-      const entryPointPath = join(packageDir, entryPoint);
-      return this.requirePathSync(entryPointPath, cacheInvalidationMode);
-    }
-
-    throw new Error(`Could not resolve module: ${moduleName}`);
-  }
-
-  private requireNodeBuiltinModule(id: string): unknown {
-    const NODE_BUILTIN_MODULE_PREFIX = 'node:';
-    id = trimStart(id, NODE_BUILTIN_MODULE_PREFIX);
-    if (this.nodeBuiltinModules.has(id)) {
-      return this.originalProtoRequire(id);
-    }
-
-    return null;
-  }
-
-  private requirePathSync(path: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
-    if (!this.existsSync(path)) {
-      throw new Error(`File not found: ${path}`);
-    }
-
-    this.checkTimestampChangedAndReloadIfNeeded(path, cacheInvalidationMode);
-    return this.modulesCache[path]?.exports;
   }
 }
 
