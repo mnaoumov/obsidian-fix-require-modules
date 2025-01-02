@@ -98,9 +98,6 @@ export abstract class CustomRequire {
     window.requireAsync = this.requireAsync.bind(this);
     plugin.register(() => delete window.requireAsync);
 
-    window.dynamicImport = window.requireAsync;
-    plugin.register(() => delete window.dynamicImport);
-
     window.requireAsyncWrapper = this.requireAsyncWrapper.bind(this);
     plugin.register(() => delete window.requireAsyncWrapper);
   }

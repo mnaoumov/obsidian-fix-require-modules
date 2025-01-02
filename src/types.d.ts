@@ -10,7 +10,6 @@ type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
 declare global {
   interface Window {
-    dynamicImport?: RequireAsyncFn;
     require?: RequireExFn;
     requireAsync?: RequireAsyncFn;
     requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
