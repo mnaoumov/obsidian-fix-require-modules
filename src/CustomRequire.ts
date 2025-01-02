@@ -376,17 +376,19 @@ await requireAsyncWrapper((require) => {
     const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
 
     if (hasCachedModule) {
+      const cachedModule = this.modulesCache[resolvedId]?.exports as unknown;
+
       switch (fullOptions.cacheInvalidationMode) {
         case CacheInvalidationMode.Never:
-          return this.modulesCache[resolvedId];
+          return cachedModule;
         case CacheInvalidationMode.WhenPossible:
           if (query) {
-            return this.modulesCache[resolvedId];
+            return cachedModule;
           }
 
           if (!this.canRequireNonCached(resolvedType)) {
             console.warn(`Cached module ${resolvedId} cannot be invalidated synchronously. The cached version will be used. `);
-            return this.modulesCache[resolvedId];
+            return cachedModule;
           }
       }
     }
