@@ -9,10 +9,7 @@ import { Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
-import {
-  ParallelBabelPlugin,
-  SequentialBabelPlugin
-} from './babel/CombineBabelPlugins.ts';
+import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
 import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInDefaultAsyncFunctionBabelPlugin } from './babel/WrapInDefaultAsyncFunctionBabelPlugin.ts';
@@ -81,10 +78,8 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
 function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): string {
   const result = new SequentialBabelPlugin([
     new ConvertToCommonJsBabelPlugin(),
-    new ParallelBabelPlugin([
-      new WrapInDefaultAsyncFunctionBabelPlugin(),
-      new FixSourceMapBabelPlugin(sourceUrl)
-    ])
+    new WrapInDefaultAsyncFunctionBabelPlugin(),
+    new FixSourceMapBabelPlugin(sourceUrl)
   ]).transform(source, sourceFileName, sourceDir);
 
   if (result.error) {

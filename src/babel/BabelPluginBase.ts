@@ -20,33 +20,6 @@ export abstract class BabelPluginBase<Data = unknown> {
     return undefined;
   }
 
-  public getPluginObj(): PluginObj {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    const visitor = this.getVisitor();
-    const inherits = this.getInherits();
-
-    function manipulateOptions(opts: unknown, parserOpts: unknown): void {
-      self.manipulateOptions(opts, parserOpts);
-    }
-
-    function pre(this: PluginPass, file: BabelFile): void {
-      self.pre(this, file);
-    }
-
-    function post(this: PluginPass, file: BabelFile): void {
-      self.post(this, file);
-    }
-
-    return {
-      inherits,
-      manipulateOptions,
-      post,
-      pre,
-      visitor
-    };
-  }
-
   public getVisitor(): Visitor<PluginPass> {
     return {};
   }
@@ -93,5 +66,32 @@ export abstract class BabelPluginBase<Data = unknown> {
         transformedCode: ''
       };
     }
+  }
+
+  private getPluginObj(): PluginObj {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    const visitor = this.getVisitor();
+    const inherits = this.getInherits();
+
+    function manipulateOptions(opts: unknown, parserOpts: unknown): void {
+      self.manipulateOptions(opts, parserOpts);
+    }
+
+    function pre(this: PluginPass, file: BabelFile): void {
+      self.pre(this, file);
+    }
+
+    function post(this: PluginPass, file: BabelFile): void {
+      self.post(this, file);
+    }
+
+    return {
+      inherits,
+      manipulateOptions,
+      post,
+      pre,
+      visitor
+    };
   }
 }
