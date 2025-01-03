@@ -18,10 +18,10 @@ import type { RequireExFn } from './types.js';
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
 import { ExtractRequireArgsListBabelPlugin } from './babel/ExtractRequireArgsListBabelPlugin.ts';
+import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionBabelPlugin.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
-import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 export enum ResolvedType {
@@ -536,7 +536,9 @@ ${this.getRequireAsyncAdvice(true)}`);
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
       await moduleFnAsyncWrapper(childRequire, module, exports);
+      // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
+      // eslint-disable-next-line import-x/no-commonjs
       return module.exports;
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });

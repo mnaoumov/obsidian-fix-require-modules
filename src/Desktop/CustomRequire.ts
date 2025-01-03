@@ -16,6 +16,7 @@ import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
 
 import { SequentialBabelPlugin } from '../babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from '../babel/ConvertToCommonJsBabelPlugin.ts';
+import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
@@ -24,7 +25,6 @@ import {
   ResolvedType
 
 } from '../CustomRequire.ts';
-import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
 import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
 type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => void;
@@ -233,7 +233,9 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
       moduleFnWrapper(childRequire, module, exports);
+      // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
+      // eslint-disable-next-line import-x/no-commonjs
       return module.exports;
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });

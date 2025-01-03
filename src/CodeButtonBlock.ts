@@ -5,7 +5,10 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import { normalizePath, Plugin } from 'obsidian';
+import {
+  normalizePath,
+  Plugin
+} from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
