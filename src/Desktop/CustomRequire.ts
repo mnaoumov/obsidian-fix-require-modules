@@ -225,12 +225,11 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFnWrapper = new Function(result.transformedCode) as () => ModuleFn;
+      const moduleFnWrapper = window.eval(result.transformedCode) as ModuleFn;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      moduleFnWrapper()(childRequire, module, exports);
+      moduleFnWrapper(childRequire, module, exports);
       this.addToModuleCache(path, exports);
       return exports;
     } catch (e) {

@@ -527,12 +527,11 @@ ${this.getRequireAsyncAdvice(true)}`);
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const moduleFnAsyncWrapper = new Function(result.transformedCode) as () => ModuleFnAsync;
+      const moduleFnAsyncWrapper = window.eval(result.transformedCode) as ModuleFnAsync;
       const exports = {};
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
-      await moduleFnAsyncWrapper()(childRequire, module, exports);
+      await moduleFnAsyncWrapper(childRequire, module, exports);
       this.addToModuleCache(path, exports);
       return exports;
     } catch (e) {
