@@ -536,8 +536,8 @@ ${this.getRequireAsyncAdvice(true)}`);
       const module = { exports };
       const childRequire = this.makeChildRequire(path);
       await moduleFnAsyncWrapper(childRequire, module, exports);
-      this.addToModuleCache(path, exports);
-      return exports;
+      this.addToModuleCache(path, module.exports);
+      return module.exports;
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
     }
