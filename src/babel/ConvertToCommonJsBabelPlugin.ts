@@ -1,11 +1,6 @@
-import type {
-  BabelFile,
-  PluginObj,
-  PluginPass
-} from '@babel/core';
-import type { Visitor } from '@babel/traverse';
+import { transform as babelTransform } from '@babel/standalone';
 
-import { availablePlugins } from '@babel/standalone';
+import type { TransformResult } from './BabelPluginBase.ts';
 
 import { BabelPluginBase } from './BabelPluginBase.ts';
 
@@ -14,15 +9,35 @@ interface TransformCodeToCommonJsData {
 }
 
 export class ConvertToCommonJsBabelPlugin extends BabelPluginBase<TransformCodeToCommonJsData> {
-  public constructor(data: TransformCodeToCommonJsData = { hasTopLevelAwait: false }) {
-    super(data);
+  public constructor() {
+    super({ hasTopLevelAwait: false });
   }
 
-  public override getVisitor(): Visitor<PluginPass> {
-    return (availablePlugins['transform-modules-commonjs'] as PluginObj).visitor;
-  }
+  public override transform(code: string, filename: string, dir?: string): TransformResult<TransformCodeToCommonJsData> {
+    try {
+      const result = babelTransform(code, {
+        ast: true,
+        cwd: dir,
+        filename,
+        plugins: ['transform-modules-commonjs'],
+        presets: ['typescript'],
+        sourceMaps: 'inline'
+      });
 
-  public override post(_state: PluginPass, file: BabelFile): void {
-    this.data.hasTopLevelAwait = file.ast.program.extra?.['topLevelAwait'] as boolean | undefined ?? false;
+      return {
+        data: {
+          hasTopLevelAwait: result.ast?.program.extra?.['topLevelAwait'] as boolean | undefined ?? false
+        },
+        transformedCode: result.code ?? ''
+      };
+    } catch (e) {
+      return {
+        data: {
+          hasTopLevelAwait: false
+        },
+        error: e as Error,
+        transformedCode: ''
+      };
+    }
   }
 }
