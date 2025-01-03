@@ -5,7 +5,7 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import { Plugin } from 'obsidian';
+import { normalizePath, Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import { join } from 'obsidian-dev-utils/Path';
 
@@ -51,7 +51,7 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   const codeButtonBlockScriptPath = join(dirPath, codeButtonBlockScriptFileName);
   await app.vault.create(codeButtonBlockScriptPath, source);
   const codeButtonBlockScriptWrapperFileName = `.code-button-block-script-wrapper-${randomName}.cjs`;
-  const codeButtonBlockScriptWrapperPath = join(dirPath, codeButtonBlockScriptWrapperFileName);
+  const codeButtonBlockScriptWrapperPath = normalizePath(join(dirPath, codeButtonBlockScriptWrapperFileName));
   const sourceDir = app.vault.adapter.getFullPath(dirPath);
   const sourceUrl = convertPathToObsidianUrl(app.vault.adapter.getFullPath(codeButtonBlockScriptPath));
 
