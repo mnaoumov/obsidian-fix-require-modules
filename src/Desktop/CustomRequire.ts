@@ -24,6 +24,8 @@ import {
   ResolvedType
 
 } from '../CustomRequire.ts';
+import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
+import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
 type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => void;
 
@@ -211,7 +213,8 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   private requireString(content: string, path: string): unknown {
     const result = new SequentialBabelPlugin([
       new ConvertToCommonJsBabelPlugin(),
-      new WrapInRequireFunctionBabelPlugin(false)
+      new WrapInRequireFunctionBabelPlugin(false),
+      new FixSourceMapBabelPlugin(convertPathToObsidianUrl(path))
     ]).transform(content, basename(path), dirname(path));
 
     if (result.error) {

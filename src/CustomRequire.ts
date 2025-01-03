@@ -21,6 +21,8 @@ import { ExtractRequireArgsListBabelPlugin } from './babel/ExtractRequireArgsLis
 import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionBabelPlugin.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
+import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
+import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 export enum ResolvedType {
   Module = 'module',
@@ -517,9 +519,11 @@ ${this.getRequireAsyncAdvice(true)}`);
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
     const filename = isUrl(path) ? 'from-url.ts' : basename(path);
     const dir = isUrl(path) ? '' : dirname(path);
+    const url = convertPathToObsidianUrl(path);
     const result = new SequentialBabelPlugin([
       new ConvertToCommonJsBabelPlugin(),
-      new WrapInRequireFunctionBabelPlugin(true)
+      new WrapInRequireFunctionBabelPlugin(true),
+      new FixSourceMapBabelPlugin(url)
     ]).transform(content, filename, dir);
 
     if (result.error) {
