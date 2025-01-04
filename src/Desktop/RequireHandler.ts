@@ -20,7 +20,9 @@ import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
+  ENTRY_POINT,
   MODULE_NAME_SEPARATOR,
+  RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
   ResolvedType
 
@@ -186,8 +188,12 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireModule(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
+    const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+    const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
+    const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+
     for (const rootDir of this.getRootDirs(parentDir)) {
-      const packageDir = join(rootDir, 'node_modules', moduleName);
+      const packageDir = join(rootDir, 'node_modules', baseModuleName);
       if (!this.exists(packageDir)) {
         continue;
       }
@@ -198,9 +204,13 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       }
 
       const packageJson = readPackageJsonSync(packageJsonPath);
-      const entryPoint = this.findEntryPoint(packageJson);
-      const entryPointPath = join(packageDir, entryPoint);
-      return this.requirePath(entryPointPath, cacheInvalidationMode);
+      const relativeModulePath = this.getRelativeModulePath(packageJson, relativeModuleName);
+      if (relativeModulePath == null) {
+        continue;
+      }
+
+      const resolvedPath = join(packageDir, relativeModulePath);
+      return this.requirePath(resolvedPath, cacheInvalidationMode);
     }
 
     throw new Error(`Could not resolve module: ${moduleName}`);

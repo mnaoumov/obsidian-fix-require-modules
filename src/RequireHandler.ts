@@ -9,7 +9,10 @@ import {
   join,
   toPosixPath
 } from 'obsidian-dev-utils/Path';
-import { trimStart } from 'obsidian-dev-utils/String';
+import {
+  trimEnd,
+  trimStart
+} from 'obsidian-dev-utils/String';
 import { isUrl } from 'obsidian-dev-utils/url';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
@@ -31,6 +34,10 @@ export enum ResolvedType {
 }
 
 const PACKAGE_JSON = 'package.json';
+export const ENTRY_POINT = '.';
+const WILDCARD_MODULE_PLACEHOLDER = '*';
+const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
+export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 
 export type PluginRequireFn = (id: string) => unknown;
 
@@ -125,8 +132,14 @@ export abstract class RequireHandler {
 
   protected abstract existsAsync(path: string): Promise<boolean>;
 
-  protected findEntryPoint(packageJson: PackageJson): string {
-    return this.findExportsEntryPoint(packageJson.exports) ?? packageJson.main ?? 'index.js';
+  protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
+    const path = this.getExportsRelativeModulePath(packageJson.exports, relativeModuleName);
+
+    if (path == null && relativeModuleName === ENTRY_POINT) {
+      return packageJson.main ?? 'index.js';
+    }
+
+    return path;
   }
 
   protected getRequireAsyncAdvice(isNewSentence?: boolean): string {
@@ -275,13 +288,13 @@ await requireAsyncWrapper((require) => {
     return window.require(id, { parentPath });
   }
 
-  private findExportsEntryPoint(exportsNode: PackageJson['exports'], isTopLevel = true): null | string {
+  private getExportsRelativeModulePath(exportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
     if (!exportsNode) {
       return null;
     }
 
     if (typeof exportsNode === 'string') {
-      return exportsNode;
+      return exportsNode + trimStart(relativeModuleName, ENTRY_POINT);
     }
 
     let exportConditions;
@@ -292,7 +305,7 @@ await requireAsyncWrapper((require) => {
       }
 
       if (typeof exportsNode[0] === 'string') {
-        return exportsNode[0];
+        return exportsNode[0] + trimStart(relativeModuleName, ENTRY_POINT);
       }
 
       exportConditions = exportsNode[0];
@@ -303,14 +316,35 @@ await requireAsyncWrapper((require) => {
     const path = exportConditions['require'] ?? exportConditions['import'] ?? exportConditions['default'];
 
     if (typeof path === 'string') {
-      return path;
+      return path + trimStart(relativeModuleName, ENTRY_POINT);
     }
 
     if (!isTopLevel) {
       return null;
     }
 
-    return this.findExportsEntryPoint(exportConditions['.'], false);
+    const separatorIndex = relativeModuleName.lastIndexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+    const parentRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(0, separatorIndex) : relativeModuleName;
+    const leafRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(separatorIndex + 1) : '';
+
+    for (const [condition, exportsNodeChild] of Object.entries(exportConditions)) {
+      if (condition === relativeModuleName) {
+        const modulePath = this.getExportsRelativeModulePath(exportsNodeChild, ENTRY_POINT, false);
+        if (modulePath) {
+          return modulePath;
+        }
+      } else if (condition.endsWith(WILDCARD_MODULE_CONDITION_SUFFIX)) {
+        const parentCondition = trimEnd(condition, WILDCARD_MODULE_CONDITION_SUFFIX);
+        if (parentCondition === parentRelativeModuleName && leafRelativeModuleName) {
+          const modulePath = this.getExportsRelativeModulePath(exportsNodeChild, ENTRY_POINT, false);
+          if (modulePath) {
+            return modulePath.replace(WILDCARD_MODULE_PLACEHOLDER, leafRelativeModuleName);
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   private getPackageJsonPath(packageDir: string): string {
@@ -489,8 +523,12 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
+    const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+    const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
+    const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+
     for (const rootDir of await this.getRootDirsAsync(parentDir)) {
-      const packageDir = join(rootDir, 'node_modules', moduleName);
+      const packageDir = join(rootDir, 'node_modules', baseModuleName);
       if (!await this.existsAsync(packageDir)) {
         continue;
       }
@@ -501,9 +539,13 @@ ${this.getRequireAsyncAdvice(true)}`);
       }
 
       const packageJson = await this.readPackageJsonAsync(packageJsonPath);
-      const entryPoint = this.findEntryPoint(packageJson);
-      const entryPointPath = join(packageDir, entryPoint);
-      return this.requirePathAsync(entryPointPath, cacheInvalidationMode);
+      const relativeModulePath = this.getRelativeModulePath(packageJson, relativeModuleName);
+      if (relativeModulePath == null) {
+        continue;
+      }
+
+      const resolvedPath = join(packageDir, relativeModulePath);
+      return this.requirePathAsync(resolvedPath, cacheInvalidationMode);
     }
 
     throw new Error(`Could not resolve module: ${moduleName}`);
