@@ -236,6 +236,10 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireString(content: string, path: string): unknown {
+    if (path.endsWith('.json')) {
+      return JSON.parse(content);
+    }
+
     const result = new SequentialBabelPlugin([
       new ConvertToCommonJsBabelPlugin(),
       new WrapInRequireFunctionBabelPlugin(false),

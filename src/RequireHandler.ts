@@ -574,6 +574,10 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
+    if (splitQuery(path).cleanStr.endsWith('.json')) {
+      return JSON.parse(content);
+    }
+
     const filename = isUrl(path) ? 'from-url.ts' : basename(path);
     const dir = isUrl(path) ? '' : dirname(path);
     const url = convertPathToObsidianUrl(path);
