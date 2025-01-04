@@ -21,7 +21,8 @@ class RequireHandlerImpl extends RequireHandler {
   }
 
   protected override async getTimestampAsync(path: string): Promise<number> {
-    return (await this.capacitorAdapter.fs.stat(path)).mtime ?? 0;
+    const stat = await this.capacitorAdapter.fs.stat(path);
+    return stat.mtime ?? 0;
   }
 
   protected override async readFileAsync(path: string): Promise<string> {
