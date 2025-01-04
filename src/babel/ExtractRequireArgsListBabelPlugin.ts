@@ -12,7 +12,7 @@ import {
 } from '@babel/types';
 import { nameof } from 'obsidian-dev-utils/Object';
 
-import type { RequireOptions } from '../CustomRequire.ts';
+import type { RequireOptions } from '../RequireHandler.ts';
 
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import { BabelPluginBase } from './BabelPluginBase.ts';

@@ -16,7 +16,7 @@ import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
 import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInDefaultAsyncFunctionBabelPlugin } from './babel/WrapInDefaultAsyncFunctionBabelPlugin.ts';
-import { requireVaultScriptAsync } from './CustomRequire.ts';
+import { requireVaultScriptAsync } from './RequireHandler.ts';
 import { printError } from './util/Error.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 

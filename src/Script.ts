@@ -10,7 +10,7 @@ import { basename } from 'obsidian-dev-utils/Path';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
 
-import { requireVaultScriptAsync } from './CustomRequire.ts';
+import { requireVaultScriptAsync } from './RequireHandler.ts';
 import { printError } from './util/Error.ts';
 
 interface CleanupScript extends Script {

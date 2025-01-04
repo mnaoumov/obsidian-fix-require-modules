@@ -11,8 +11,8 @@ import {
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
 
-import type { PluginRequireFn } from '../CustomRequire.ts';
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
+import type { PluginRequireFn } from '../RequireHandler.ts';
 
 import { SequentialBabelPlugin } from '../babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from '../babel/ConvertToCommonJsBabelPlugin.ts';
@@ -20,16 +20,16 @@ import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
-  CustomRequire,
   MODULE_NAME_SEPARATOR,
+  RequireHandler,
   ResolvedType
 
-} from '../CustomRequire.ts';
+} from '../RequireHandler.ts';
 import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
 type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => void;
 
-class CustomRequireImpl extends CustomRequire {
+class RequireHandlerImpl extends RequireHandler {
   private electronModules = new Map<string, unknown>();
   private nodeBuiltinModules = new Set<string>();
   private originalProtoRequire!: NodeRequire;
@@ -258,4 +258,4 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
   }
 }
 
-export const customRequire = new CustomRequireImpl();
+export const requireHandler = new RequireHandlerImpl();

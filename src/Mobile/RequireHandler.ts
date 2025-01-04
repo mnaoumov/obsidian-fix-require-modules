@@ -1,8 +1,8 @@
 import { CapacitorAdapter } from 'obsidian';
 
-import { CustomRequire } from '../CustomRequire.ts';
+import { RequireHandler } from '../RequireHandler.ts';
 
-class CustomRequireImpl extends CustomRequire {
+class RequireHandlerImpl extends RequireHandler {
   private get capacitorAdapter(): CapacitorAdapter {
     const adapter = this.plugin.app.vault.adapter;
     if (!(adapter instanceof CapacitorAdapter)) {
@@ -33,4 +33,4 @@ class CustomRequireImpl extends CustomRequire {
   }
 }
 
-export const customRequire = new CustomRequireImpl();
+export const requireHandler = new RequireHandlerImpl();

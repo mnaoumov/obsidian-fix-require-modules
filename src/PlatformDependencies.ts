@@ -1,10 +1,10 @@
 import { Platform } from 'obsidian';
 
-import type { CustomRequire } from './CustomRequire.ts';
+import type { RequireHandler } from './RequireHandler.ts';
 import type { ScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
 
 export interface PlatformDependencies {
-  customRequire: CustomRequire;
+  requireHandler: RequireHandler;
   scriptDirectoryWatcher: ScriptDirectoryWatcher;
 }
 

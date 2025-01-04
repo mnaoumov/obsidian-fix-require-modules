@@ -54,7 +54,7 @@ interface SplitQueryResult {
 export const MODULE_NAME_SEPARATOR = '*';
 const VAULT_ROOT_PREFIX = '//';
 
-export abstract class CustomRequire {
+export abstract class RequireHandler {
   protected readonly moduleDependencies = new Map<string, Set<string>>();
   protected modulesCache!: NodeJS.Dict<NodeModule>;
   protected readonly moduleTimestamps = new Map<string, number>();

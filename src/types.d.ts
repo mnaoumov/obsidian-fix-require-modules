@@ -1,6 +1,6 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import type { RequireOptions } from './CustomRequire.ts';
+import type { RequireOptions } from './RequireHandler.ts';
 
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg<T> = (require: RequireExFn) => MaybePromise<T>;
