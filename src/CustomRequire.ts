@@ -547,10 +547,10 @@ ${this.getRequireAsyncAdvice(true)}`);
 
     try {
       const moduleFnAsyncWrapper = window.eval(result.transformedCode) as ModuleFnAsync;
-      const exports = {};
-      const module = { exports };
+      const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
-      await moduleFnAsyncWrapper(childRequire, module, exports);
+      // eslint-disable-next-line import-x/no-commonjs
+      await moduleFnAsyncWrapper(childRequire, module, module.exports);
       // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
       // eslint-disable-next-line import-x/no-commonjs

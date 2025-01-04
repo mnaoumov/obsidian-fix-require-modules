@@ -244,10 +244,10 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
 
     try {
       const moduleFnWrapper = window.eval(result.transformedCode) as ModuleFn;
-      const exports = {};
-      const module = { exports };
+      const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
-      moduleFnWrapper(childRequire, module, exports);
+      // eslint-disable-next-line import-x/no-commonjs
+      moduleFnWrapper(childRequire, module, module.exports);
       // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
       // eslint-disable-next-line import-x/no-commonjs
