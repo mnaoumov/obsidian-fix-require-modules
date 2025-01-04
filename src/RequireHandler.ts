@@ -26,6 +26,14 @@ import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionB
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
+import { normalizeOptionalProperties } from 'obsidian-dev-utils/Object';
+
+interface WrapRequireOptions {
+  optionsToPrepend?: Partial<RequireOptions>;
+  optionsToAppend?: Partial<RequireOptions>;
+  require: RequireExFn
+  beforeRequire?: (id: string) => void;
+}
 
 export enum ResolvedType {
   Module = 'module',
@@ -162,11 +170,6 @@ await requireAsyncWrapper((require) => {
 
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
-  protected makeChildRequire(parentPath: string): NodeRequire {
-    const childRequire = (id: string): unknown => this.childRequire(id, parentPath);
-    return Object.assign(childRequire, this.requireEx);
-  }
-
   protected abstract readFileAsync(path: string): Promise<string>;
 
   protected abstract requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
@@ -276,16 +279,6 @@ await requireAsyncWrapper((require) => {
     }
 
     return ans;
-  }
-
-  private childRequire(id: string, parentPath: string): unknown {
-    let dependencies = this.moduleDependencies.get(parentPath);
-    if (!dependencies) {
-      dependencies = new Set<string>();
-      this.moduleDependencies.set(parentPath, dependencies);
-    }
-    dependencies.add(id);
-    return window.require(id, { parentPath });
   }
 
   private getExportsRelativeModulePath(exportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
@@ -512,14 +505,27 @@ ${this.getRequireAsyncAdvice(true)}`);
     return module;
   }
 
-  private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>): Promise<T> {
+  private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>, require?: RequireExFn): Promise<T> {
     const result = new ExtractRequireArgsListBabelPlugin().transform(requireFn.toString(), 'extract-requires.js');
     const requireArgsList = result.data.requireArgsList;
     for (const requireArgs of requireArgsList) {
       const { id, options } = requireArgs;
-      await this.requireAsync(id, options);
+      const newOptions = normalizeOptionalProperties<Partial<RequireOptions>>({ parentPath: require?.parentPath, ...options });
+      await this.requireAsync(id, newOptions);
     }
-    return await requireFn(this.requireWithCacheWithoutInvalidation);
+    return await requireFn(this.wrapRequire({
+      require: require ?? this.requireEx,
+      optionsToAppend: { cacheInvalidationMode: CacheInvalidationMode.Never }
+    }));
+  }
+
+  private wrapRequire(options: WrapRequireOptions): RequireExFn {
+    const fn = (id: string, requireOptions: Partial<RequireOptions> = {}): unknown => {
+      options.beforeRequire?.(id);
+      const newOptions = { ...options.optionsToPrepend, ...requireOptions, ...options.optionsToAppend };
+      return options.require(id, newOptions);
+    };
+    return Object.assign(fn, options.require, { parentPath: options.optionsToPrepend?.parentPath });
   }
 
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
@@ -573,6 +579,21 @@ ${this.getRequireAsyncAdvice(true)}`);
     return this.modulesCache[path]?.exports;
   }
 
+  protected makeChildRequire(parentPath: string): RequireExFn {
+    return this.wrapRequire({
+      beforeRequire: (id: string): void => {
+        let dependencies = this.moduleDependencies.get(parentPath);
+        if (!dependencies) {
+          dependencies = new Set<string>();
+          this.moduleDependencies.set(parentPath, dependencies);
+        }
+        dependencies.add(id);
+      },
+      require: this.requireEx,
+      optionsToPrepend: { parentPath }
+    })
+  }
+
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
     if (splitQuery(path).cleanStr.endsWith('.json')) {
       return JSON.parse(content);
@@ -594,6 +615,7 @@ ${this.getRequireAsyncAdvice(true)}`);
     try {
       const moduleFnAsyncWrapper = window.eval(result.transformedCode) as ModuleFnAsync;
       const module = { exports: {} };
+
       const childRequire = this.makeChildRequire(path);
       // eslint-disable-next-line import-x/no-commonjs
       await moduleFnAsyncWrapper(childRequire, module, module.exports);

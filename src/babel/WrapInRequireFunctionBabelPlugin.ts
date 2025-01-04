@@ -39,7 +39,8 @@ export class WrapInRequireFunctionBabelPlugin extends BabelPluginBase {
                   blockStatement(programBody),
                   false,
                   true
-                )
+                ),
+                identifier('require')
               ]
             ))
           ];
