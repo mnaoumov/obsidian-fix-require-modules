@@ -353,7 +353,22 @@ await requireAsyncWrapper((require) => {
 
   private async getRootDirsAsync(dir: string): Promise<string[]> {
     const modulesRootDir = this.plugin.settingsCopy.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot) : null;
-    return [await this.getRootDirAsync(dir), modulesRootDir].filter((dir): dir is string => dir !== null);
+
+    const ans: string[] = [];
+    for (const possibleDir of new Set([dir, modulesRootDir])) {
+      if (possibleDir === null) {
+        continue;
+      }
+
+      const rootDir = await this.getRootDirAsync(possibleDir);
+      if (rootDir == null) {
+        continue;
+      }
+
+      ans.push(rootDir);
+    }
+
+    return ans;
   }
 
   private async readPackageJsonAsync(path: string): Promise<PackageJson> {

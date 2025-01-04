@@ -153,7 +153,22 @@ class CustomRequireImpl extends CustomRequire {
 
   private getRootDirs(dir: string): string[] {
     const modulesRootDir = this.plugin.settingsCopy.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot) : null;
-    return [getRootDir(dir), modulesRootDir].filter((dir): dir is string => dir !== null);
+
+    const ans: string[] = [];
+    for (const possibleDir of new Set([dir, modulesRootDir])) {
+      if (possibleDir === null) {
+        continue;
+      }
+
+      const rootDir = getRootDir(possibleDir);
+      if (rootDir == null) {
+        continue;
+      }
+
+      ans.push(rootDir);
+    }
+
+    return ans;
   }
 
   private getTimestamp(path: string): number {
