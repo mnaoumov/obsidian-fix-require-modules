@@ -46,14 +46,18 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   try {
     const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper((tempPluginClass) => {
-      registerTempPlugin(plugin, tempPluginClass);
-    });
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin));
     resultEl.setText('Done! ✅');
   } catch (error) {
     resultEl.setText('Error! ❌\nSee console for details...');
     printError(new Error('Error executing code block', { cause: error }));
   }
+}
+
+function makeRegisterTempPluginFn(plugin: Plugin): RegisterTempPluginFn {
+  return (tempPluginClass) => {
+    registerTempPlugin(plugin, tempPluginClass);
+  };
 }
 
 function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string): string {
