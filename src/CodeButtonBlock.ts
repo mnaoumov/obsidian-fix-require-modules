@@ -6,7 +6,7 @@ import type {
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import { Plugin } from 'obsidian';
-import { errorToString } from 'obsidian-dev-utils/Error';
+import { printError } from 'obsidian-dev-utils/Error';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import {
   basename,
@@ -16,10 +16,10 @@ import {
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
 import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin.ts';
+import { ConsoleWrapper } from './ConsoleWrapper.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
 
 type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console) => MaybePromise<void>;
-type ConsoleMethod = 'debug' | 'error' | 'info' | 'log' | 'warn';
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
 
 type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
@@ -41,70 +41,20 @@ export function unloadTempPlugins(): void {
   }
 }
 
-function appendToLog(resultEl: HTMLElement, message: string, method: ConsoleMethod): void {
-  const logEntry = resultEl.createDiv({ cls: `console-log-entry console-log-entry-${method}`, text: message });
-  logEntry.scrollIntoView({ behavior: 'smooth', block: 'end' });
-}
-
-function appendToResultEl(resultEl: HTMLElement, args: unknown[], method: ConsoleMethod): void {
-  const formattedMessage = args.map(formatMessage).join(' ');
-  appendToLog(resultEl, formattedMessage, method);
-}
-
-function formatMessage(arg: unknown): string {
-  if (arg === null) {
-    return 'null';
-  }
-
-  if (arg === undefined) {
-    return formatMessage(replacer('', arg));
-  }
-
-  if (typeof arg === 'function') {
-    return formatMessage(replacer('', arg));
-  }
-
-  if (arg instanceof Error) {
-    return formatMessage(replacer('', arg));
-  }
-
-  if (typeof arg === 'object') {
-    return JSON.stringify(arg, replacer, 2);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-base-to-string
-  return String(arg);
-
-  function replacer(_key: string, value: unknown): unknown {
-    if (value === undefined) {
-      return 'undefined';
-    }
-    if (typeof value === 'function') {
-      return `function ${value.name || 'anonymous'}()`;
-    }
-
-    if (value instanceof Error) {
-      return errorToString(value);
-    }
-
-    return value;
-  }
-}
-
 async function handleClick(plugin: Plugin, resultEl: HTMLElement, sourcePath: string, source: string, caption: string, buttonIndex: number): Promise<void> {
   resultEl.empty();
-  writeSystemMessage(resultEl, '⏳ Executing...');
-
-  const wrappedConsole = wrapConsole(resultEl);
+  const wrappedConsole = new ConsoleWrapper(resultEl);
+  wrappedConsole.writeSystemMessage('⏳ Executing...');
 
   try {
     const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole);
-    writeSystemMessage(resultEl, '✔ Executed successfully');
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole.getConsoleInstance());
+    wrappedConsole.writeSystemMessage('✔ Executed successfully');
   } catch (error) {
-    wrappedConsole.error(error);
-    writeSystemMessage(resultEl, '✖ Executed with error!');
+    printError(error);
+    wrappedConsole.appendToResultEl([error], 'error');
+    wrappedConsole.writeSystemMessage('✖ Executed with error!');
   }
 }
 
@@ -201,22 +151,4 @@ function registerTempPlugin(plugin: Plugin, tempPluginClass: TempPluginClass): v
 
 function unregisterCodeHighlighting(): void {
   window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, 'null'));
-}
-
-function wrapConsole(resultEl: HTMLElement): Console {
-  const wrappedConsole = { ...console };
-
-  for (const method of ['log', 'debug', 'error', 'info', 'warn'] as ConsoleMethod[]) {
-    wrappedConsole[method] = (...args): void => {
-      console[method](...args);
-      appendToResultEl(resultEl, args, method);
-    };
-  }
-
-  return wrappedConsole;
-}
-
-function writeSystemMessage(resultEl: HTMLElement, message: string): void {
-  const systemMessage = resultEl.createDiv({ cls: 'system-message', text: message });
-  systemMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
