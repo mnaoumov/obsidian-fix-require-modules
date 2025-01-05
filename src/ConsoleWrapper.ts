@@ -26,12 +26,12 @@ export class ConsoleWrapper {
 
   public writeSystemMessage(message: string): void {
     const systemMessage = this.resultEl.createDiv({ cls: 'system-message', text: message });
-    systemMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    systemMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   private appendToLog(message: string, method: ConsoleMethod): void {
     const logEntry = this.resultEl.createDiv({ cls: `console-log-entry console-log-entry-${method}`, text: message });
-    logEntry.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    logEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 
