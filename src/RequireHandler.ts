@@ -1,6 +1,7 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
+import { debuggableEval } from 'debuggable-eval';
 import { Platform } from 'obsidian';
 import { normalizeOptionalProperties } from 'obsidian-dev-utils/Object';
 import {
@@ -616,7 +617,7 @@ ${this.getRequireAsyncAdvice(true)}`);
     }
 
     try {
-      const moduleFnAsyncWrapper = window.eval(result.transformedCode) as ModuleFnAsync;
+      const moduleFnAsyncWrapper = debuggableEval(result.transformedCode, `requireStringAsync:${path}`) as ModuleFnAsync;
       const module = { exports: {} };
 
       const childRequire = this.makeChildRequire(path);

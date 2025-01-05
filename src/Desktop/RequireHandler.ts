@@ -1,3 +1,4 @@
+import { debuggableEval } from 'debuggable-eval';
 import { FileSystemAdapter } from 'obsidian';
 import {
   basename,
@@ -244,11 +245,13 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       return JSON.parse(content);
     }
 
+    const filename = basename(path);
+
     const result = new SequentialBabelPlugin([
       new ConvertToCommonJsBabelPlugin(),
       new WrapInRequireFunctionBabelPlugin(false),
       new FixSourceMapBabelPlugin(convertPathToObsidianUrl(path))
-    ]).transform(content, basename(path), dirname(path));
+    ]).transform(content, filename, dirname(path));
 
     if (result.error) {
       throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: result.error });
@@ -261,7 +264,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
     }
 
     try {
-      const moduleFnWrapper = window.eval(result.transformedCode) as ModuleFn;
+      const moduleFnWrapper = debuggableEval(result.transformedCode, `requireString:${path}`) as ModuleFn;
       const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
       // eslint-disable-next-line import-x/no-commonjs
