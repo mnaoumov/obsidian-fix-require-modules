@@ -22,6 +22,7 @@ import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
   ENTRY_POINT,
   MODULE_NAME_SEPARATOR,
+  NODE_MODULES_DIR,
   RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
   ResolvedType
@@ -193,7 +194,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
     const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 
     for (const rootDir of this.getRootDirs(parentDir)) {
-      const packageDir = join(rootDir, 'node_modules', baseModuleName);
+      const packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
       if (!this.exists(packageDir)) {
         continue;
       }

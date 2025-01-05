@@ -41,6 +41,7 @@ interface WrapRequireOptions {
   require: RequireExFn;
 }
 
+export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
 export const ENTRY_POINT = '.';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
@@ -540,7 +541,7 @@ ${this.getRequireAsyncAdvice(true)}`);
     const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 
     for (const rootDir of await this.getRootDirsAsync(parentDir)) {
-      const packageDir = join(rootDir, 'node_modules', baseModuleName);
+      const packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
       if (!await this.existsAsync(packageDir)) {
         continue;
       }
