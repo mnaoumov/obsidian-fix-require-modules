@@ -10,12 +10,20 @@
   --console-log-entry-warn-background-color: #fcf8e3;
   --console-log-entry-system-background-color: #0078d7;
   --console-log-entry-system-color: #ffffff;
+  --console-log-container-border-color: #cccccc;
+  --console-log-container-background-color: #ffffff;
 }
 
 .console-log-container {
   font-family: "Courier New", monospace;
   line-height: 1.5;
+  border: 1px solid var(--console-log-container-border-color);
+  border-radius: 6px;
+  background-color: var(--console-log-container-background-color);
+  padding: 10px;
   margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: pre-wrap;
 }
 
 .console-log-container .system-message {
@@ -25,7 +33,7 @@
   border-radius: 4px;
   font-style: italic;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .console-log-container .console-log-entry::before {
@@ -36,7 +44,7 @@
 
 .console-log-container .console-log-entry {
   padding: 5px 10px;
-  margin: 2px 0;
+  margin: 5px 0;
   border-radius: 3px;
 }
 
