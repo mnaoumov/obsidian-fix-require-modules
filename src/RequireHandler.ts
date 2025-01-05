@@ -34,20 +34,6 @@ export enum ResolvedType {
   Url = 'url'
 }
 
-interface WrapRequireOptions {
-  beforeRequire?: (id: string) => void;
-  optionsToAppend?: Partial<RequireOptions>;
-  optionsToPrepend?: Partial<RequireOptions>;
-  require: RequireExFn;
-}
-
-export const NODE_MODULES_DIR = 'node_modules';
-const PACKAGE_JSON = 'package.json';
-export const ENTRY_POINT = '.';
-const WILDCARD_MODULE_PLACEHOLDER = '*';
-const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
-export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
-
 export type PluginRequireFn = (id: string) => unknown;
 
 export interface RequireOptions {
@@ -67,7 +53,20 @@ interface SplitQueryResult {
   query: string;
 }
 
+interface WrapRequireOptions {
+  beforeRequire?: (id: string) => void;
+  optionsToAppend?: Partial<RequireOptions>;
+  optionsToPrepend?: Partial<RequireOptions>;
+  require: RequireExFn;
+}
+
+export const ENTRY_POINT = '.';
 export const MODULE_NAME_SEPARATOR = '*';
+export const NODE_MODULES_DIR = 'node_modules';
+const PACKAGE_JSON = 'package.json';
+export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
+const WILDCARD_MODULE_PLACEHOLDER = '*';
+const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 const VAULT_ROOT_PREFIX = '//';
 
 export abstract class RequireHandler {
