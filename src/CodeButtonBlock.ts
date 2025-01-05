@@ -19,7 +19,7 @@ import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin
 import { ConsoleWrapper } from './ConsoleWrapper.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
 
-type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console) => MaybePromise<void>;
+type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console, container: HTMLElement) => MaybePromise<void>;
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
 
 type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
@@ -49,7 +49,7 @@ async function handleClick(plugin: Plugin, resultEl: HTMLElement, sourcePath: st
   try {
     const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole.getConsoleInstance());
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole.getConsoleInstance(), resultEl);
     wrappedConsole.writeSystemMessage('✔ Executed successfully');
   } catch (error) {
     printError(error);

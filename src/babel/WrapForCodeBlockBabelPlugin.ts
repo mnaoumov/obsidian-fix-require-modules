@@ -58,7 +58,8 @@ export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
           identifier('codeButtonBlockScriptWrapper'),
           [
             identifier('registerTempPlugin'),
-            identifier('console')
+            identifier('console'),
+            identifier('container')
           ],
           blockStatement(programBody),
           false,
