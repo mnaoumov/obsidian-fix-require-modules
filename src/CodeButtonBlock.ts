@@ -33,6 +33,7 @@ interface HandleClickOptions {
   caption: string;
   plugin: Plugin;
   resultEl: HTMLElement;
+  shouldWrapConsole: boolean;
   source: string;
   sourcePath: string;
 }
@@ -59,7 +60,7 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
   try {
     const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}:code-button:${options.buttonIndex.toString()}:${options.caption}`, dirname(options.sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(), options.resultEl);
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl);
     wrappedConsole.writeSystemMessage('✔ Executed successfully');
   } catch (error) {
     printError(error);
@@ -97,7 +98,8 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       ...rest
     ] = getCodeBlockArguments(ctx, el);
 
-    const shouldAutoRun = rest.includes('autorun');
+    const shouldAutoRun = rest.includes('autorun') || rest.includes('autorun:true');
+    const shouldWrapConsole = !rest.includes('console:false');
 
     const lines = sectionInfo.text.split('\n');
     const previousLines = lines.slice(0, sectionInfo.lineStart);
@@ -109,6 +111,7 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       caption,
       plugin,
       resultEl,
+      shouldWrapConsole,
       source,
       sourcePath: ctx.sourcePath
     };

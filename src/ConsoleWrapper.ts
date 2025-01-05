@@ -11,7 +11,11 @@ export class ConsoleWrapper {
     this.appendToLog(formattedMessage, method);
   }
 
-  public getConsoleInstance(): Console {
+  public getConsoleInstance(shouldWrapConsole: boolean): Console {
+    if (!shouldWrapConsole) {
+      return console;
+    }
+
     const wrappedConsole = { ...console };
 
     for (const method of ['log', 'debug', 'error', 'info', 'warn'] as ConsoleMethod[]) {
