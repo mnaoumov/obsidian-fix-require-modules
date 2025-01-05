@@ -36,7 +36,6 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
   }
 
   protected override async onLayoutReady(): Promise<void> {
-    this.requireHandler.register(this, require);
     await this.saveSettings(this.settings);
     await invokeStartupScript(this);
     this.register(() => cleanupStartupScript(this));
@@ -46,6 +45,8 @@ export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginS
     const platformDependencies = await getPlatformDependencies();
     this.scriptDirectoryWatcher = platformDependencies.scriptDirectoryWatcher;
     this.requireHandler = platformDependencies.requireHandler;
+    this.requireHandler.register(this, require);
+
     registerCodeButtonBlock(this);
     this.addCommand({
       callback: () => selectAndInvokeScript(this),
