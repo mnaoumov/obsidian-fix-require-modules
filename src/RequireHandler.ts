@@ -2,6 +2,7 @@ import type { MaybePromise } from 'obsidian-dev-utils/Async';
 import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
 import { Platform } from 'obsidian';
+import { normalizeOptionalProperties } from 'obsidian-dev-utils/Object';
 import {
   basename,
   dirname,
@@ -26,19 +27,18 @@ import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionB
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
-import { normalizeOptionalProperties } from 'obsidian-dev-utils/Object';
-
-interface WrapRequireOptions {
-  optionsToPrepend?: Partial<RequireOptions>;
-  optionsToAppend?: Partial<RequireOptions>;
-  require: RequireExFn
-  beforeRequire?: (id: string) => void;
-}
 
 export enum ResolvedType {
   Module = 'module',
   Path = 'path',
   Url = 'url'
+}
+
+interface WrapRequireOptions {
+  beforeRequire?: (id: string) => void;
+  optionsToAppend?: Partial<RequireOptions>;
+  optionsToPrepend?: Partial<RequireOptions>;
+  require: RequireExFn;
 }
 
 const PACKAGE_JSON = 'package.json';
@@ -169,6 +169,21 @@ await requireAsyncWrapper((require) => {
   }
 
   protected abstract getTimestampAsync(path: string): Promise<number>;
+
+  protected makeChildRequire(parentPath: string): RequireExFn {
+    return this.wrapRequire({
+      beforeRequire: (id: string): void => {
+        let dependencies = this.moduleDependencies.get(parentPath);
+        if (!dependencies) {
+          dependencies = new Set<string>();
+          this.moduleDependencies.set(parentPath, dependencies);
+        }
+        dependencies.add(id);
+      },
+      optionsToPrepend: { parentPath },
+      require: this.requireEx
+    });
+  }
 
   protected abstract readFileAsync(path: string): Promise<string>;
 
@@ -514,18 +529,9 @@ ${this.getRequireAsyncAdvice(true)}`);
       await this.requireAsync(id, newOptions);
     }
     return await requireFn(this.wrapRequire({
-      require: require ?? this.requireEx,
-      optionsToAppend: { cacheInvalidationMode: CacheInvalidationMode.Never }
+      optionsToAppend: { cacheInvalidationMode: CacheInvalidationMode.Never },
+      require: require ?? this.requireEx
     }));
-  }
-
-  private wrapRequire(options: WrapRequireOptions): RequireExFn {
-    const fn = (id: string, requireOptions: Partial<RequireOptions> = {}): unknown => {
-      options.beforeRequire?.(id);
-      const newOptions = { ...options.optionsToPrepend, ...requireOptions, ...options.optionsToAppend };
-      return options.require(id, newOptions);
-    };
-    return Object.assign(fn, options.require, { parentPath: options.optionsToPrepend?.parentPath });
   }
 
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
@@ -579,21 +585,6 @@ ${this.getRequireAsyncAdvice(true)}`);
     return this.modulesCache[path]?.exports;
   }
 
-  protected makeChildRequire(parentPath: string): RequireExFn {
-    return this.wrapRequire({
-      beforeRequire: (id: string): void => {
-        let dependencies = this.moduleDependencies.get(parentPath);
-        if (!dependencies) {
-          dependencies = new Set<string>();
-          this.moduleDependencies.set(parentPath, dependencies);
-        }
-        dependencies.add(id);
-      },
-      require: this.requireEx,
-      optionsToPrepend: { parentPath }
-    })
-  }
-
   private async requireStringAsync(content: string, path: string): Promise<unknown> {
     if (splitQuery(path).cleanStr.endsWith('.json')) {
       return JSON.parse(content);
@@ -639,6 +630,15 @@ ${this.getRequireAsyncAdvice(true)}`);
       cacheInvalidationMode: CacheInvalidationMode.Never
     };
     return this.require(id, optionsWithoutInvalidation);
+  }
+
+  private wrapRequire(options: WrapRequireOptions): RequireExFn {
+    const fn = (id: string, requireOptions: Partial<RequireOptions> = {}): unknown => {
+      options.beforeRequire?.(id);
+      const newOptions = { ...options.optionsToPrepend, ...requireOptions, ...options.optionsToAppend };
+      return options.require(id, newOptions);
+    };
+    return Object.assign(fn, options.require, { parentPath: options.optionsToPrepend?.parentPath });
   }
 }
 
