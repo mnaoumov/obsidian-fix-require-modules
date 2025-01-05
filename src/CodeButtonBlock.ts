@@ -6,6 +6,7 @@ import type {
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import { Plugin } from 'obsidian';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { printError } from 'obsidian-dev-utils/Error';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import {
@@ -27,6 +28,15 @@ type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
 const CODE_BUTTON_BLOCK_LANGUAGE = 'code-button';
 const tempPlugins = new Map<string, Plugin>();
 
+interface HandleClickOptions {
+  buttonIndex: number;
+  caption: string;
+  plugin: Plugin;
+  resultEl: HTMLElement;
+  source: string;
+  sourcePath: string;
+}
+
 export function registerCodeButtonBlock(plugin: Plugin): void {
   registerCodeHighlighting();
   plugin.register(unregisterCodeHighlighting);
@@ -41,15 +51,15 @@ export function unloadTempPlugins(): void {
   }
 }
 
-async function handleClick(plugin: Plugin, resultEl: HTMLElement, sourcePath: string, source: string, caption: string, buttonIndex: number): Promise<void> {
-  resultEl.empty();
-  const wrappedConsole = new ConsoleWrapper(resultEl);
+async function handleClick(options: HandleClickOptions): Promise<void> {
+  options.resultEl.empty();
+  const wrappedConsole = new ConsoleWrapper(options.resultEl);
   wrappedConsole.writeSystemMessage('⏳ Executing...');
 
   try {
-    const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
-    const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole.getConsoleInstance(), resultEl);
+    const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}:code-button:${options.buttonIndex.toString()}:${options.caption}`, dirname(options.sourcePath));
+    const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(), options.resultEl);
     wrappedConsole.writeSystemMessage('✔ Executed successfully');
   } catch (error) {
     printError(error);
@@ -79,6 +89,7 @@ function makeWrapperScript(source: string, sourceFileName: string, sourceDir: st
 
 function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
   const sectionInfo = ctx.getSectionInfo(el);
+  const resultEl = el.createDiv({ cls: 'console-log-container' });
 
   if (sectionInfo) {
     const [
@@ -93,22 +104,28 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
     const previousText = previousLines.join('\n');
     const buttonIndex = Array.from(previousText.matchAll(new RegExp(`^\`{3,}${CODE_BUTTON_BLOCK_LANGUAGE}`, 'gm'))).length;
 
+    const handleClickOptions: HandleClickOptions = {
+      buttonIndex,
+      caption,
+      plugin,
+      resultEl,
+      source,
+      sourcePath: ctx.sourcePath
+    };
+
     el.createEl('button', {
       cls: 'mod-cta',
       async onclick(): Promise<void> {
-        await handleClick(plugin, resultEl, ctx.sourcePath, source, caption, buttonIndex);
+        await handleClick(handleClickOptions);
       },
+      prepend: true,
       text: caption
     });
 
     if (shouldAutoRun) {
-      setTimeout(async () => {
-        await handleClick(plugin, resultEl, ctx.sourcePath, source, caption, buttonIndex);
-      }, 0);
+      invokeAsyncSafely(() => handleClick(handleClickOptions));
     }
   }
-
-  const resultEl = el.createDiv({ cls: 'console-log-container' });
 
   if (!sectionInfo) {
     new ConsoleWrapper(resultEl).writeSystemMessage('✖ Error!\nCould not get code block info. Try to reopen the note...');
