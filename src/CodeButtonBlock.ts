@@ -102,7 +102,7 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
   const resultEl = el.createDiv({ cls: 'console-log-container' });
 
   if (!sectionInfo) {
-    resultEl.textContent = '✖ Error!\nCould not get code block info. Try to reopen the note...';
+    new ConsoleWrapper(resultEl).writeSystemMessage('✖ Error!\nCould not get code block info. Try to reopen the note...');
   }
 }
 
