@@ -12,7 +12,10 @@ import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
 
 import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
-import type { PluginRequireFn } from '../RequireHandler.ts';
+import type {
+  PluginRequireFn,
+  RequireAsyncWrapperFn
+} from '../RequireHandler.ts';
 
 import { SequentialBabelPlugin } from '../babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from '../babel/ConvertToCommonJsBabelPlugin.ts';
@@ -30,7 +33,7 @@ import {
 } from '../RequireHandler.ts';
 import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
-type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => void;
+type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn<unknown>) => void;
 
 class RequireHandlerImpl extends RequireHandler {
   private electronModules = new Map<string, unknown>();
@@ -262,7 +265,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
       const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
       // eslint-disable-next-line import-x/no-commonjs
-      moduleFnWrapper(childRequire, module, module.exports);
+      moduleFnWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
       // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
       // eslint-disable-next-line import-x/no-commonjs

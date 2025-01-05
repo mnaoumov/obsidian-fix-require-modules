@@ -35,15 +35,15 @@ export enum ResolvedType {
 
 export type PluginRequireFn = (id: string) => unknown;
 
+export type RequireAsyncWrapperFn<T> = (requireFn: RequireAsyncWrapperArg<T>) => Promise<T>;
+
 export interface RequireOptions {
   cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
 }
-
-type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => Promise<void>;
+type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn<unknown>) => Promise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg<T> = (require: RequireExFn) => MaybePromise<T>;
-type RequireAsyncWrapperFn<T> = (requireFn: RequireAsyncWrapperArg<T>) => Promise<T>;
 type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
@@ -243,6 +243,20 @@ await requireAsyncWrapper((require) => {
   }
 
   protected abstract readFileAsync(path: string): Promise<string>;
+
+  protected async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>, require?: RequireExFn): Promise<T> {
+    const result = new ExtractRequireArgsListBabelPlugin().transform(requireFn.toString(), 'extract-requires.js');
+    const requireArgsList = result.data.requireArgsList;
+    for (const requireArgs of requireArgsList) {
+      const { id, options } = requireArgs;
+      const newOptions = normalizeOptionalProperties<Partial<RequireOptions>>({ parentPath: require?.parentPath, ...options });
+      await this.requireAsync(id, newOptions);
+    }
+    return await requireFn(this.wrapRequire({
+      optionsToAppend: { cacheInvalidationMode: CacheInvalidationMode.Never },
+      require: require ?? this.requireEx
+    }));
+  }
 
   protected abstract requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown;
 
@@ -532,20 +546,6 @@ ${this.getRequireAsyncAdvice(true)}`);
     return module;
   }
 
-  private async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>, require?: RequireExFn): Promise<T> {
-    const result = new ExtractRequireArgsListBabelPlugin().transform(requireFn.toString(), 'extract-requires.js');
-    const requireArgsList = result.data.requireArgsList;
-    for (const requireArgs of requireArgsList) {
-      const { id, options } = requireArgs;
-      const newOptions = normalizeOptionalProperties<Partial<RequireOptions>>({ parentPath: require?.parentPath, ...options });
-      await this.requireAsync(id, newOptions);
-    }
-    return await requireFn(this.wrapRequire({
-      optionsToAppend: { cacheInvalidationMode: CacheInvalidationMode.Never },
-      require: require ?? this.requireEx
-    }));
-  }
-
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
     const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
     const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
@@ -621,7 +621,7 @@ ${this.getRequireAsyncAdvice(true)}`);
 
       const childRequire = this.makeChildRequire(path);
       // eslint-disable-next-line import-x/no-commonjs
-      await moduleFnAsyncWrapper(childRequire, module, module.exports);
+      await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
       // eslint-disable-next-line import-x/no-commonjs
       this.addToModuleCache(path, module.exports);
       // eslint-disable-next-line import-x/no-commonjs
