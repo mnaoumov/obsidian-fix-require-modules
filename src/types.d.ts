@@ -8,10 +8,8 @@ type RequireAsyncWrapperFn<T> = (requireFn: RequireAsyncWrapperArg<T>) => Promis
 type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
-declare global {
-  interface Window {
-    require?: RequireExFn;
-    requireAsync?: RequireAsyncFn;
-    requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
-  }
+interface RequireWindow {
+  require?: RequireExFn;
+  requireAsync?: RequireAsyncFn;
+  requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
 }
