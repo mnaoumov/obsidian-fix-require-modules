@@ -437,6 +437,103 @@ function myTypeScriptFn(arg: string): void {}
 
 ![Code Button](images/code-button.png)
 
+### Refreshing code blocks
+
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✔     |
+
+Code blocks are refreshed automatically when the content changes.
+
+If you just update settings in the code block header, the code block will not be rerendered.
+
+So your button caption and settings will not be refreshed.
+
+To fix that, you can:
+
+- Modify the code block content.
+- Reopen the note.
+- Reload the plugin.
+- Use the [Refresh Preview](https://obsidian.md/plugins?id=refresh-preview) plugin.
+
+### Console messages
+
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✔     |
+
+Code blocks intercept all calls to `console.debug()`, `console.error()`, `console.info()`, `console.log()`, `console.warn()` and display them in the results panel.
+
+````markdown
+```code-button "Console messages"
+console.debug('debug message');
+console.error('error message');
+console.info('info message');
+console.log('log message');
+console.warn('warn message');
+```
+````
+
+![Console messages](images/console-messages.png)
+
+If you want to disable console messages, you can set the `console` setting to `false`.
+
+````markdown
+```code-button "Console messages" console:false
+console.debug('debug message');
+console.error('error message');
+console.info('info message');
+console.log('log message');
+console.warn('warn message');
+```
+````
+
+See [Refreshing code blocks](#refreshing-code-blocks)
+
+### Auto output
+
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✖     |
+
+Code blocks automatically output the last evaluated expression.
+
+````markdown
+```code-button REPL
+1 + 2;
+3 + 4;
+5 + 6; // this will be displayed in the results panel
+```
+````
+
+### Auto running code blocks
+
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✖     |
+
+Code blocks can be configured to run automatically when the note is opened using the `autorun` or `autorun:true` setting.
+
+````markdown
+```code-button "Run automatically" autorun
+// code to run
+```
+````
+
+### Container
+
+Within code block you have access to the `container` HTML element that wraps the results panel.
+
+### Render markdown
+
+Within code block you have access to the `renderMarkdown()` function that renders markdown in the results panel.
+
+````markdown
+```code-button "Render markdown"
+await renderMarkdown('**Hello, world!**');
+```
+````
+
 ### Temp plugins
 
 | Desktop | Mobile |
