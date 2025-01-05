@@ -17,10 +17,6 @@ import {
 import { isUrl } from 'obsidian-dev-utils/url';
 
 import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
-import type {
-  RequireExFn,
-  RequireWindow
-} from './types.js';
 
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
@@ -45,6 +41,17 @@ export interface RequireOptions {
 }
 
 type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown) => Promise<void>;
+type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
+type RequireAsyncWrapperArg<T> = (require: RequireExFn) => MaybePromise<T>;
+type RequireAsyncWrapperFn<T> = (requireFn: RequireAsyncWrapperArg<T>) => Promise<T>;
+type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
+type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
+
+interface RequireWindow {
+  require?: RequireExFn;
+  requireAsync?: RequireAsyncFn;
+  requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
+}
 
 interface ResolveResult {
   resolvedId: string;
