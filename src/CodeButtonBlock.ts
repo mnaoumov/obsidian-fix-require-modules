@@ -14,7 +14,7 @@ import {
 
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
-import { WrapInDefaultAsyncFunctionBabelPlugin } from './babel/WrapInDefaultAsyncFunctionBabelPlugin.ts';
+import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
 import { printError } from './util/Error.ts';
 
@@ -63,7 +63,7 @@ function makeRegisterTempPluginFn(plugin: Plugin): RegisterTempPluginFn {
 function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string): string {
   const result = new SequentialBabelPlugin([
     new ConvertToCommonJsBabelPlugin(),
-    new WrapInDefaultAsyncFunctionBabelPlugin()
+    new WrapForCodeBlockBabelPlugin()
   ]).transform(source, sourceFileName, sourceDir);
 
   if (result.error) {

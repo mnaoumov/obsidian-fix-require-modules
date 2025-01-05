@@ -12,7 +12,7 @@ import {
 
 import { BabelPluginBase } from './BabelPluginBase.ts';
 
-export class WrapInDefaultAsyncFunctionBabelPlugin extends BabelPluginBase {
+export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
   public constructor() {
     super({});
   }
