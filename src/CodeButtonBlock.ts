@@ -42,8 +42,8 @@ export function unloadTempPlugins(): void {
 }
 
 function appendToLog(resultEl: HTMLElement, message: string, method: ConsoleMethod): void {
-  resultEl.createDiv({ cls: `console-log-entry-${method}`, text: message });
-  resultEl.scrollTop = resultEl.scrollHeight;
+  const logEntry = resultEl.createDiv({ cls: `console-log-entry console-log-entry-${method}`, text: message });
+  logEntry.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 function appendToResultEl(resultEl: HTMLElement, args: unknown[], method: ConsoleMethod): void {
@@ -217,5 +217,6 @@ function wrapConsole(resultEl: HTMLElement): Console {
 }
 
 function writeSystemMessage(resultEl: HTMLElement, message: string): void {
-  resultEl.createEl('div', { cls: 'system-message', text: message });
+  const systemMessage = resultEl.createDiv({ cls: 'system-message', text: message });
+  systemMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
