@@ -35,22 +35,22 @@ export enum ResolvedType {
 
 export type PluginRequireFn = (id: string) => unknown;
 
-export type RequireAsyncWrapperFn<T> = (requireFn: RequireAsyncWrapperArg<T>) => Promise<T>;
+export type RequireAsyncWrapperFn = (requireFn: RequireAsyncWrapperArg) => Promise<unknown>;
 
 export interface RequireOptions {
   cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
 }
-type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn<unknown>) => Promise<void>;
+type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
-type RequireAsyncWrapperArg<T> = (require: RequireExFn) => MaybePromise<T>;
+type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
 type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
 interface RequireWindow {
   require?: RequireExFn;
   requireAsync?: RequireAsyncFn;
-  requireAsyncWrapper?: RequireAsyncWrapperFn<unknown>;
+  requireAsyncWrapper?: RequireAsyncWrapperFn;
 }
 
 interface ResolveResult {
@@ -244,7 +244,7 @@ await requireAsyncWrapper((require) => {
 
   protected abstract readFileAsync(path: string): Promise<string>;
 
-  protected async requireAsyncWrapper<T>(requireFn: (require: RequireExFn) => MaybePromise<T>, require?: RequireExFn): Promise<T> {
+  protected async requireAsyncWrapper(requireFn: (require: RequireExFn) => MaybePromise<unknown>, require?: RequireExFn): Promise<unknown> {
     const result = new ExtractRequireArgsListBabelPlugin().transform(requireFn.toString(), 'extract-requires.js');
     const requireArgsList = result.data.requireArgsList;
     for (const requireArgs of requireArgsList) {

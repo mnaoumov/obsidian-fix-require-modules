@@ -33,7 +33,7 @@ import {
 } from '../RequireHandler.ts';
 import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
-type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn<unknown>) => void;
+type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => void;
 
 class RequireHandlerImpl extends RequireHandler {
   private electronModules = new Map<string, unknown>();
