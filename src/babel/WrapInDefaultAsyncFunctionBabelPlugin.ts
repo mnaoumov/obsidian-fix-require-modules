@@ -23,7 +23,9 @@ export class WrapInDefaultAsyncFunctionBabelPlugin extends BabelPluginBase {
         const programBody = path.node.body;
         const wrapperFunction = functionExpression(
           identifier('codeButtonBlockScriptWrapper'),
-          [identifier('registerTempPlugin')],
+          [
+            identifier('registerTempPlugin')
+          ],
           blockStatement(programBody),
           false,
           true
