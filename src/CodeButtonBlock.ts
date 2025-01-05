@@ -61,7 +61,7 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
   wrappedConsole.writeSystemMessage('⏳ Executing...');
 
   try {
-    const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}:code-button:${options.buttonIndex.toString()}:${options.caption}`, dirname(options.sourcePath));
+    const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}.code-button.${options.buttonIndex.toString()}.${options.caption}.ts`, dirname(options.sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl, makeRenderMarkdownFn(options.plugin, options.resultEl, options.sourcePath));
     wrappedConsole.writeSystemMessage('✔ Executed successfully');
