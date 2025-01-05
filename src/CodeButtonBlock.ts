@@ -5,20 +5,18 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import {
-  normalizePath,
-  Plugin
-} from 'obsidian';
+import { Plugin } from 'obsidian';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
-import { join } from 'obsidian-dev-utils/Path';
+import {
+  basename,
+  dirname
+} from 'obsidian-dev-utils/Path';
 
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
-import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInDefaultAsyncFunctionBabelPlugin } from './babel/WrapInDefaultAsyncFunctionBabelPlugin.ts';
-import { requireVaultScriptAsync } from './RequireHandlerUtils.ts';
+import { requireStringAsync } from './RequireHandlerUtils.ts';
 import { printError } from './util/Error.ts';
-import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn) => MaybePromise<void>;
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
@@ -41,27 +39,13 @@ export function unloadTempPlugins(): void {
   }
 }
 
-async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath: string, source: string): Promise<void> {
-  const app = plugin.app;
+async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath: string, source: string, caption: string, buttonIndex: number): Promise<void> {
   resultEl.empty();
   resultEl.setText('Executing...⌛');
 
-  const noteFile = app.vault.getAbstractFileByPath(sourcePath);
-  const dir = noteFile?.parent;
-  const dirPath = dir?.path ?? '';
-  const randomName = Math.random().toString(36).slice(2, 15);
-  const codeButtonBlockScriptFileName = `.code-button-block-script-${randomName}.mts`;
-  const codeButtonBlockScriptPath = join(dirPath, codeButtonBlockScriptFileName);
-  await app.vault.create(codeButtonBlockScriptPath, source);
-  const codeButtonBlockScriptWrapperFileName = `.code-button-block-script-wrapper-${randomName}.cjs`;
-  const codeButtonBlockScriptWrapperPath = normalizePath(join(dirPath, codeButtonBlockScriptWrapperFileName));
-  const sourceDir = app.vault.adapter.getFullPath(dirPath);
-  const sourceUrl = convertPathToObsidianUrl(app.vault.adapter.getFullPath(codeButtonBlockScriptPath));
-
   try {
-    const wrappedCode = makeWrapperScript(source, codeButtonBlockScriptFileName, sourceDir, sourceUrl);
-    await app.vault.create(codeButtonBlockScriptWrapperPath, wrappedCode);
-    const codeButtonBlockScriptWrapper = await requireVaultScriptAsync(codeButtonBlockScriptWrapperPath) as CodeButtonBlockScriptWrapper;
+    const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
+    const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper((tempPluginClass) => {
       registerTempPlugin(plugin, tempPluginClass);
     });
@@ -69,20 +53,13 @@ async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath:
   } catch (error) {
     resultEl.setText('Error! ❌\nSee console for details...');
     printError(new Error('Error executing code block', { cause: error }));
-  } finally {
-    for (const path of [codeButtonBlockScriptPath, codeButtonBlockScriptWrapperPath]) {
-      if (await app.vault.adapter.exists(path)) {
-        await app.vault.adapter.remove(path);
-      }
-    }
   }
 }
 
-function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string, sourceUrl: string): string {
+function makeWrapperScript(source: string, sourceFileName: string, sourceDir: string): string {
   const result = new SequentialBabelPlugin([
     new ConvertToCommonJsBabelPlugin(),
-    new WrapInDefaultAsyncFunctionBabelPlugin(),
-    new FixSourceMapBabelPlugin(sourceUrl)
+    new WrapInDefaultAsyncFunctionBabelPlugin()
   ]).transform(source, sourceFileName, sourceDir);
 
   if (result.error) {
@@ -100,10 +77,15 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       caption = '(no caption)'
     ] = getCodeBlockArguments(ctx, el);
 
+    const lines = sectionInfo.text.split('\n');
+    const previousLines = lines.slice(0, sectionInfo.lineStart);
+    const previousText = previousLines.join('\n');
+    const buttonIndex = Array.from(previousText.matchAll(new RegExp(`^\`{3,}${CODE_BUTTON_BLOCK_LANGUAGE}`, 'gm'))).length;
+
     el.createEl('button', {
       cls: 'mod-cta',
       async onclick(): Promise<void> {
-        await handleClick(plugin, resultEl, ctx.sourcePath, source);
+        await handleClick(plugin, resultEl, ctx.sourcePath, source, caption, buttonIndex);
       },
       text: caption
     });

@@ -179,6 +179,41 @@ export abstract class RequireHandler {
     return module;
   }
 
+  public async requireStringAsync(content: string, path: string, urlSuffix?: string): Promise<unknown> {
+    if (splitQuery(path).cleanStr.endsWith('.json')) {
+      return JSON.parse(content);
+    }
+
+    const filename = isUrl(path) ? path : basename(path);
+    const dir = isUrl(path) ? '' : dirname(path);
+    urlSuffix = urlSuffix ? `/${urlSuffix}` : '';
+    const url = convertPathToObsidianUrl(path) + urlSuffix;
+    const result = new SequentialBabelPlugin([
+      new ConvertToCommonJsBabelPlugin(),
+      new WrapInRequireFunctionBabelPlugin(true),
+      new FixSourceMapBabelPlugin(url)
+    ]).transform(content, filename, dir);
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    try {
+      const moduleFnAsyncWrapper = debuggableEval(result.transformedCode, `requireStringAsync/${path}${urlSuffix}`) as ModuleFnAsync;
+      const module = { exports: {} };
+
+      const childRequire = this.makeChildRequire(path);
+      // eslint-disable-next-line import-x/no-commonjs
+      await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
+      // eslint-disable-next-line import-x/no-commonjs
+      this.addToModuleCache(path, module.exports);
+      // eslint-disable-next-line import-x/no-commonjs
+      return module.exports;
+    } catch (e) {
+      throw new Error(`Failed to load module: ${path}`, { cause: e });
+    }
+  }
+
   protected addToModuleCache(id: string, module: unknown): void {
     this.modulesCache[id] = {
       children: [],
@@ -596,40 +631,6 @@ ${this.getRequireAsyncAdvice(true)}`);
 
     await this.checkTimestampChangedAndReloadIfNeededAsync(path, cacheInvalidationMode);
     return this.modulesCache[path]?.exports;
-  }
-
-  private async requireStringAsync(content: string, path: string): Promise<unknown> {
-    if (splitQuery(path).cleanStr.endsWith('.json')) {
-      return JSON.parse(content);
-    }
-
-    const filename = isUrl(path) ? 'from-url.ts' : basename(path);
-    const dir = isUrl(path) ? '' : dirname(path);
-    const url = convertPathToObsidianUrl(path);
-    const result = new SequentialBabelPlugin([
-      new ConvertToCommonJsBabelPlugin(),
-      new WrapInRequireFunctionBabelPlugin(true),
-      new FixSourceMapBabelPlugin(url)
-    ]).transform(content, filename, dir);
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    try {
-      const moduleFnAsyncWrapper = debuggableEval(result.transformedCode, `requireStringAsync:${path}`) as ModuleFnAsync;
-      const module = { exports: {} };
-
-      const childRequire = this.makeChildRequire(path);
-      // eslint-disable-next-line import-x/no-commonjs
-      await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
-      // eslint-disable-next-line import-x/no-commonjs
-      this.addToModuleCache(path, module.exports);
-      // eslint-disable-next-line import-x/no-commonjs
-      return module.exports;
-    } catch (e) {
-      throw new Error(`Failed to load module: ${path}`, { cause: e });
-    }
   }
 
   private async requireUrlAsync(url: string): Promise<unknown> {

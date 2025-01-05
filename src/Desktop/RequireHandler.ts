@@ -264,7 +264,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
     }
 
     try {
-      const moduleFnWrapper = debuggableEval(result.transformedCode, `requireString:${path}`) as ModuleFn;
+      const moduleFnWrapper = debuggableEval(result.transformedCode, `requireString/${path}`) as ModuleFn;
       const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
       // eslint-disable-next-line import-x/no-commonjs
