@@ -24,7 +24,8 @@ export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
         const wrapperFunction = functionExpression(
           identifier('codeButtonBlockScriptWrapper'),
           [
-            identifier('registerTempPlugin')
+            identifier('registerTempPlugin'),
+            identifier('console')
           ],
           blockStatement(programBody),
           false,

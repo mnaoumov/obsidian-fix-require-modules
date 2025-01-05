@@ -6,6 +6,7 @@ import type {
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import { Plugin } from 'obsidian';
+import { errorToString } from 'obsidian-dev-utils/Error';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
 import {
   basename,
@@ -16,10 +17,11 @@ import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
 import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
-import { printError } from './util/Error.ts';
 
-type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn) => MaybePromise<void>;
+type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console) => MaybePromise<void>;
+type ConsoleMethod = 'debug' | 'error' | 'info' | 'log' | 'warn';
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
+
 type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
 
 const CODE_BUTTON_BLOCK_LANGUAGE = 'code-button';
@@ -39,18 +41,70 @@ export function unloadTempPlugins(): void {
   }
 }
 
-async function handleClick(plugin: Plugin, resultEl: HTMLPreElement, sourcePath: string, source: string, caption: string, buttonIndex: number): Promise<void> {
+function appendToLog(resultEl: HTMLElement, message: string, method: ConsoleMethod): void {
+  resultEl.createDiv({ cls: `console-log-entry-${method}`, text: message });
+  resultEl.scrollTop = resultEl.scrollHeight;
+}
+
+function appendToResultEl(resultEl: HTMLElement, args: unknown[], method: ConsoleMethod): void {
+  const formattedMessage = args.map(formatMessage).join(' ');
+  appendToLog(resultEl, formattedMessage, method);
+}
+
+function formatMessage(arg: unknown): string {
+  if (arg === null) {
+    return 'null';
+  }
+
+  if (arg === undefined) {
+    return formatMessage(replacer('', arg));
+  }
+
+  if (typeof arg === 'function') {
+    return formatMessage(replacer('', arg));
+  }
+
+  if (arg instanceof Error) {
+    return formatMessage(replacer('', arg));
+  }
+
+  if (typeof arg === 'object') {
+    return JSON.stringify(arg, replacer, 2);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
+  return String(arg);
+
+  function replacer(_key: string, value: unknown): unknown {
+    if (value === undefined) {
+      return 'undefined';
+    }
+    if (typeof value === 'function') {
+      return `function ${value.name || 'anonymous'}()`;
+    }
+
+    if (value instanceof Error) {
+      return errorToString(value);
+    }
+
+    return value;
+  }
+}
+
+async function handleClick(plugin: Plugin, resultEl: HTMLElement, sourcePath: string, source: string, caption: string, buttonIndex: number): Promise<void> {
   resultEl.empty();
-  resultEl.setText('Executing...⌛');
+  writeSystemMessage(resultEl, '⏳ Executing...');
+
+  const wrappedConsole = wrapConsole(resultEl);
 
   try {
     const script = makeWrapperScript(source, `${basename(sourcePath)}:code-button:${buttonIndex.toString()}:${caption}`, dirname(sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, plugin.app.vault.adapter.getFullPath(sourcePath).replaceAll('\\', '/'), `code-button:${buttonIndex.toString()}:${caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin));
-    resultEl.setText('Done! ✅');
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(plugin), wrappedConsole);
+    writeSystemMessage(resultEl, '✔ Executed successfully');
   } catch (error) {
-    resultEl.setText('Error! ❌\nSee console for details...');
-    printError(new Error('Error executing code block', { cause: error }));
+    wrappedConsole.error(error);
+    writeSystemMessage(resultEl, '✖ Executed with error!');
   }
 }
 
@@ -95,7 +149,7 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
     });
   }
 
-  const resultEl = el.createEl('pre');
+  const resultEl = el.createDiv({ cls: 'console-log-container' });
 
   if (!sectionInfo) {
     resultEl.textContent = 'Error! ❌\nCould not get code block info. Try to reopen the note...';
@@ -147,4 +201,21 @@ function registerTempPlugin(plugin: Plugin, tempPluginClass: TempPluginClass): v
 
 function unregisterCodeHighlighting(): void {
   window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, 'null'));
+}
+
+function wrapConsole(resultEl: HTMLElement): Console {
+  const wrappedConsole = { ...console };
+
+  for (const method of ['log', 'debug', 'error', 'info', 'warn'] as ConsoleMethod[]) {
+    wrappedConsole[method] = (...args): void => {
+      console[method](...args);
+      appendToResultEl(resultEl, args, method);
+    };
+  }
+
+  return wrappedConsole;
+}
+
+function writeSystemMessage(resultEl: HTMLElement, message: string): void {
+  resultEl.createEl('div', { cls: 'system-message', text: message });
 }
