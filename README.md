@@ -72,8 +72,8 @@ All of the examples below will be shown using `require()`, but you can use them 
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ✅     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✔     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Certain Obsidian built-in modules are available for import during plugin development but show `Uncaught Error: Cannot find module` if you try to [`require()`][require] them manually. This plugin fixes that problem, allowing the following [`require()`][require] calls to work properly:
 
@@ -113,8 +113,8 @@ app.plugins.getPlugin('fix-require-modules').builtInModuleNames;
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ✅     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✔     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 There is a global variable `app` that gives access to obsidian `App` instance.
 
@@ -134,8 +134,8 @@ require('obsidian/app');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Fixes `Cannot find module` errors for relative paths:
 
@@ -155,8 +155,8 @@ require('./some/relative/path.js', { parentPath: 'path/to/current/note.md' });
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Adds support for root-relative paths:
 
@@ -170,8 +170,8 @@ The root `/` directory is configurable via settings.
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 On Linux and MacOS, the system root path is `/path/from/system/root.js`.
 
@@ -185,8 +185,8 @@ require('~/path/from/system/root.js');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Adds support for vault-root-relative paths:
 
@@ -198,8 +198,8 @@ require('//path/from/vault/root.js');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Originally, [`require()`][require] only supported [`CommonJS` (`cjs`)](https://nodejs.org/api/modules.html#modules-commonjs-modules) modules and would throw `require() of ES Module path/to/script.mjs not supported. Instead change the require of path/to/script.mjs to a dynamic import() which is available in all CommonJS modules`. This plugin adds support for ECMAScript modules:
 
@@ -219,8 +219,8 @@ require('path/to/script.mjs');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Adds support for [`TypeScript`][TypeScript] modules:
 
@@ -234,8 +234,8 @@ require('path/to/script.mts');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 You can require NPM modules installed into your configured scripts root folder.
 
@@ -249,8 +249,8 @@ See [Tips](#tips) how to avoid performance issues.
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ❌      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✖      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 ```js
 require('https://some-site.com/some-script.js');
@@ -260,8 +260,8 @@ require('https://some-site.com/some-script.js');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 You can require files using file URLs:
 
@@ -273,8 +273,8 @@ require('file:///C:/path/to/vault/then/to/script.js');
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 You can require files using resource URLs:
 
@@ -288,8 +288,8 @@ See [getResourcePath()](https://docs.obsidian.md/Reference/TypeScript+API/Vault/
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ❌      | ❌     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✖      | ✖     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 ```js
 await Promise.resolve();
@@ -301,8 +301,8 @@ export const dep = 42;
 
 |                      | Desktop | Mobile |
 | -------------------- | ------- | ------ |
-| **`require()`**      | ✅      | ✅     |
-| **`requireAsync()`** | ✅      | ✅     |
+| **`require()`**      | ✔      | ✔     |
+| **`requireAsync()`** | ✔      | ✔     |
 
 Modules are cached for performance, but the cache is invalidated if the script or its dependencies change.
 
@@ -329,7 +329,7 @@ require('https://some-site.com/some-script.js?someQuery'); // cacheInvalidationM
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 If you need to clear the `require` cache, you can invoke the `Fix Require Modules: Clear Cache` command.
 
@@ -337,7 +337,7 @@ If you need to clear the `require` cache, you can invoke the `Fix Require Module
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Manages source maps for compiled code, allowing seamless debugging in [`Obsidian`][Obsidian].
 
@@ -346,7 +346,7 @@ Manages source maps for compiled code, allowing seamless debugging in [`Obsidian
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Make any script invocable by defining a module that exports a function named `invoke` (sync or async) that accepts `app` argument
 
@@ -380,7 +380,7 @@ export async function invoke(app: App): Promise<void> { console.log('mts async')
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Configure a script directory so every script in it can be invoked using the [`Command Palette`][Command Palette]. Use `Fix Require Modules: Invoke Script: <<Choose>>` for more predictable lists:
 
@@ -392,7 +392,7 @@ Configure a script directory so every script in it can be invoked using the [`Co
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Invoke any script when [`Obsidian`][Obsidian] loads via a configuration setting.
 
@@ -404,7 +404,7 @@ The function has the same signature as [`invoke()`](#invocable-scripts) function
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ❌     |
+| ✔      | ✖     |
 
 
 Assign hotkeys to frequently used scripts:
@@ -415,7 +415,7 @@ Assign hotkeys to frequently used scripts:
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Create code buttons that execute [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript]:
 
@@ -441,7 +441,7 @@ function myTypeScriptFn(arg: string): void {}
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 This plugin allows you to create temporary plugins.
 
@@ -471,7 +471,7 @@ Also all temp plugins are unloaded when current plugin is unloaded.
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 If you plan to use scripts extensively, consider putting them in a [`dot directory`][dot directory], such as `.scripts` within your vault. [`Obsidian`][Obsidian] doesn't track changes within [`dot directories`][dot directory] and won't re-index your `node_modules` folder repeatedly.
 
@@ -481,7 +481,7 @@ If you plan to use scripts extensively, consider putting them in a [`dot directo
 
 | Desktop | Mobile |
 | ------- | ------ |
-| ✅      | ✅     |
+| ✔      | ✔     |
 
 Extending dynamic [`import()`][import] expressions to support `const obsidian = await import('obsidian')` is currently impossible due to [`Electron`](https://www.electronjs.org/) limitations within [`Obsidian`][Obsidian]. Although [`Obsidian`][Obsidian] [`1.6.5+`](https://obsidian.md/changelog/2024-06-25-desktop-v1.6.5/) uses [`Node.js v20.14.0`](https://nodejs.org/en/blog/release/v20.14.0) which includes [`Module.register()`][Module Register], it depends on [`Node.js Worker threads`](https://nodejs.org/api/worker_threads.html) and fails with `The V8 platform used by this instance of Node does not support creating Workers`. Use [`requireAsync()`](#requireAsync) as a workaround.
 
