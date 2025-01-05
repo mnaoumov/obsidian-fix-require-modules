@@ -82,8 +82,11 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
 
   if (sectionInfo) {
     const [
-      caption = '(no caption)'
+      caption = '(no caption)',
+      ...rest
     ] = getCodeBlockArguments(ctx, el);
+
+    const shouldAutoRun = rest.includes('autorun');
 
     const lines = sectionInfo.text.split('\n');
     const previousLines = lines.slice(0, sectionInfo.lineStart);
@@ -97,6 +100,12 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       },
       text: caption
     });
+
+    if (shouldAutoRun) {
+      setTimeout(async () => {
+        await handleClick(plugin, resultEl, ctx.sourcePath, source, caption, buttonIndex);
+      }, 0);
+    }
   }
 
   const resultEl = el.createDiv({ cls: 'console-log-container' });
