@@ -59,7 +59,8 @@ export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
           [
             identifier('registerTempPlugin'),
             identifier('console'),
-            identifier('container')
+            identifier('container'),
+            identifier('renderMarkdown')
           ],
           blockStatement(programBody),
           false,

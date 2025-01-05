@@ -5,7 +5,10 @@ import type {
 } from 'obsidian';
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import { Plugin } from 'obsidian';
+import {
+  MarkdownRenderer,
+  Plugin
+} from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { printError } from 'obsidian-dev-utils/Error';
 import { getCodeBlockArguments } from 'obsidian-dev-utils/obsidian/MarkdownCodeBlockProcessor';
@@ -20,7 +23,7 @@ import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin
 import { ConsoleWrapper } from './ConsoleWrapper.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
 
-type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console, container: HTMLElement) => MaybePromise<void>;
+type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console, container: HTMLElement, renderMarkdown: (markdown: string) => Promise<void>) => MaybePromise<void>;
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
 
 type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
@@ -60,7 +63,7 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
   try {
     const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}:code-button:${options.buttonIndex.toString()}:${options.caption}`, dirname(options.sourcePath));
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl);
+    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl, makeRenderMarkdownFn(options.plugin, options.resultEl, options.sourcePath));
     wrappedConsole.writeSystemMessage('✔ Executed successfully');
   } catch (error) {
     printError(error);
@@ -72,6 +75,12 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
 function makeRegisterTempPluginFn(plugin: Plugin): RegisterTempPluginFn {
   return (tempPluginClass) => {
     registerTempPlugin(plugin, tempPluginClass);
+  };
+}
+
+function makeRenderMarkdownFn(plugin: Plugin, resultEl: HTMLElement, sourcePath: string): (markdown: string) => Promise<void> {
+  return async (markdown: string) => {
+    await MarkdownRenderer.render(plugin.app, markdown, resultEl, sourcePath, plugin);
   };
 }
 
