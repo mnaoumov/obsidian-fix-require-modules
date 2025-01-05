@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 8.0.0
+
+- Add renderMarkdown
+- Add console:false
+- Pass container
+- Add autorun
+- Log last value
+- Handle console
+- Better stack traces
+- Handle system root
+- Add requireAsync
+- Add support for nested console calls, eval, new Function()
+- Fix caching
+- Add validation
+- Add mobile watcher
+
 ## 7.0.0
 
 - Load/unload temp plugin
