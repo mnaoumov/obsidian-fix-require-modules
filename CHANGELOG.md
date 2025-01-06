@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.1.0
+
+- Replace `window.builtInModuleNames` with `require('obsidian/builtInModuleNames')`
+
 ## 8.0.2
 
 - Fix initial scripts initialization
