@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.2.0
+
+- Add `autoOutput:false`
+
 ## 8.1.0
 
 - Replace `window.builtInModuleNames` with `require('obsidian/builtInModuleNames')`
