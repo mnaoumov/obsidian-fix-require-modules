@@ -14,6 +14,7 @@ export abstract class ScriptDirectoryWatcher {
     }
 
     this.stopWatcher();
+    await onChange();
     await this.startWatcher(onChange);
   }
 
