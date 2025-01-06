@@ -430,9 +430,21 @@ Configure a script directory so every script in it can be invoked using the [`Co
 
 Invoke any script when [`Obsidian`][Obsidian] loads via a configuration setting.
 
-You can add a `cleanup()` function to the startup script, which will be called when the plugin is unloaded.
+You can add an optional `cleanup()` function to the startup script, which will be called when the plugin is unloaded.
 
 The function has the same signature as [`invoke()`](#invocable-scripts) function.
+
+```ts
+import type { App } from 'obsidian';
+
+export async function cleanup(app: App): Promise<void> {
+  // cleanup code
+}
+
+export async function invoke(app: App): Promise<void> {
+  // startup code
+}
+```
 
 ### Hotkeys
 
