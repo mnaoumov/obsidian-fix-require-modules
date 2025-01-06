@@ -54,7 +54,7 @@ await requireAsyncWrapper(async (require) => {
 id: string;
 options: Partial<RequireOptions>;
 
-type RequireOptions = {
+interface RequireOptions {
   cacheInvalidationMode: 'always' | 'never' | 'whenPossible';
   parentPath: string;
 };
@@ -562,6 +562,8 @@ To disable this feature, set the `autoOutput` setting to `false`.
 ```
 ````
 
+See [Refreshing code blocks](#refreshing-code-blocks).
+
 ### Auto running code blocks
 
 | Desktop | Mobile |
@@ -580,9 +582,23 @@ See [Refreshing code blocks](#refreshing-code-blocks).
 
 ### Container
 
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✖     |
+
 Within code block you have access to the `container` HTML element that wraps the results panel.
 
+````markdown
+```code-button "Using container"
+container.createEl('button', { text: 'Click me!' });
+```
+````
+
 ### Render markdown
+
+| Desktop | Mobile |
+| ------- | ------ |
+| ✔      | ✖     |
 
 Within code block you have access to the `renderMarkdown()` function that renders markdown in the results panel.
 
