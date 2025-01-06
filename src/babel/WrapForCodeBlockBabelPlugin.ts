@@ -9,50 +9,47 @@ import {
   assignmentExpression,
   blockStatement,
   callExpression,
-
   expressionStatement,
   functionExpression,
   identifier,
   isExpressionStatement,
-  isReturnStatement,
-  memberExpression,
-  nullLiteral
+  memberExpression
 } from '@babel/types';
 
 import { BabelPluginBase } from './BabelPluginBase.ts';
 
 export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
-  public constructor() {
+  public constructor(private readonly shouldAutoOutput: boolean) {
     super({});
   }
 
   public override getVisitor(): Visitor<PluginPass> {
     return {
-      Program(path): void {
+      Program: (path): void => {
         const programBody = path.node.body;
 
-        const lastStatement = programBody.pop();
-        let lastStatementExpression = convertToExpression(lastStatement);
+        if (this.shouldAutoOutput) {
+          const lastStatement = programBody.pop();
+          const lastStatementExpression = convertToExpression(lastStatement);
 
-        if (!lastStatementExpression) {
-          if (lastStatement) {
-            programBody.push(lastStatement);
+          if (!lastStatementExpression) {
+            if (lastStatement) {
+              programBody.push(lastStatement);
+            }
+          } else {
+            const newLastStatement = expressionStatement(callExpression(
+              memberExpression(
+                identifier('console'),
+                identifier('log')
+              ),
+              [
+                lastStatementExpression
+              ]
+            ));
+
+            programBody.push(newLastStatement);
           }
-
-          lastStatementExpression = identifier('undefined');
         }
-
-        const newLastStatement = expressionStatement(callExpression(
-          memberExpression(
-            identifier('console'),
-            identifier('log')
-          ),
-          [
-            lastStatementExpression
-          ]
-        ));
-
-        programBody.push(newLastStatement);
 
         const wrapperFunction = functionExpression(
           identifier('codeButtonBlockScriptWrapper'),
@@ -87,16 +84,6 @@ function convertToExpression(statement: Statement | undefined): Expression | nul
 
   if (isExpressionStatement(statement)) {
     return statement.expression;
-  }
-
-  if (isReturnStatement(statement)) {
-    if (statement.argument) {
-      return statement.argument;
-    }
-
-    if (statement.argument === null) {
-      return nullLiteral();
-    }
   }
 
   return null;

@@ -534,7 +534,7 @@ console.warn('warn message');
 ```
 ````
 
-See [Refreshing code blocks](#refreshing-code-blocks)
+See [Refreshing code blocks](#refreshing-code-blocks).
 
 ### Auto output
 
@@ -552,6 +552,16 @@ Code blocks automatically output the last evaluated expression.
 ```
 ````
 
+To disable this feature, set the `autoOutput` setting to `false`.
+
+````markdown
+```code-button REPL autoOutput:false
+1 + 2;
+3 + 4;
+5 + 6; // this will not be displayed in the results panel
+```
+````
+
 ### Auto running code blocks
 
 | Desktop | Mobile |
@@ -565,6 +575,8 @@ Code blocks can be configured to run automatically when the note is opened using
 // code to run
 ```
 ````
+
+See [Refreshing code blocks](#refreshing-code-blocks).
 
 ### Container
 
