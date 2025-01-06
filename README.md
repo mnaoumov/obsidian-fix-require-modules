@@ -15,7 +15,6 @@ This plugin is for you if you want to:
   - [Modules](https://github.com/polyipseity/obsidian-modules) scripts;
   - [QuickAdd](https://quickadd.obsidian.guide/) scripts;
   - [Templater](https://silentvoid13.github.io/Templater/) scripts;
-  - [Obsidian API](https://docs.obsidian.md/Reference/TypeScript+API) scripts;
   - etc.
 - Write modular scripts using modern `JavaScript`/`TypeScript` syntax and patterns.
 - Prototype [`Obsidian`][Obsidian] plugins.
@@ -94,8 +93,6 @@ It is especially useful for migrating scripts you have for desktop to use on mob
 
 ## Features
 
-This plugin heavily simplifies working with custom [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] scripts/modules. You can work with them using [DevTools Console](https://developer.chrome.com/docs/devtools/console), [CustomJS](https://github.com/saml-dev/obsidian-custom-js) scripts, [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts, [Modules](https://github.com/polyipseity/obsidian-modules) scripts, [QuickAdd](https://quickadd.obsidian.guide/) scripts, [Templater](https://silentvoid13.github.io/Templater/) scripts, etc.
-
 All of the examples below will be shown using `require()`, but you can use them with all the new functions introduced by this plugin.
 
 ### Built-in Modules
@@ -136,7 +133,7 @@ new Notice('My notice');
 Get the list of built-in module names fixed by the plugin:
 
 ```js
-app.plugins.getPlugin('fix-require-modules').builtInModuleNames;
+window.builtInModuleNames;
 ```
 
 ### `obsidian/app` module
@@ -174,7 +171,7 @@ require('./some/relative/path.js');
 require('../some/other/relative/path.js');
 ```
 
-Optionally provide the path to the current script/note if detection fails. Submit an [issue](https://github.com/mnaoumov/obsidian-fix-require-modules/issues) if needed:
+Optionally provide the path to the current script/note if detection fails. Submit an [issue](https://github.com/mnaoumov/obsidian-codescript-toolkit/issues) if needed:
 
 ```js
 require('./some/relative/path.js', { parentPath: 'path/to/current/script.js' });
@@ -361,7 +358,7 @@ require('https://some-site.com/some-script.js?someQuery'); // cacheInvalidationM
 | ------- | ------ |
 | ✔      | ✔     |
 
-If you need to clear the `require` cache, you can invoke the `Fix Require Modules: Clear Cache` command.
+If you need to clear the `require` cache, you can invoke the `CodeScript Toolkit: Clear Cache` command.
 
 ### Source maps
 
@@ -412,7 +409,7 @@ export async function invoke(app: App): Promise<void> { console.log('mts async')
 | ------- | ------ |
 | ✔      | ✔     |
 
-Configure a script directory so every script in it can be invoked using the [`Command Palette`][Command Palette]. Use `Fix Require Modules: Invoke Script: <<Choose>>` for more predictable lists:
+Configure a script directory so every script in it can be invoked using the [`Command Palette`][Command Palette]. Use `CodeScript Toolkit: Invoke Script: <<Choose>>` for more predictable lists:
 
 ![Command Palette](images/commmand-palette.png)
 
@@ -590,7 +587,7 @@ registerTempPlugin(MyPlugin);
 ```
 ````
 
-The loaded temp plugins can be unloaded using the `Fix Require Modules: Unload Temp Plugin: PluginName` / `Fix Require Modules: Unload Temp Plugins` commands.
+The loaded temp plugins can be unloaded using the `CodeScript Toolkit: Unload Temp Plugin: PluginName` / `CodeScript Toolkit: Unload Temp Plugins` commands.
 
 Also all temp plugins are unloaded when current plugin is unloaded.
 
@@ -614,7 +611,7 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 
 ## Installation
 
-- `Fix Require Modules` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=fix-require-modules).
+- `CodeScript Toolkit` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=fix-require-modules).
 - Beta releases can be installed through [BRAT](https://github.com/TfTHacker/obsidian42-brat).
 
 ## Support
