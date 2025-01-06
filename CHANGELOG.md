@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.0.2
+
+- Fix initial scripts initialization
+
 ## 8.0.1
 
 - Expose window.builtInModuleNames
