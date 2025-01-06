@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 8.0.1
+
+- Expose window.builtInModuleNames
+- Apply rebranding
+
 ## 8.0.0
 
 - Add renderMarkdown
