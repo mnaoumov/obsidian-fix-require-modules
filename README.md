@@ -130,12 +130,6 @@ const { Notice } = require('obsidian');
 new Notice('My notice');
 ```
 
-Get the list of built-in module names fixed by the plugin:
-
-```js
-window.builtInModuleNames;
-```
-
 ### `obsidian/app` module
 
 |                      | Desktop | Mobile |
@@ -155,6 +149,19 @@ This plugin gives you a safer alternative:
 
 ```js
 require('obsidian/app');
+```
+
+### `obsidian/builtInModuleNames` module
+
+|                      | Desktop | Mobile |
+| -------------------- | ------- | ------ |
+| **`require()`**      | ✔      | ✔     |
+| **`requireAsync()`** | ✔      | ✔     |
+
+You can access the list of built-in Obsidian module names that are made available by this plugin.
+
+```js
+require('obsidian/builtInModuleNames');
 ```
 
 ### Relative path

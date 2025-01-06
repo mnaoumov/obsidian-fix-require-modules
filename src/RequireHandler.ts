@@ -49,7 +49,6 @@ type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
 interface RequireWindow {
-  builtInModuleNames?: string[];
   require?: RequireExFn;
   requireAsync?: RequireAsyncFn;
   requireAsyncWrapper?: RequireAsyncWrapperFn;
@@ -133,9 +132,6 @@ export abstract class RequireHandler {
 
     requireWindow.requireAsyncWrapper = this.requireAsyncWrapper.bind(this);
     plugin.register(() => delete requireWindow.requireAsyncWrapper);
-
-    requireWindow.builtInModuleNames = builtInModuleNames;
-    plugin.register(() => delete requireWindow.builtInModuleNames);
   }
 
   public async requireAsync(id: string, options: Partial<RequireOptions> = {}): Promise<unknown> {
@@ -303,6 +299,10 @@ await requireAsyncWrapper((require) => {
   protected requireSpecialModule(id: string): unknown {
     if (id === 'obsidian/app') {
       return this.plugin.app;
+    }
+
+    if (id === 'obsidian/builtInModuleNames') {
+      return builtInModuleNames;
     }
 
     if (builtInModuleNames.includes(id)) {
