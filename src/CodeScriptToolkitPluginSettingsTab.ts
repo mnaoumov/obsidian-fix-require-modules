@@ -6,10 +6,10 @@ import { appendCodeBlock } from 'obsidian-dev-utils/DocumentFragment';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
 
-import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
-import type { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
+import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
+import type { CodeScriptToolkitPluginPluginSettings } from './CodeScriptToolkitPluginSettings.ts';
 
-export class FixRequireModulesPluginSettingsTab extends PluginSettingsTabBase<FixRequireModulesPlugin, FixRequireModulesPluginSettings> {
+export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabBase<CodeScriptToolkitPlugin, CodeScriptToolkitPluginPluginSettings> {
   public override display(): void {
     this.containerEl.empty();
 

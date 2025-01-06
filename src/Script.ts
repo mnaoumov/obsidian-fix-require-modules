@@ -8,7 +8,7 @@ import { Notice } from 'obsidian';
 import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
 import { basename } from 'obsidian-dev-utils/Path';
 
-import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
 import { requireVaultScriptAsync } from './RequireHandlerUtils.ts';
 import { printError } from './util/Error.ts';
@@ -23,7 +23,7 @@ interface Script {
 
 const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 
-export async function cleanupStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
+export async function cleanupStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   if (!plugin.settingsCopy.startupScriptPath) {
     return;
   }
@@ -33,7 +33,7 @@ export async function cleanupStartupScript(plugin: FixRequireModulesPlugin): Pro
   await script.cleanup?.(plugin.app);
 }
 
-export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Promise<void> {
+export async function invokeStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   if (!plugin.settingsCopy.startupScriptPath) {
     console.warn('No Startup script path specified in the settings');
   } else {
@@ -41,7 +41,7 @@ export async function invokeStartupScript(plugin: FixRequireModulesPlugin): Prom
   }
 }
 
-export async function registerInvocableScripts(plugin: FixRequireModulesPlugin): Promise<void> {
+export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin): Promise<void> {
   const COMMAND_NAME_PREFIX = 'invokeScriptFile-';
   const commands = plugin.app.commands.listCommands().filter((c) => c.id.startsWith(`${plugin.manifest.id}:${COMMAND_NAME_PREFIX}`));
   for (const command of commands) {
@@ -77,7 +77,7 @@ export async function registerInvocableScripts(plugin: FixRequireModulesPlugin):
   }
 }
 
-export async function selectAndInvokeScript(plugin: FixRequireModulesPlugin): Promise<void> {
+export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   const app = plugin.app;
   const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
   let scriptFiles: string[];

@@ -8,8 +8,8 @@ import {
   registerCodeButtonBlock,
   unloadTempPlugins
 } from './CodeButtonBlock.ts';
-import { FixRequireModulesPluginSettings } from './FixRequireModulesPluginSettings.ts';
-import { FixRequireModulesPluginSettingsTab } from './FixRequireModulesPluginSettingsTab.ts';
+import { CodeScriptToolkitPluginPluginSettings } from './CodeScriptToolkitPluginSettings.ts';
+import { CodeScriptToolkitPluginPluginSettingsTab } from './CodeScriptToolkitPluginSettingsTab.ts';
 import { getPlatformDependencies } from './PlatformDependencies.ts';
 import {
   cleanupStartupScript,
@@ -18,21 +18,21 @@ import {
   selectAndInvokeScript
 } from './Script.ts';
 
-export class FixRequireModulesPlugin extends PluginBase<FixRequireModulesPluginSettings> {
+export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginPluginSettings> {
   private requireHandler!: RequireHandler;
   private scriptDirectoryWatcher!: ScriptDirectoryWatcher;
 
-  public override async saveSettings(newSettings: FixRequireModulesPluginSettings): Promise<void> {
+  public override async saveSettings(newSettings: CodeScriptToolkitPluginPluginSettings): Promise<void> {
     await super.saveSettings(newSettings);
     await this.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
   }
 
-  protected override createPluginSettings(data: unknown): FixRequireModulesPluginSettings {
-    return new FixRequireModulesPluginSettings(data);
+  protected override createPluginSettings(data: unknown): CodeScriptToolkitPluginPluginSettings {
+    return new CodeScriptToolkitPluginPluginSettings(data);
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return new FixRequireModulesPluginSettingsTab(this);
+    return new CodeScriptToolkitPluginPluginSettingsTab(this);
   }
 
   protected override async onLayoutReady(): Promise<void> {

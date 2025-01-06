@@ -1,4 +1,4 @@
-import { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
 // eslint-disable-next-line import-x/no-default-export
-export default FixRequireModulesPlugin;
+export default CodeScriptToolkitPlugin;

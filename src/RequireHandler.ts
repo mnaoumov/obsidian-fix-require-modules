@@ -17,7 +17,7 @@ import {
 } from 'obsidian-dev-utils/String';
 import { isUrl } from 'obsidian-dev-utils/url';
 
-import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
 import { SequentialBabelPlugin } from './babel/CombineBabelPlugins.ts';
 import { ConvertToCommonJsBabelPlugin } from './babel/ConvertToCommonJsBabelPlugin.ts';
@@ -85,7 +85,7 @@ export abstract class RequireHandler {
   protected modulesCache!: NodeJS.Dict<NodeModule>;
   protected readonly moduleTimestamps = new Map<string, number>();
   protected originalRequire!: NodeRequire;
-  protected plugin!: FixRequireModulesPlugin;
+  protected plugin!: CodeScriptToolkitPlugin;
   protected requireEx!: RequireExFn;
   protected requireWithCacheWithoutInvalidation!: RequireExFn;
   protected vaultAbsolutePath!: string;
@@ -107,7 +107,7 @@ export abstract class RequireHandler {
     }
   }
 
-  public register(plugin: FixRequireModulesPlugin, pluginRequire: PluginRequireFn): void {
+  public register(plugin: CodeScriptToolkitPlugin, pluginRequire: PluginRequireFn): void {
     this.plugin = plugin;
     this.pluginRequire = pluginRequire;
     this.vaultAbsolutePath = toPosixPath(plugin.app.vault.adapter.basePath);

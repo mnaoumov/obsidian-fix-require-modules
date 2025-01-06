@@ -1,12 +1,12 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
-import type { FixRequireModulesPlugin } from './FixRequireModulesPlugin.ts';
+import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
 export abstract class ScriptDirectoryWatcher {
-  protected plugin!: FixRequireModulesPlugin;
+  protected plugin!: CodeScriptToolkitPlugin;
   private wasRegisteredInPlugin = false;
 
-  public async register(plugin: FixRequireModulesPlugin, onChange: () => Promise<void>): Promise<void> {
+  public async register(plugin: CodeScriptToolkitPlugin, onChange: () => Promise<void>): Promise<void> {
     if (!this.wasRegisteredInPlugin) {
       this.plugin = plugin;
       this.plugin.register(this.stopWatcher.bind(this));

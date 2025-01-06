@@ -1,7 +1,7 @@
 import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
 import { join } from 'obsidian-dev-utils/Path';
 
-export class FixRequireModulesPluginSettings extends PluginSettingsBase {
+export class CodeScriptToolkitPluginPluginSettings extends PluginSettingsBase {
   public invocableScriptsDirectory = '';
   public mobileChangesCheckingIntervalInSeconds = 30;
   public modulesRoot = '';

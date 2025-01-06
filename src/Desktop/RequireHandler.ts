@@ -12,7 +12,7 @@ import {
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
 
-import type { FixRequireModulesPlugin } from '../FixRequireModulesPlugin.ts';
+import type { CodeScriptToolkitPlugin } from '../CodeScriptToolkitPlugin.ts';
 import type {
   PluginRequireFn,
   RequireAsyncWrapperFn
@@ -49,7 +49,7 @@ class RequireHandlerImpl extends RequireHandler {
     return adapter;
   }
 
-  public override register(plugin: FixRequireModulesPlugin, pluginRequire: PluginRequireFn): void {
+  public override register(plugin: CodeScriptToolkitPlugin, pluginRequire: PluginRequireFn): void {
     super.register(plugin, pluginRequire);
 
     const Module = this.originalRequire('node:module') as typeof import('node:module');
