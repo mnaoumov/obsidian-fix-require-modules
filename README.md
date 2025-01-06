@@ -1,6 +1,36 @@
-# Fix Require Modules
+# CodeScript Toolkit
 
-This is a plugin for [`Obsidian`][Obsidian] that fixes [`require()`][require] calls and simplifies working with custom [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] modules.
+(formerly known as `Fix Require Modules`)
+
+This is a plugin for [`Obsidian`][Obsidian] that allows to do a lot of things with [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] scripts from inside the [`Obsidian`][Obsidian] itself.
+
+## Who is this plugin for?
+
+This plugin is for you if you want to:
+
+- Write in any flavor of `JavaScript`/`TypeScript` in:
+  - [DevTools Console](https://developer.chrome.com/docs/devtools/console) within [`Obsidian`][Obsidian];
+  - [CustomJS](https://github.com/saml-dev/obsidian-custom-js) scripts;
+  - [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts;
+  - [Modules](https://github.com/polyipseity/obsidian-modules) scripts;
+  - [QuickAdd](https://quickadd.obsidian.guide/) scripts;
+  - [Templater](https://silentvoid13.github.io/Templater/) scripts;
+  - [Obsidian API](https://docs.obsidian.md/Reference/TypeScript+API) scripts;
+  - etc.
+- Write modular scripts using modern `JavaScript`/`TypeScript` syntax and patterns.
+- Prototype [`Obsidian`][Obsidian] plugins.
+- Explore [`Obsidian`][Obsidian] API (public and internal) in runtime easier.
+- Invoke any `JavaScript`/`TypeScript` script via command or hotkey.
+
+## Why this plugin?
+
+There are several very good plugins that allow to write `JavaScript`/`TypeScript` scripts for [`Obsidian`][Obsidian], but they all have their own limitations and quirks.
+
+Most of those plugins support writing scripts in [`CommonJS` (`cjs`)][cjs] only, which is not so used nowadays.
+
+None of those plugins provide you the developer experience as you would have in any other modern `JavaScript`/`TypeScript` development environment.
+
+This plugin aims to erase the line between the `Obsidian` world and the `JavaScript`/`TypeScript` development world.
 
 ## New functions
 
@@ -201,7 +231,7 @@ require('//path/from/vault/root.js');
 | **`require()`**      | ✔      | ✖     |
 | **`requireAsync()`** | ✔      | ✔     |
 
-Originally, [`require()`][require] only supported [`CommonJS` (`cjs`)](https://nodejs.org/api/modules.html#modules-commonjs-modules) modules and would throw `require() of ES Module path/to/script.mjs not supported. Instead change the require of path/to/script.mjs to a dynamic import() which is available in all CommonJS modules`. This plugin adds support for ECMAScript modules:
+Originally, [`require()`][require] only supported [`CommonJS` (`cjs`)][cjs] modules and would throw `require() of ES Module path/to/script.mjs not supported. Instead change the require of path/to/script.mjs to a dynamic import() which is available in all CommonJS modules`. This plugin adds support for ECMAScript modules:
 
 ```js
 require('path/to/script.mjs');
@@ -594,6 +624,8 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 ## License
 
 © [Michael Naumov](https://github.com/mnaoumov/)
+
+[cjs]: https://nodejs.org/api/modules.html#modules-commonjs-modules
 
 [Command Palette]: https://help.obsidian.md/Plugins/Command+palette
 
