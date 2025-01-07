@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 8.3.0
+
+- Add support for private modules
+- Check suffixes for missing paths
+
 ## 8.2.0
 
 - Add `autoOutput:false`
