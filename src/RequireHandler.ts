@@ -76,6 +76,7 @@ export const MODULE_NAME_SEPARATOR = '*';
 export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
 export const PATH_SUFFIXES = ['', '.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', '/index.js', '/index.cjs', '/index.mjs', '/index.ts', '/index.cts', '/index.mts'];
+export const PRIVATE_MODULE_PREFIX = '#';
 export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
@@ -235,7 +236,8 @@ export abstract class RequireHandler {
   protected abstract existsAsync(path: string): Promise<boolean>;
 
   protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
-    const path = this.getExportsRelativeModulePath(packageJson.exports, relativeModuleName);
+    const importsExportsNode = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX) ? packageJson.imports : packageJson.exports;
+    const path = this.getExportsRelativeModulePath(importsExportsNode, relativeModuleName);
 
     if (path == null && relativeModuleName === ENTRY_POINT) {
       return packageJson.main ?? 'index.js';
@@ -408,32 +410,32 @@ await requireAsyncWrapper((require) => {
     return ans;
   }
 
-  private getExportsRelativeModulePath(exportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
-    if (!exportsNode) {
+  private getExportsRelativeModulePath(importsExportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
+    if (!importsExportsNode) {
       return null;
     }
 
-    if (typeof exportsNode === 'string') {
-      return exportsNode + trimStart(relativeModuleName, ENTRY_POINT);
+    if (typeof importsExportsNode === 'string') {
+      return importsExportsNode + trimStart(relativeModuleName, ENTRY_POINT);
     }
 
-    let exportConditions;
+    let conditions;
 
-    if (Array.isArray(exportsNode)) {
-      if (!exportsNode[0]) {
+    if (Array.isArray(importsExportsNode)) {
+      if (!importsExportsNode[0]) {
         return null;
       }
 
-      if (typeof exportsNode[0] === 'string') {
-        return exportsNode[0] + trimStart(relativeModuleName, ENTRY_POINT);
+      if (typeof importsExportsNode[0] === 'string') {
+        return importsExportsNode[0] + trimStart(relativeModuleName, ENTRY_POINT);
       }
 
-      exportConditions = exportsNode[0];
+      conditions = importsExportsNode[0];
     } else {
-      exportConditions = exportsNode;
+      conditions = importsExportsNode;
     }
 
-    const path = exportConditions['require'] ?? exportConditions['import'] ?? exportConditions['default'];
+    const path = conditions['require'] ?? conditions['node'] ?? conditions['import'] ?? conditions['default'];
 
     if (typeof path === 'string') {
       return path + trimStart(relativeModuleName, ENTRY_POINT);
@@ -447,7 +449,7 @@ await requireAsyncWrapper((require) => {
     const parentRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(0, separatorIndex) : relativeModuleName;
     const leafRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(separatorIndex + 1) : '';
 
-    for (const [condition, exportsNodeChild] of Object.entries(exportConditions)) {
+    for (const [condition, exportsNodeChild] of Object.entries(conditions)) {
       if (condition === relativeModuleName) {
         const modulePath = this.getExportsRelativeModulePath(exportsNodeChild, ENTRY_POINT, false);
         if (modulePath) {
@@ -590,10 +592,17 @@ ${this.getRequireAsyncAdvice(true)}`);
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
     const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
     const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
-    const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+    let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 
     for (const rootDir of await this.getRootDirsAsync(parentDir)) {
-      const packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
+      let packageDir: string;
+      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX)) {
+        packageDir = rootDir;
+        relativeModuleName = moduleName;
+      } else {
+        packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
+      }
+
       if (!await this.existsAsync(packageDir)) {
         continue;
       }

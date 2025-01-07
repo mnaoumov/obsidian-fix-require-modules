@@ -28,6 +28,7 @@ import {
   MODULE_NAME_SEPARATOR,
   NODE_MODULES_DIR,
   PATH_SUFFIXES,
+  PRIVATE_MODULE_PREFIX,
   RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
   ResolvedType
@@ -196,10 +197,17 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   private requireModule(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
     const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
     const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
-    const relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+    let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 
     for (const rootDir of this.getRootDirs(parentDir)) {
-      const packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
+      let packageDir: string;
+      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX)) {
+        packageDir = rootDir;
+        relativeModuleName = moduleName;
+      } else {
+        packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
+      }
+
       if (!this.exists(packageDir)) {
         continue;
       }
