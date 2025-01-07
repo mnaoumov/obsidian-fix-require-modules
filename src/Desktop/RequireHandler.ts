@@ -27,6 +27,7 @@ import {
   ENTRY_POINT,
   MODULE_NAME_SEPARATOR,
   NODE_MODULES_DIR,
+  PATH_SUFFIXES,
   RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
   ResolvedType
@@ -232,7 +233,17 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requirePath(path: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
-    if (!this.exists(path)) {
+    let isFound = false;
+    for (const suffix of PATH_SUFFIXES) {
+      const newPath = path + suffix;
+      if (this.exists(newPath)) {
+        path = newPath;
+        isFound = true;
+        break;
+      }
+    }
+
+    if (!isFound) {
       throw new Error(`File not found: ${path}`);
     }
 

@@ -75,6 +75,7 @@ export const ENTRY_POINT = '.';
 export const MODULE_NAME_SEPARATOR = '*';
 export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
+export const PATH_SUFFIXES = ['', '.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', '/index.js', '/index.cjs', '/index.mjs', '/index.ts', '/index.cts', '/index.mts'];
 export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
@@ -629,7 +630,17 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requirePathAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
-    if (!await this.existsAsync(path)) {
+    let isFound = false;
+    for (const suffix of PATH_SUFFIXES) {
+      const newPath = path + suffix;
+      if (await this.existsAsync(newPath)) {
+        path = newPath;
+        isFound = true;
+        break;
+      }
+    }
+
+    if (!isFound) {
       throw new Error(`File not found: ${path}`);
     }
 
