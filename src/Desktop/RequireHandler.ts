@@ -234,7 +234,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
 
     for (const rootDir of this.getRootDirs(parentDir)) {
       let packageDir: string;
-      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX)) {
+      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX) || moduleName === ENTRY_POINT) {
         packageDir = rootDir;
         relativeModuleName = moduleName;
       } else {

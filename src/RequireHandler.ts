@@ -709,7 +709,7 @@ ${this.getRequireAsyncAdvice(true)}`);
 
     for (const rootDir of await this.getRootDirsAsync(parentDir)) {
       let packageDir: string;
-      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX)) {
+      if (moduleName.startsWith(PRIVATE_MODULE_PREFIX) || moduleName === ENTRY_POINT) {
         packageDir = rootDir;
         relativeModuleName = moduleName;
       } else {
