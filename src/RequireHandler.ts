@@ -78,6 +78,7 @@ const PACKAGE_JSON = 'package.json';
 export const PATH_SUFFIXES = ['', '.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', '/index.js', '/index.cjs', '/index.mjs', '/index.ts', '/index.cts', '/index.mts'];
 export const PRIVATE_MODULE_PREFIX = '#';
 export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
+export const SCOPED_MODULE_PREFIX = '@';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
@@ -608,7 +609,15 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requireModuleAsync(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
-    const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+    let separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+
+    if (moduleName.startsWith(SCOPED_MODULE_PREFIX)) {
+      if (separatorIndex === -1) {
+        throw new Error(`Invalid scoped module name: ${moduleName}`);
+      }
+      separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR, separatorIndex + 1);
+    }
+
     const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
     let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 

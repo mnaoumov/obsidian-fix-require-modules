@@ -31,7 +31,8 @@ import {
   PRIVATE_MODULE_PREFIX,
   RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
-  ResolvedType
+  ResolvedType,
+  SCOPED_MODULE_PREFIX
 
 } from '../RequireHandler.ts';
 import { convertPathToObsidianUrl } from '../util/obsidian.ts';
@@ -220,7 +221,15 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireModule(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
-    const separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+    let separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+
+    if (moduleName.startsWith(SCOPED_MODULE_PREFIX)) {
+      if (separatorIndex === -1) {
+        throw new Error(`Invalid scoped module name: ${moduleName}`);
+      }
+      separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR, separatorIndex + 1);
+    }
+
     const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
     let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
 
