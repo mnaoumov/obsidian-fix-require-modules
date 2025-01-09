@@ -238,14 +238,23 @@ export abstract class RequireHandler {
   protected abstract existsFileAsync(path: string): Promise<boolean>;
 
   protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
-    const importsExportsNode = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX) ? packageJson.imports : packageJson.exports;
+    const isPrivateModule = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX);
+    const importsExportsNode = isPrivateModule ? packageJson.imports : packageJson.exports;
     const path = this.getExportsRelativeModulePath(importsExportsNode, relativeModuleName);
 
-    if (path == null && relativeModuleName === ENTRY_POINT) {
+    if (path) {
+      return path;
+    }
+
+    if (relativeModuleName === ENTRY_POINT) {
       return packageJson.main ?? 'index.js';
     }
 
-    return path;
+    if (!importsExportsNode && !isPrivateModule) {
+      return relativeModuleName;
+    }
+
+    return null;
   }
 
   protected getRequireAsyncAdvice(isNewSentence?: boolean): string {
