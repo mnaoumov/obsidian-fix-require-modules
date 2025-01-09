@@ -76,8 +76,12 @@ class RequireHandlerImpl extends RequireHandler {
     return type !== ResolvedType.Url;
   }
 
-  protected override async existsAsync(path: string): Promise<boolean> {
-    return await Promise.resolve(this.exists(path));
+  protected override async existsDirectoryAsync(path: string): Promise<boolean> {
+    return await Promise.resolve(this.existsDirectory(path));
+  }
+
+  protected override async existsFileAsync(path: string): Promise<boolean> {
+    return await Promise.resolve(this.existsFile(path));
   }
 
   protected override async getTimestampAsync(path: string): Promise<number> {
@@ -125,7 +129,7 @@ class RequireHandlerImpl extends RequireHandler {
         case ResolvedType.Module:
           for (const rootDir of this.getRootDirs(path)) {
             const packageJsonPath = getPackageJsonPath(rootDir);
-            if (!this.exists(packageJsonPath)) {
+            if (!this.existsFile(packageJsonPath)) {
               continue;
             }
 
@@ -134,11 +138,17 @@ class RequireHandlerImpl extends RequireHandler {
             }
           }
           break;
-        case ResolvedType.Path:
-          if (this.checkTimestampChangedAndReloadIfNeeded(resolvedId, cacheInvalidationMode)) {
+        case ResolvedType.Path: {
+          const existingFilePath = this.findExistingFilePath(resolvedId);
+          if (existingFilePath == null) {
+            throw new Error(`File not found: ${resolvedId}`);
+          }
+
+          if (this.checkTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode)) {
             ans = true;
           }
           break;
+        }
         case ResolvedType.Url: {
           const errorMessage = this.getUrlDependencyErrorMessage(path, resolvedId, cacheInvalidationMode);
           switch (cacheInvalidationMode) {
@@ -156,8 +166,23 @@ class RequireHandlerImpl extends RequireHandler {
     return ans;
   }
 
-  private exists(path: string): boolean {
-    return this.fileSystemAdapter.fs.existsSync(path);
+  private existsDirectory(path: string): boolean {
+    return this.fileSystemAdapter.fs.existsSync(path) && this.fileSystemAdapter.fs.statSync(path).isDirectory();
+  }
+
+  private existsFile(path: string): boolean {
+    return this.fileSystemAdapter.fs.existsSync(path) && this.fileSystemAdapter.fs.statSync(path).isFile();
+  }
+
+  private findExistingFilePath(path: string): null | string {
+    for (const suffix of PATH_SUFFIXES) {
+      const newPath = path + suffix;
+      if (this.existsFile(newPath)) {
+        return newPath;
+      }
+    }
+
+    return null;
   }
 
   private getRootDirs(dir: string): string[] {
@@ -208,12 +233,12 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
         packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
       }
 
-      if (!this.exists(packageDir)) {
+      if (!this.existsDirectory(packageDir)) {
         continue;
       }
 
       const packageJsonPath = getPackageJsonPath(packageDir);
-      if (!this.exists(packageJsonPath)) {
+      if (!this.existsFile(packageJsonPath)) {
         continue;
       }
 
@@ -241,22 +266,13 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requirePath(path: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
-    let isFound = false;
-    for (const suffix of PATH_SUFFIXES) {
-      const newPath = path + suffix;
-      if (this.exists(newPath)) {
-        path = newPath;
-        isFound = true;
-        break;
-      }
-    }
-
-    if (!isFound) {
+    const existingFilePath = this.findExistingFilePath(path);
+    if (existingFilePath == null) {
       throw new Error(`File not found: ${path}`);
     }
 
-    this.checkTimestampChangedAndReloadIfNeeded(path, cacheInvalidationMode);
-    return this.modulesCache[path]?.exports;
+    this.checkTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
+    return this.modulesCache[existingFilePath]?.exports;
   }
 
   private requireString(content: string, path: string): unknown {

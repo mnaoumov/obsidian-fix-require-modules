@@ -233,7 +233,8 @@ export abstract class RequireHandler {
 
   protected abstract canRequireNonCached(type: ResolvedType): boolean;
 
-  protected abstract existsAsync(path: string): Promise<boolean>;
+  protected abstract existsDirectoryAsync(path: string): Promise<boolean>;
+  protected abstract existsFileAsync(path: string): Promise<boolean>;
 
   protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
     const importsExportsNode = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX) ? packageJson.imports : packageJson.exports;
@@ -382,7 +383,7 @@ await requireAsyncWrapper((require) => {
         case ResolvedType.Module:
           for (const rootDir of await this.getRootDirsAsync(path)) {
             const packageJsonPath = this.getPackageJsonPath(rootDir);
-            if (!await this.existsAsync(packageJsonPath)) {
+            if (!await this.existsFileAsync(packageJsonPath)) {
               continue;
             }
 
@@ -391,11 +392,17 @@ await requireAsyncWrapper((require) => {
             }
           }
           break;
-        case ResolvedType.Path:
-          if (await this.checkTimestampChangedAndReloadIfNeededAsync(resolvedId, cacheInvalidationMode)) {
+        case ResolvedType.Path: {
+          const existingFilePath = await this.findExistingFilePathAsync(resolvedId);
+          if (existingFilePath == null) {
+            throw new Error(`File not found: ${resolvedId}`);
+          }
+
+          if (await this.checkTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode)) {
             ans = true;
           }
           break;
+        }
         case ResolvedType.Url: {
           if (cacheInvalidationMode === CacheInvalidationMode.Never) {
             continue;
@@ -408,6 +415,17 @@ await requireAsyncWrapper((require) => {
     }
 
     return ans;
+  }
+
+  private async findExistingFilePathAsync(path: string): Promise<null | string> {
+    for (const suffix of PATH_SUFFIXES) {
+      const newPath = path + suffix;
+      if (await this.existsFileAsync(newPath)) {
+        return newPath;
+      }
+    }
+
+    return null;
   }
 
   private getExportsRelativeModulePath(importsExportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
@@ -499,7 +517,7 @@ await requireAsyncWrapper((require) => {
   private async getRootDirAsync(cwd: string): Promise<null | string> {
     let currentDir = toPosixPath(cwd);
     while (currentDir !== '.' && currentDir !== '/') {
-      if (await this.existsAsync(this.getPackageJsonPath(currentDir))) {
+      if (await this.existsFileAsync(this.getPackageJsonPath(currentDir))) {
         return toPosixPath(currentDir);
       }
       currentDir = dirname(currentDir);
@@ -603,12 +621,12 @@ ${this.getRequireAsyncAdvice(true)}`);
         packageDir = join(rootDir, NODE_MODULES_DIR, baseModuleName);
       }
 
-      if (!await this.existsAsync(packageDir)) {
+      if (!await this.existsDirectoryAsync(packageDir)) {
         continue;
       }
 
       const packageJsonPath = this.getPackageJsonPath(packageDir);
-      if (!await this.existsAsync(packageJsonPath)) {
+      if (!await this.existsFileAsync(packageJsonPath)) {
         continue;
       }
 
@@ -639,22 +657,13 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 
   private async requirePathAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
-    let isFound = false;
-    for (const suffix of PATH_SUFFIXES) {
-      const newPath = path + suffix;
-      if (await this.existsAsync(newPath)) {
-        path = newPath;
-        isFound = true;
-        break;
-      }
-    }
-
-    if (!isFound) {
+    const existingFilePath = await this.findExistingFilePathAsync(path);
+    if (existingFilePath == null) {
       throw new Error(`File not found: ${path}`);
     }
 
-    await this.checkTimestampChangedAndReloadIfNeededAsync(path, cacheInvalidationMode);
-    return this.modulesCache[path]?.exports;
+    await this.checkTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
+    return this.modulesCache[existingFilePath]?.exports;
   }
 
   private async requireUrlAsync(url: string): Promise<unknown> {
