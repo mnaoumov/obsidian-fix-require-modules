@@ -273,8 +273,17 @@ await requireAsyncWrapper((require) => {
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
-    const emptyModule = {};
-    this.addToModuleCache(id, emptyModule, false);
+    const cachedModuleEntry = this.modulesCache[id];
+    let emptyModule;
+    if (cachedModuleEntry) {
+      if (cachedModuleEntry.loaded) {
+        return cachedModuleEntry.exports;
+      }
+      emptyModule = cachedModuleEntry.exports as object;
+    } else {
+      emptyModule = {};
+      this.addToModuleCache(id, emptyModule, false);
+    }
     try {
       const loadedModule = moduleInitializer();
       const module = this.merge(emptyModule, loadedModule);
@@ -288,8 +297,17 @@ await requireAsyncWrapper((require) => {
   }
 
   protected async initModuleAndAddToCacheAsync(id: string, moduleInitializer: () => Promise<unknown>): Promise<unknown> {
-    const emptyModule = {};
-    this.addToModuleCache(id, emptyModule, false);
+    const cachedModuleEntry = this.modulesCache[id];
+    let emptyModule;
+    if (cachedModuleEntry) {
+      if (cachedModuleEntry.loaded) {
+        return cachedModuleEntry.exports;
+      }
+      emptyModule = cachedModuleEntry.exports as object;
+    } else {
+      emptyModule = {};
+      this.addToModuleCache(id, emptyModule, false);
+    }
     try {
       const loadedModule = await moduleInitializer();
       const module = this.merge(emptyModule, loadedModule);
