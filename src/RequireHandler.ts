@@ -35,17 +35,22 @@ export enum ResolvedType {
 }
 
 export type PluginRequireFn = (id: string) => unknown;
-
 export type RequireAsyncWrapperFn = (requireFn: RequireAsyncWrapperArg) => Promise<unknown>;
 
 export interface RequireOptions {
   cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
 }
+
+interface EsModule {
+  __esModule: boolean;
+}
+
 type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
 type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
+
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
 interface RequireWindow {
@@ -163,22 +168,26 @@ export abstract class RequireHandler {
       query = '';
     }
 
-    const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
+    const cachedModuleEntry = this.modulesCache[resolvedId];
 
-    if (hasCachedModule) {
+    if (cachedModuleEntry) {
+      if (!cachedModuleEntry.loaded) {
+        console.warn(`Circular dependency detected: ${resolvedId} -> ... -> ${fullOptions.parentPath ?? ''} -> ${resolvedId}`);
+        return cachedModuleEntry.exports;
+      }
+
       switch (fullOptions.cacheInvalidationMode) {
         case CacheInvalidationMode.Never:
-          return this.modulesCache[resolvedId];
+          return cachedModuleEntry.exports;
         case CacheInvalidationMode.WhenPossible:
           if (query) {
-            return this.modulesCache[resolvedId];
+            return cachedModuleEntry.exports;
           }
       }
     }
 
-    const module = await this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
-    this.addToModuleCache(cleanResolvedId, module);
-    this.addToModuleCache(resolvedId, module);
+    const module = await this.initModuleAndAddToCacheAsync(cleanResolvedId, () => this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode));
+    this.initModuleAndAddToCache(resolvedId, () => module);
     return module;
   }
 
@@ -206,35 +215,22 @@ export abstract class RequireHandler {
       const module = { exports: {} };
 
       const childRequire = this.makeChildRequire(path);
-      // eslint-disable-next-line import-x/no-commonjs
-      await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
-      // eslint-disable-next-line import-x/no-commonjs
-      this.addToModuleCache(path, module.exports);
-      // eslint-disable-next-line import-x/no-commonjs
-      return module.exports;
+
+      return await this.initModuleAndAddToCacheAsync(path, async () => {
+        // eslint-disable-next-line import-x/no-commonjs
+        await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
+        // eslint-disable-next-line import-x/no-commonjs
+        return module.exports;
+      });
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
     }
   }
 
-  protected addToModuleCache(id: string, module: unknown): void {
-    this.modulesCache[id] = {
-      children: [],
-      exports: module,
-      filename: '',
-      id,
-      isPreloading: false,
-      loaded: true,
-      parent: null,
-      path: '',
-      paths: [],
-      require: this.requireEx
-    };
-  }
-
   protected abstract canRequireNonCached(type: ResolvedType): boolean;
 
   protected abstract existsDirectoryAsync(path: string): Promise<boolean>;
+
   protected abstract existsFileAsync(path: string): Promise<boolean>;
 
   protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
@@ -274,8 +270,37 @@ await requireAsyncWrapper((require) => {
 
     return advice;
   }
-
   protected abstract getTimestampAsync(path: string): Promise<number>;
+
+  protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
+    const emptyModule = {};
+    this.addToModuleCache(id, emptyModule, false);
+    try {
+      const loadedModule = moduleInitializer();
+      const module = this.merge(emptyModule, loadedModule);
+      this.addToModuleCache(id, module);
+      return module;
+    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete this.modulesCache[id];
+      throw e;
+    }
+  }
+
+  protected async initModuleAndAddToCacheAsync(id: string, moduleInitializer: () => Promise<unknown>): Promise<unknown> {
+    const emptyModule = {};
+    this.addToModuleCache(id, emptyModule, false);
+    try {
+      const loadedModule = await moduleInitializer();
+      const module = this.merge(emptyModule, loadedModule);
+      this.addToModuleCache(id, module);
+      return module;
+    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete this.modulesCache[id];
+      throw e;
+    }
+  }
 
   protected makeChildRequire(parentPath: string): RequireExFn {
     return this.wrapRequire({
@@ -373,14 +398,30 @@ await requireAsyncWrapper((require) => {
     return { resolvedId: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, resolvedType: ResolvedType.Module };
   }
 
+  private addToModuleCache(id: string, module: unknown, isLoaded = true): void {
+    this.modulesCache[id] = {
+      children: [],
+      exports: module,
+      filename: '',
+      id,
+      isPreloading: false,
+      loaded: isLoaded,
+      parent: null,
+      path: '',
+      paths: [],
+      require: this.requireEx
+    };
+  }
+
   private async checkTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<boolean> {
     const timestamp = await this.getTimestampAsync(path);
     const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
     if (timestamp !== cachedTimestamp) {
       const content = await this.readFileAsync(path);
-      const module = await this.requireStringAsync(content, path);
-      this.addToModuleCache(path, module);
       this.moduleTimestamps.set(path, timestamp);
+      await this.initModuleAndAddToCacheAsync(path, async () => {
+        return await this.requireStringAsync(content, path);
+      });
       return true;
     }
 
@@ -555,6 +596,22 @@ await requireAsyncWrapper((require) => {
     return ans;
   }
 
+  private merge(emptyModule: object, loadedModule: unknown): unknown {
+    if (typeof loadedModule !== 'object' || loadedModule === null) {
+      return loadedModule;
+    }
+
+    Object.assign(emptyModule, loadedModule);
+
+    const esModule = loadedModule as Partial<EsModule>;
+
+    if (esModule.__esModule) {
+      Object.defineProperty(emptyModule, '__esModule', { value: true });
+    }
+
+    return emptyModule;
+  }
+
   private async readPackageJsonAsync(path: string): Promise<PackageJson> {
     const content = await this.readFileAsync(path);
     return JSON.parse(content) as PackageJson;
@@ -586,22 +643,25 @@ await requireAsyncWrapper((require) => {
       query = '';
     }
 
-    const hasCachedModule = Object.prototype.hasOwnProperty.call(this.modulesCache, resolvedId);
+    const cachedModuleEntry = this.modulesCache[resolvedId];
 
-    if (hasCachedModule) {
-      const cachedModule = this.modulesCache[resolvedId]?.exports as unknown;
+    if (cachedModuleEntry) {
+      if (!cachedModuleEntry.loaded) {
+        console.warn(`Circular dependency detected: ${resolvedId} -> ... -> ${fullOptions.parentPath ?? ''} -> ${resolvedId}`);
+        return cachedModuleEntry.exports;
+      }
 
       switch (fullOptions.cacheInvalidationMode) {
         case CacheInvalidationMode.Never:
-          return cachedModule;
+          return cachedModuleEntry.exports;
         case CacheInvalidationMode.WhenPossible:
           if (query) {
-            return cachedModule;
+            return cachedModuleEntry.exports;
           }
 
           if (!this.canRequireNonCached(resolvedType)) {
             console.warn(`Cached module ${resolvedId} cannot be invalidated synchronously. The cached version will be used. `);
-            return cachedModule;
+            return cachedModuleEntry.exports;
           }
       }
     }
@@ -611,9 +671,8 @@ await requireAsyncWrapper((require) => {
 ${this.getRequireAsyncAdvice(true)}`);
     }
 
-    const module = this.requireNonCached(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode);
-    this.addToModuleCache(cleanResolvedId, module);
-    this.addToModuleCache(resolvedId, module);
+    const module = this.initModuleAndAddToCache(cleanResolvedId, () => this.requireNonCached(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode));
+    this.initModuleAndAddToCache(resolvedId, () => module);
     return module;
   }
 

@@ -115,9 +115,8 @@ class RequireHandlerImpl extends RequireHandler {
     const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
     if (timestamp !== cachedTimestamp) {
       const content = this.readFile(path);
-      const module = this.requireString(content, path);
-      this.addToModuleCache(path, module);
       this.moduleTimestamps.set(path, timestamp);
+      this.initModuleAndAddToCache(path, () => this.requireString(content, path));
       return true;
     }
 
@@ -311,12 +310,13 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
       const moduleFnWrapper = debuggableEval(result.transformedCode, `requireString/${path}`) as ModuleFn;
       const module = { exports: {} };
       const childRequire = this.makeChildRequire(path);
-      // eslint-disable-next-line import-x/no-commonjs
-      moduleFnWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
-      // eslint-disable-next-line import-x/no-commonjs
-      this.addToModuleCache(path, module.exports);
-      // eslint-disable-next-line import-x/no-commonjs
-      return module.exports;
+
+      return this.initModuleAndAddToCache(path, () => {
+        // eslint-disable-next-line import-x/no-commonjs
+        moduleFnWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
+        // eslint-disable-next-line import-x/no-commonjs
+        return module.exports;
+      });
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
     }
