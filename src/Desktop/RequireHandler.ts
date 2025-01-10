@@ -128,6 +128,12 @@ class RequireHandlerImpl extends RequireHandler {
   }
 
   private getDependenciesTimestampChangedAndReloadIfNeeded(path: string, cacheInvalidationMode: CacheInvalidationMode): number {
+    if (this.currentModulesTimestampChain.has(path)) {
+      return this.moduleTimestamps.get(path) ?? 0;
+    }
+
+    this.currentModulesTimestampChain.add(path);
+
     const updateTimestamp = (newTimestamp: number): void => {
       timestamp = Math.max(timestamp, newTimestamp);
       this.moduleTimestamps.set(path, timestamp);
@@ -281,7 +287,15 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       throw new Error(`File not found: ${path}`);
     }
 
-    this.getDependenciesTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
+    const isRootRequire = this.currentModulesTimestampChain.size === 0;
+
+    try {
+      this.getDependenciesTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
+    } finally {
+      if (isRootRequire) {
+        this.currentModulesTimestampChain.clear();
+      }
+    }
     return this.modulesCache[existingFilePath]?.exports;
   }
 

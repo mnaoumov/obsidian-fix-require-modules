@@ -89,6 +89,7 @@ const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
 
 export abstract class RequireHandler {
+  protected readonly currentModulesTimestampChain = new Set<string>();
   protected readonly moduleDependencies = new Map<string, Set<string>>();
   protected modulesCache!: NodeJS.Dict<NodeModule>;
   protected readonly moduleTimestamps = new Map<string, number>();
@@ -98,11 +99,10 @@ export abstract class RequireHandler {
   protected requireWithCacheWithoutInvalidation!: RequireExFn;
   protected vaultAbsolutePath!: string;
   private pluginRequire!: PluginRequireFn;
-  private updatedModuleTimestamps = new Map<string, number>();
 
   public clearCache(): void {
     this.moduleTimestamps.clear();
-    this.updatedModuleTimestamps.clear();
+    this.currentModulesTimestampChain.clear();
     this.moduleDependencies.clear();
 
     for (const key of Object.keys(this.modulesCache)) {
@@ -448,6 +448,12 @@ await requireAsyncWrapper((require) => {
   }
 
   private async getDependenciesTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<number> {
+    if (this.currentModulesTimestampChain.has(path)) {
+      return this.moduleTimestamps.get(path) ?? 0;
+    }
+
+    this.currentModulesTimestampChain.add(path);
+
     const updateTimestamp = (newTimestamp: number): void => {
       timestamp = Math.max(timestamp, newTimestamp);
       this.moduleTimestamps.set(path, timestamp);
@@ -753,7 +759,16 @@ ${this.getRequireAsyncAdvice(true)}`);
       throw new Error(`File not found: ${path}`);
     }
 
-    await this.getDependenciesTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
+    const isRootRequire = this.currentModulesTimestampChain.size === 0;
+
+    try {
+      await this.getDependenciesTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
+    } finally {
+      if (isRootRequire) {
+        this.currentModulesTimestampChain.clear();
+      }
+    }
+
     return this.modulesCache[existingFilePath]?.exports;
   }
 
