@@ -35,10 +35,10 @@ export async function cleanupStartupScript(plugin: CodeScriptToolkitPlugin): Pro
 
 export async function invokeStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   if (!plugin.settingsCopy.startupScriptPath) {
-    console.warn('No Startup script path specified in the settings');
-  } else {
-    await invoke(plugin.app, plugin.settingsCopy.getStartupScriptPath(), true);
+    return;
   }
+
+  await invoke(plugin.app, plugin.settingsCopy.getStartupScriptPath(), true);
 }
 
 export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin): Promise<void> {
@@ -51,9 +51,6 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
   const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
 
   if (!invocableScriptsDirectory) {
-    const message = 'No Invocable scripts directory specified in the settings';
-    new Notice(message);
-    console.warn(message);
     return;
   }
 
