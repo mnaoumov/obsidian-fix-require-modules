@@ -131,8 +131,8 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       plugin,
       resultEl,
       shouldAutoOutput,
-      shouldWrapConsole,
       shouldShowSystemMessages,
+      shouldWrapConsole,
       source,
       sourcePath: ctx.sourcePath
     };

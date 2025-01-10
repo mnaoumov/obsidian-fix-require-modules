@@ -25,11 +25,12 @@ import { ExtractRequireArgsListBabelPlugin } from './babel/ExtractRequireArgsLis
 import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionBabelPlugin.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
-import { CachedModuleProxyHandler } from './CachedModuleProxyHandler.ts';
+import {
+  CachedModuleProxyHandler,
+  EMPTY_MODULE_SYMBOL
+} from './CachedModuleProxyHandler.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
-
-import { EMPTY_MODULE_SYMBOL } from './CachedModuleProxyHandler.ts';
 
 export enum ResolvedType {
   Module = 'module',
