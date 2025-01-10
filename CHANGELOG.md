@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 8.4.0
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/12.0.0
+- Fix multiple initialization
+- Resolve entry point
+- Support circular dependencies
+- Support nested path without exports node
+- Handle scoped modules
+- Add suffixes for relative paths
+
 ## 8.3.0
 
 - Add support for private modules
