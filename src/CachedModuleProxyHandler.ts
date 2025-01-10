@@ -1,3 +1,5 @@
+export const EMPTY_MODULE_SYMBOL = Symbol('emptyModule');
+
 export class CachedModuleProxyHandler implements ProxyHandler<object> {
   public constructor(private readonly cachedModuleFn: () => unknown) { }
 
@@ -35,6 +37,10 @@ export class CachedModuleProxyHandler implements ProxyHandler<object> {
   }
 
   public get(_target: object, property: string | symbol, receiver: unknown): unknown {
+    if (property === EMPTY_MODULE_SYMBOL) {
+      return true;
+    }
+
     const cachedModule = this.cachedModuleFn();
     if (cachedModule && typeof cachedModule === 'object') {
       return Reflect.get(cachedModule, property, receiver);

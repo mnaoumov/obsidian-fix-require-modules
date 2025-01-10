@@ -29,6 +29,8 @@ import { CachedModuleProxyHandler } from './CachedModuleProxyHandler.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
+import { EMPTY_MODULE_SYMBOL } from './CachedModuleProxyHandler.ts';
+
 export enum ResolvedType {
   Module = 'module',
   Path = 'path',
@@ -46,6 +48,7 @@ export interface RequireOptions {
 interface EmptyModule {
   [EMPTY_MODULE_SYMBOL]: boolean;
 }
+
 type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
@@ -88,7 +91,6 @@ export const SCOPED_MODULE_PREFIX = '@';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
-const EMPTY_MODULE_SYMBOL = Symbol('emptyModule');
 
 export abstract class RequireHandler {
   protected readonly currentModulesTimestampChain = new Set<string>();
@@ -445,12 +447,6 @@ await requireAsyncWrapper((require) => {
   private createEmptyModule(id: string): EmptyModule {
     const loadingModule = {};
     const emptyModule = new Proxy({}, new CachedModuleProxyHandler(() => this.getCachedModule(id) ?? loadingModule));
-    Object.defineProperty(emptyModule, EMPTY_MODULE_SYMBOL, {
-      configurable: false,
-      enumerable: false,
-      value: true,
-      writable: false
-    });
     return emptyModule as EmptyModule;
   }
 
