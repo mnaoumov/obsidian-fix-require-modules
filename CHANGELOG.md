@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 8.5.0
+
+- Debug successful execution
+- Allow disabling system messages
+- Don't cache empty modules
+
 ## 8.4.0
 
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/12.0.0
