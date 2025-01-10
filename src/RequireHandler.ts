@@ -25,6 +25,7 @@ import { ExtractRequireArgsListBabelPlugin } from './babel/ExtractRequireArgsLis
 import { FixSourceMapBabelPlugin } from './babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from './babel/WrapInRequireFunctionBabelPlugin.ts';
 import { builtInModuleNames } from './BuiltInModuleNames.ts';
+import { CachedModuleProxyHandler } from './CachedModuleProxyHandler.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
 import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
@@ -40,10 +41,6 @@ export type RequireAsyncWrapperFn = (requireFn: RequireAsyncWrapperArg) => Promi
 export interface RequireOptions {
   cacheInvalidationMode: CacheInvalidationMode;
   parentPath?: string;
-}
-
-interface EsModule {
-  __esModule: boolean;
 }
 
 type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
@@ -110,8 +107,7 @@ export abstract class RequireHandler {
         continue;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.modulesCache[key];
+      this.deleteCacheEntry(key);
     }
   }
 
@@ -278,49 +274,35 @@ await requireAsyncWrapper((require) => {
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
-    const cachedModuleEntry = this.modulesCache[id];
-    let emptyModule;
-    if (cachedModuleEntry) {
-      if (cachedModuleEntry.loaded) {
-        return cachedModuleEntry.exports;
-      }
-      emptyModule = cachedModuleEntry.exports as object;
-    } else {
-      emptyModule = {};
-      this.addToModuleCache(id, emptyModule, false);
-    }
+    this.deleteCacheEntry(id);
+    this.addToModuleCache(id, this.createEmptyModule(id), false);
     try {
-      const loadedModule = moduleInitializer();
-      const module = this.merge(emptyModule, loadedModule);
+      const module = moduleInitializer();
+      const cachedModule = this.getCachedModule(id);
+      if (cachedModule) {
+        return cachedModule;
+      }
       this.addToModuleCache(id, module);
       return module;
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.modulesCache[id];
+      this.deleteCacheEntry(id);
       throw e;
     }
   }
 
   protected async initModuleAndAddToCacheAsync(id: string, moduleInitializer: () => Promise<unknown>): Promise<unknown> {
-    const cachedModuleEntry = this.modulesCache[id];
-    let emptyModule;
-    if (cachedModuleEntry) {
-      if (cachedModuleEntry.loaded) {
-        return cachedModuleEntry.exports;
-      }
-      emptyModule = cachedModuleEntry.exports as object;
-    } else {
-      emptyModule = {};
-      this.addToModuleCache(id, emptyModule, false);
-    }
+    this.deleteCacheEntry(id);
+    this.addToModuleCache(id, this.createEmptyModule(id), false);
     try {
-      const loadedModule = await moduleInitializer();
-      const module = this.merge(emptyModule, loadedModule);
+      const module = await moduleInitializer();
+      const cachedModule = this.getCachedModule(id);
+      if (cachedModule) {
+        return cachedModule;
+      }
       this.addToModuleCache(id, module);
       return module;
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.modulesCache[id];
+      this.deleteCacheEntry(id);
       throw e;
     }
   }
@@ -421,8 +403,8 @@ await requireAsyncWrapper((require) => {
     return { resolvedId: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, resolvedType: ResolvedType.Module };
   }
 
-  private addToModuleCache(id: string, module: unknown, isLoaded = true): void {
-    this.modulesCache[id] = {
+  private addToModuleCache(id: string, module: unknown, isLoaded = true): NodeModule {
+    return this.modulesCache[id] = {
       children: [],
       exports: module,
       filename: '',
@@ -436,6 +418,16 @@ await requireAsyncWrapper((require) => {
     };
   }
 
+  private createEmptyModule(id: string): unknown {
+    const loadingModule = {};
+    return new Proxy({}, new CachedModuleProxyHandler(() => this.getCachedModule(id) ?? loadingModule));
+  }
+
+  private deleteCacheEntry(id: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete this.modulesCache[id];
+  }
+
   private async findExistingFilePathAsync(path: string): Promise<null | string> {
     for (const suffix of PATH_SUFFIXES) {
       const newPath = path + suffix;
@@ -445,6 +437,10 @@ await requireAsyncWrapper((require) => {
     }
 
     return null;
+  }
+
+  private getCachedModule(id: string): unknown {
+    return this.modulesCache[id]?.loaded ? this.modulesCache[id].exports : null;
   }
 
   private async getDependenciesTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<number> {
@@ -614,22 +610,6 @@ await requireAsyncWrapper((require) => {
     }
 
     return ans;
-  }
-
-  private merge(emptyModule: object, loadedModule: unknown): unknown {
-    if (typeof loadedModule !== 'object' || loadedModule === null) {
-      return loadedModule;
-    }
-
-    Object.assign(emptyModule, loadedModule);
-
-    const esModule = loadedModule as Partial<EsModule>;
-
-    if (esModule.__esModule) {
-      Object.defineProperty(emptyModule, '__esModule', { value: true });
-    }
-
-    return emptyModule;
   }
 
   private async readPackageJsonAsync(path: string): Promise<PackageJson> {
