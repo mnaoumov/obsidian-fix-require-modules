@@ -172,6 +172,10 @@ export abstract class RequireHandler {
         return cachedModuleEntry.exports;
       }
 
+      if (this.currentModulesTimestampChain.has(resolvedId)) {
+        return cachedModuleEntry.exports;
+      }
+
       switch (fullOptions.cacheInvalidationMode) {
         case CacheInvalidationMode.Never:
           return cachedModuleEntry.exports;
@@ -183,7 +187,9 @@ export abstract class RequireHandler {
     }
 
     const module = await this.initModuleAndAddToCacheAsync(cleanResolvedId, () => this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode));
-    this.initModuleAndAddToCache(resolvedId, () => module);
+    if (resolvedId !== cleanResolvedId) {
+      this.initModuleAndAddToCache(resolvedId, () => module);
+    }
     return module;
   }
 
@@ -274,8 +280,10 @@ await requireAsyncWrapper((require) => {
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
-    this.deleteCacheEntry(id);
-    this.addToModuleCache(id, this.createEmptyModule(id), false);
+    if (!this.modulesCache[id] || this.modulesCache[id].loaded) {
+      this.deleteCacheEntry(id);
+      this.addToModuleCache(id, this.createEmptyModule(id), false);
+    }
     try {
       const module = moduleInitializer();
       const cachedModule = this.getCachedModule(id);
@@ -291,8 +299,10 @@ await requireAsyncWrapper((require) => {
   }
 
   protected async initModuleAndAddToCacheAsync(id: string, moduleInitializer: () => Promise<unknown>): Promise<unknown> {
-    this.deleteCacheEntry(id);
-    this.addToModuleCache(id, this.createEmptyModule(id), false);
+    if (!this.modulesCache[id] || this.modulesCache[id].loaded) {
+      this.deleteCacheEntry(id);
+      this.addToModuleCache(id, this.createEmptyModule(id), false);
+    }
     try {
       const module = await moduleInitializer();
       const cachedModule = this.getCachedModule(id);
@@ -651,6 +661,10 @@ await requireAsyncWrapper((require) => {
         return cachedModuleEntry.exports;
       }
 
+      if (this.currentModulesTimestampChain.has(resolvedId)) {
+        return cachedModuleEntry.exports;
+      }
+
       switch (fullOptions.cacheInvalidationMode) {
         case CacheInvalidationMode.Never:
           return cachedModuleEntry.exports;
@@ -672,7 +686,9 @@ ${this.getRequireAsyncAdvice(true)}`);
     }
 
     const module = this.initModuleAndAddToCache(cleanResolvedId, () => this.requireNonCached(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode));
-    this.initModuleAndAddToCache(resolvedId, () => module);
+    if (resolvedId !== cleanResolvedId) {
+      this.initModuleAndAddToCache(resolvedId, () => module);
+    }
     return module;
   }
 
