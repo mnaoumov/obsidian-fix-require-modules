@@ -43,9 +43,13 @@ export interface RequireOptions {
   parentPath?: string;
 }
 
+interface EmptyModule {
+  [EMPTY_MODULE_SYMBOL]: boolean;
+}
 type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
+
 type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
 
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
@@ -84,6 +88,7 @@ export const SCOPED_MODULE_PREFIX = '@';
 const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
+const EMPTY_MODULE_SYMBOL = Symbol('emptyModule');
 
 export abstract class RequireHandler {
   protected readonly currentModulesTimestampChain = new Set<string>();
@@ -235,6 +240,10 @@ export abstract class RequireHandler {
 
   protected abstract existsFileAsync(path: string): Promise<boolean>;
 
+  protected getCachedModule(id: string): unknown {
+    return this.modulesCache[id]?.loaded ? this.modulesCache[id].exports : null;
+  }
+
   protected getPackageJsonPath(packageDir: string): string {
     return join(packageDir, PACKAGE_JSON);
   }
@@ -290,7 +299,10 @@ await requireAsyncWrapper((require) => {
       if (cachedModule) {
         return cachedModule;
       }
-      this.addToModuleCache(id, module);
+      if (!this.isEmptyModule(module)) {
+        this.addToModuleCache(id, module);
+      }
+
       return module;
     } catch (e) {
       this.deleteCacheEntry(id);
@@ -309,7 +321,9 @@ await requireAsyncWrapper((require) => {
       if (cachedModule) {
         return cachedModule;
       }
-      this.addToModuleCache(id, module);
+      if (!this.isEmptyModule(module)) {
+        this.addToModuleCache(id, module);
+      }
       return module;
     } catch (e) {
       this.deleteCacheEntry(id);
@@ -428,9 +442,16 @@ await requireAsyncWrapper((require) => {
     };
   }
 
-  private createEmptyModule(id: string): unknown {
+  private createEmptyModule(id: string): EmptyModule {
     const loadingModule = {};
-    return new Proxy({}, new CachedModuleProxyHandler(() => this.getCachedModule(id) ?? loadingModule));
+    const emptyModule = new Proxy({}, new CachedModuleProxyHandler(() => this.getCachedModule(id) ?? loadingModule));
+    Object.defineProperty(emptyModule, EMPTY_MODULE_SYMBOL, {
+      configurable: false,
+      enumerable: false,
+      value: true,
+      writable: false
+    });
+    return emptyModule as EmptyModule;
   }
 
   private deleteCacheEntry(id: string): void {
@@ -447,10 +468,6 @@ await requireAsyncWrapper((require) => {
     }
 
     return null;
-  }
-
-  private getCachedModule(id: string): unknown {
-    return this.modulesCache[id]?.loaded ? this.modulesCache[id].exports : null;
   }
 
   private async getDependenciesTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<number> {
@@ -502,7 +519,7 @@ await requireAsyncWrapper((require) => {
       }
     }
 
-    if (timestamp > cachedTimestamp) {
+    if (timestamp > cachedTimestamp || !this.getCachedModule(path)) {
       const content = await this.readFileAsync(path);
       await this.initModuleAndAddToCacheAsync(path, () => this.requireStringAsync(content, path));
     }
@@ -620,6 +637,10 @@ await requireAsyncWrapper((require) => {
     }
 
     return ans;
+  }
+
+  private isEmptyModule(module: unknown): boolean {
+    return (module as Partial<EmptyModule> | undefined)?.[EMPTY_MODULE_SYMBOL] === true;
   }
 
   private async readPackageJsonAsync(path: string): Promise<PackageJson> {

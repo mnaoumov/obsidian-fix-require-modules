@@ -181,7 +181,7 @@ class RequireHandlerImpl extends RequireHandler {
       }
     }
 
-    if (timestamp > cachedTimestamp) {
+    if (timestamp > cachedTimestamp || !this.getCachedModule(path)) {
       const content = this.readFile(path);
       this.initModuleAndAddToCache(path, () => this.requireString(content, path));
     }
