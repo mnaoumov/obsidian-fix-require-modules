@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.6.0
+
+- Avoid confusing warnings
+
 ## 8.5.0
 
 - Debug successful execution
