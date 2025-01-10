@@ -233,6 +233,10 @@ export abstract class RequireHandler {
 
   protected abstract existsFileAsync(path: string): Promise<boolean>;
 
+  protected getPackageJsonPath(packageDir: string): string {
+    return join(packageDir, PACKAGE_JSON);
+  }
+
   protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
     const isPrivateModule = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX);
     const importsExportsNode = isPrivateModule ? packageJson.imports : packageJson.exports;
@@ -270,6 +274,7 @@ await requireAsyncWrapper((require) => {
 
     return advice;
   }
+
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
@@ -431,20 +436,26 @@ await requireAsyncWrapper((require) => {
     };
   }
 
-  private async checkTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<boolean> {
-    const timestamp = await this.getTimestampAsync(path);
-    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
-    if (timestamp !== cachedTimestamp) {
-      const content = await this.readFileAsync(path);
-      this.moduleTimestamps.set(path, timestamp);
-      await this.initModuleAndAddToCacheAsync(path, async () => {
-        return await this.requireStringAsync(content, path);
-      });
-      return true;
+  private async findExistingFilePathAsync(path: string): Promise<null | string> {
+    for (const suffix of PATH_SUFFIXES) {
+      const newPath = path + suffix;
+      if (await this.existsFileAsync(newPath)) {
+        return newPath;
+      }
     }
 
-    let ans = false;
+    return null;
+  }
 
+  private async getDependenciesTimestampChangedAndReloadIfNeededAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<number> {
+    const updateTimestamp = (newTimestamp: number): void => {
+      timestamp = Math.max(timestamp, newTimestamp);
+      this.moduleTimestamps.set(path, timestamp);
+    };
+
+    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
+    let timestamp = 0;
+    updateTimestamp(await this.getTimestampAsync(path));
     const dependencies = this.moduleDependencies.get(path) ?? [];
     for (const dependency of dependencies) {
       const { resolvedId, resolvedType } = this.resolve(dependency, path);
@@ -456,9 +467,8 @@ await requireAsyncWrapper((require) => {
               continue;
             }
 
-            if (await this.checkTimestampChangedAndReloadIfNeededAsync(packageJsonPath, cacheInvalidationMode)) {
-              ans = true;
-            }
+            const dependencyTimestamp = await this.getDependenciesTimestampChangedAndReloadIfNeededAsync(packageJsonPath, cacheInvalidationMode);
+            updateTimestamp(dependencyTimestamp);
           }
           break;
         case ResolvedType.Path: {
@@ -467,34 +477,24 @@ await requireAsyncWrapper((require) => {
             throw new Error(`File not found: ${resolvedId}`);
           }
 
-          if (await this.checkTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode)) {
-            ans = true;
-          }
+          const dependencyTimestamp = await this.getDependenciesTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
+          updateTimestamp(dependencyTimestamp);
           break;
         }
         case ResolvedType.Url: {
-          if (cacheInvalidationMode === CacheInvalidationMode.Never) {
-            continue;
+          if (cacheInvalidationMode !== CacheInvalidationMode.Never) {
+            updateTimestamp(Date.now());
           }
-
-          ans = true;
           break;
         }
       }
     }
 
-    return ans;
-  }
-
-  private async findExistingFilePathAsync(path: string): Promise<null | string> {
-    for (const suffix of PATH_SUFFIXES) {
-      const newPath = path + suffix;
-      if (await this.existsFileAsync(newPath)) {
-        return newPath;
-      }
+    if (timestamp > cachedTimestamp) {
+      const content = await this.readFileAsync(path);
+      await this.initModuleAndAddToCacheAsync(path, () => this.requireStringAsync(content, path));
     }
-
-    return null;
+    return timestamp;
   }
 
   private getExportsRelativeModulePath(importsExportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
@@ -554,10 +554,6 @@ await requireAsyncWrapper((require) => {
     }
 
     return null;
-  }
-
-  private getPackageJsonPath(packageDir: string): string {
-    return join(packageDir, PACKAGE_JSON);
   }
 
   private getParentPathFromCallStack(): null | string {
@@ -757,7 +753,7 @@ ${this.getRequireAsyncAdvice(true)}`);
       throw new Error(`File not found: ${path}`);
     }
 
-    await this.checkTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
+    await this.getDependenciesTimestampChangedAndReloadIfNeededAsync(existingFilePath, cacheInvalidationMode);
     return this.modulesCache[existingFilePath]?.exports;
   }
 

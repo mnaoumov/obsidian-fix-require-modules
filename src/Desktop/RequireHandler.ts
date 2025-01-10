@@ -1,3 +1,5 @@
+import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
+
 import { debuggableEval } from 'debuggable-eval';
 import { FileSystemAdapter } from 'obsidian';
 import {
@@ -5,10 +7,6 @@ import {
   dirname,
   join
 } from 'obsidian-dev-utils/Path';
-import {
-  getPackageJsonPath,
-  readPackageJsonSync
-} from 'obsidian-dev-utils/scripts/Npm';
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
 
@@ -102,68 +100,12 @@ class RequireHandlerImpl extends RequireHandler {
       case ResolvedType.Path:
         return this.requirePath(id, cacheInvalidationMode);
       case ResolvedType.Url:
-        throw new Error('Cannot require synchronously from URL');
+        throw new Error(`Cannot require synchronously from URL. ${this.getRequireAsyncAdvice(true)}`);
     }
   }
 
   protected override requireSpecialModule(id: string): unknown {
     return super.requireSpecialModule(id) ?? this.electronModules.get(id) ?? this.requireNodeBuiltinModule(id);
-  }
-
-  private checkTimestampChangedAndReloadIfNeeded(path: string, cacheInvalidationMode: CacheInvalidationMode): boolean {
-    const timestamp = this.getTimestamp(path);
-    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
-    if (timestamp !== cachedTimestamp) {
-      const content = this.readFile(path);
-      this.moduleTimestamps.set(path, timestamp);
-      this.initModuleAndAddToCache(path, () => this.requireString(content, path));
-      return true;
-    }
-
-    let ans = false;
-
-    const dependencies = this.moduleDependencies.get(path) ?? [];
-    for (const dependency of dependencies) {
-      const { resolvedId, resolvedType } = this.resolve(dependency, path);
-      switch (resolvedType) {
-        case ResolvedType.Module:
-          for (const rootDir of this.getRootDirs(path)) {
-            const packageJsonPath = getPackageJsonPath(rootDir);
-            if (!this.existsFile(packageJsonPath)) {
-              continue;
-            }
-
-            if (this.checkTimestampChangedAndReloadIfNeeded(packageJsonPath, cacheInvalidationMode)) {
-              ans = true;
-            }
-          }
-          break;
-        case ResolvedType.Path: {
-          const existingFilePath = this.findExistingFilePath(resolvedId);
-          if (existingFilePath == null) {
-            throw new Error(`File not found: ${resolvedId}`);
-          }
-
-          if (this.checkTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode)) {
-            ans = true;
-          }
-          break;
-        }
-        case ResolvedType.Url: {
-          const errorMessage = this.getUrlDependencyErrorMessage(path, resolvedId, cacheInvalidationMode);
-          switch (cacheInvalidationMode) {
-            case CacheInvalidationMode.Always:
-              throw new Error(errorMessage);
-            case CacheInvalidationMode.WhenPossible:
-              console.warn(errorMessage);
-              break;
-          }
-          break;
-        }
-      }
-    }
-
-    return ans;
   }
 
   private existsDirectory(path: string): boolean {
@@ -183,6 +125,61 @@ class RequireHandlerImpl extends RequireHandler {
     }
 
     return null;
+  }
+
+  private getDependenciesTimestampChangedAndReloadIfNeeded(path: string, cacheInvalidationMode: CacheInvalidationMode): number {
+    const updateTimestamp = (newTimestamp: number): void => {
+      timestamp = Math.max(timestamp, newTimestamp);
+      this.moduleTimestamps.set(path, timestamp);
+    };
+
+    const cachedTimestamp = this.moduleTimestamps.get(path) ?? 0;
+    let timestamp = 0;
+    updateTimestamp(this.getTimestamp(path));
+    const dependencies = this.moduleDependencies.get(path) ?? [];
+    for (const dependency of dependencies) {
+      const { resolvedId, resolvedType } = this.resolve(dependency, path);
+      switch (resolvedType) {
+        case ResolvedType.Module:
+          for (const rootDir of this.getRootDirs(path)) {
+            const packageJsonPath = this.getPackageJsonPath(rootDir);
+            if (!this.existsFile(packageJsonPath)) {
+              continue;
+            }
+
+            const dependencyTimestamp = this.getDependenciesTimestampChangedAndReloadIfNeeded(packageJsonPath, cacheInvalidationMode);
+            updateTimestamp(dependencyTimestamp);
+          }
+          break;
+        case ResolvedType.Path: {
+          const existingFilePath = this.findExistingFilePath(resolvedId);
+          if (existingFilePath == null) {
+            throw new Error(`File not found: ${resolvedId}`);
+          }
+
+          const dependencyTimestamp = this.getDependenciesTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
+          updateTimestamp(dependencyTimestamp);
+          break;
+        }
+        case ResolvedType.Url: {
+          const errorMessage = this.getUrlDependencyErrorMessage(path, resolvedId, cacheInvalidationMode);
+          switch (cacheInvalidationMode) {
+            case CacheInvalidationMode.Always:
+              throw new Error(errorMessage);
+            case CacheInvalidationMode.WhenPossible:
+              console.warn(errorMessage);
+              break;
+          }
+          break;
+        }
+      }
+    }
+
+    if (timestamp > cachedTimestamp) {
+      const content = this.readFile(path);
+      this.initModuleAndAddToCache(path, () => this.requireString(content, path));
+    }
+    return timestamp;
   }
 
   private getRootDirs(dir: string): string[] {
@@ -219,6 +216,11 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
     return this.fileSystemAdapter.fs.readFileSync(path, 'utf8');
   }
 
+  private readPackageJson(path: string): PackageJson {
+    const content = this.readFile(path);
+    return JSON.parse(content) as PackageJson;
+  }
+
   private requireModule(moduleName: string, parentDir: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
     let separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR);
 
@@ -245,12 +247,12 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
         continue;
       }
 
-      const packageJsonPath = getPackageJsonPath(packageDir);
+      const packageJsonPath = this.getPackageJsonPath(packageDir);
       if (!this.existsFile(packageJsonPath)) {
         continue;
       }
 
-      const packageJson = readPackageJsonSync(packageJsonPath);
+      const packageJson = this.readPackageJson(packageJsonPath);
       const relativeModulePath = this.getRelativeModulePath(packageJson, relativeModuleName);
       if (relativeModulePath == null) {
         continue;
@@ -279,7 +281,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       throw new Error(`File not found: ${path}`);
     }
 
-    this.checkTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
+    this.getDependenciesTimestampChangedAndReloadIfNeeded(existingFilePath, cacheInvalidationMode);
     return this.modulesCache[existingFilePath]?.exports;
   }
 
