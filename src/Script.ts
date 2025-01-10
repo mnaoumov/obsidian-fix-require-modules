@@ -141,6 +141,7 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
       throw new Error(`${scriptPath} does not export a function`);
     }
     await invokeFn(app);
+    console.debug(`${scriptString} ${scriptPath} executed successfully`);
   } catch (error) {
     new Notice(`Error invoking ${scriptString} ${scriptPath}
 See console for details...`);
