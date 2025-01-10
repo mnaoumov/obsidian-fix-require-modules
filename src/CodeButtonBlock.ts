@@ -37,6 +37,7 @@ interface HandleClickOptions {
   plugin: Plugin;
   resultEl: HTMLElement;
   shouldAutoOutput: boolean;
+  shouldShowSystemMessages: boolean;
   shouldWrapConsole: boolean;
   source: string;
   sourcePath: string;
@@ -59,17 +60,23 @@ export function unloadTempPlugins(): void {
 async function handleClick(options: HandleClickOptions): Promise<void> {
   options.resultEl.empty();
   const wrappedConsole = new ConsoleWrapper(options.resultEl);
-  wrappedConsole.writeSystemMessage('⏳ Executing...');
+  if (options.shouldShowSystemMessages) {
+    wrappedConsole.writeSystemMessage('⏳ Executing...');
+  }
 
   try {
     const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}.code-button.${options.buttonIndex.toString()}.${options.caption}.ts`, dirname(options.sourcePath), options.shouldAutoOutput);
     const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
     await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl, makeRenderMarkdownFn(options.plugin, options.resultEl, options.sourcePath));
-    wrappedConsole.writeSystemMessage('✔ Executed successfully');
+    if (options.shouldShowSystemMessages) {
+      wrappedConsole.writeSystemMessage('✔ Executed successfully');
+    }
   } catch (error) {
     printError(error);
     wrappedConsole.appendToResultEl([error], 'error');
-    wrappedConsole.writeSystemMessage('✖ Executed with error!');
+    if (options.shouldShowSystemMessages) {
+      wrappedConsole.writeSystemMessage('✖ Executed with error!');
+    }
   }
 }
 
@@ -111,6 +118,7 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
     const shouldAutoRun = rest.includes('autorun') || rest.includes('autorun:true');
     const shouldWrapConsole = !rest.includes('console:false');
     const shouldAutoOutput = !rest.includes('autoOutput:false');
+    const shouldShowSystemMessages = !rest.includes('systemMessages:false');
 
     const lines = sectionInfo.text.split('\n');
     const previousLines = lines.slice(0, sectionInfo.lineStart);
@@ -124,6 +132,7 @@ function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement,
       resultEl,
       shouldAutoOutput,
       shouldWrapConsole,
+      shouldShowSystemMessages,
       source,
       sourcePath: ctx.sourcePath
     };

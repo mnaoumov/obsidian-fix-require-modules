@@ -483,6 +483,14 @@ function myTypeScriptFn(arg: string): void {}
 
 ![Code Button](images/code-button.png)
 
+If you don't want to see the system messages such as `Executing...`, `Executed successfully`, you can set the `systemMessages` setting to `false`.
+
+````markdown
+```code-button "Click me!" systemMessages:false
+// code
+```
+````
+
 ### Refreshing code blocks
 
 | Desktop | Mobile |
@@ -526,11 +534,7 @@ If you do not want to intercept console messages, you can set the `console` sett
 
 ````markdown
 ```code-button "Console messages" console:false
-console.debug('debug message');
-console.error('error message');
-console.info('info message');
-console.log('log message');
-console.warn('warn message');
+// code
 ```
 ````
 
@@ -558,7 +562,7 @@ To disable this feature, set the `autoOutput` setting to `false`.
 ```code-button REPL autoOutput:false
 1 + 2;
 3 + 4;
-5 + 6; // this will not be displayed in the results panel
+5 + 6; // this will NOT be displayed in the results panel
 ```
 ````
 
