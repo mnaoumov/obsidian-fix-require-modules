@@ -522,7 +522,7 @@ console.warn('warn message');
 
 ![Console messages](images/console-messages.png)
 
-If you want to disable console messages, you can set the `console` setting to `false`.
+If you do not want to intercept console messages, you can set the `console` setting to `false`.
 
 ````markdown
 ```code-button "Console messages" console:false
