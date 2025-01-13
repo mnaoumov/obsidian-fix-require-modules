@@ -50,7 +50,14 @@ function formatMessage(arg: unknown): string {
   return toJson(arg, {
     functionHandlingMode: FunctionHandlingMode.NameOnly,
     maxDepth: 0,
+    shouldCatchToJSONErrors: true,
     shouldHandleCircularReferences: true,
-    shouldHandleUndefined: true
+    shouldHandleUndefined: true,
+    shouldSortKeys: true,
+    tokenSubstitutions: {
+      circularReference: '[[CircularReference]]',
+      maxDepthLimitReached: '{...}',
+      toJSONFailed: '[[ToJSONFailed]]',
+    }
   });
 }
