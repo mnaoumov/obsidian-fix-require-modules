@@ -15,7 +15,7 @@ export class CachedModuleProxyHandler implements ProxyHandler<object> {
   public construct(_target: object, argArray: unknown[], newTarget?: Function): object {
     const cachedModule = this.cachedModuleFn();
     if (typeof cachedModule === 'function') {
-      return Reflect.construct(cachedModule, argArray, newTarget) as object;
+      return Reflect.construct(cachedModule, argArray, newTarget);
     }
     return {};
   }
