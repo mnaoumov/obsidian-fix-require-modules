@@ -21,7 +21,7 @@
     "@types/node": "^22.10.6",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^13.7.3",
+    "obsidian-dev-utils": "^13.8.0",
     "obsidian-typings": "^2.14.3"
   },
   "type": "module"

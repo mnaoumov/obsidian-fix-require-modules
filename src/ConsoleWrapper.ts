@@ -1,3 +1,4 @@
+import { errorToString } from 'obsidian-dev-utils/Error';
 import {
   FunctionHandlingMode,
   toJson
@@ -47,17 +48,22 @@ function formatMessage(arg: unknown): string {
     return arg;
   }
 
+  if (arg instanceof Error) {
+    return errorToString(arg);
+  }
+
   return toJson(arg, {
     functionHandlingMode: FunctionHandlingMode.NameOnly,
     maxDepth: 0,
     shouldCatchToJSONErrors: true,
     shouldHandleCircularReferences: true,
+    shouldHandleErrors: true,
     shouldHandleUndefined: true,
     shouldSortKeys: true,
     tokenSubstitutions: {
       circularReference: '[[CircularReference]]',
       maxDepthLimitReached: '{...}',
-      toJSONFailed: '[[ToJSONFailed]]',
+      toJSONFailed: '[[ToJSONFailed]]'
     }
   });
 }
