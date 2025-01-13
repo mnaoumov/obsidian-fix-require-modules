@@ -1,4 +1,7 @@
-import { errorToString } from 'obsidian-dev-utils/Error';
+import {
+  FunctionHandlingMode,
+  toJson
+} from 'obsidian-dev-utils/Object';
 
 type ConsoleMethod = 'debug' | 'error' | 'info' | 'log' | 'warn';
 
@@ -40,41 +43,14 @@ export class ConsoleWrapper {
 }
 
 function formatMessage(arg: unknown): string {
-  if (arg === null) {
-    return 'null';
+  if (typeof arg === 'string') {
+    return arg;
   }
 
-  if (arg === undefined) {
-    return formatMessage(jsonReplacer(arg));
-  }
-
-  if (typeof arg === 'function') {
-    return formatMessage(jsonReplacer(arg));
-  }
-
-  if (arg instanceof Error) {
-    return formatMessage(jsonReplacer(arg));
-  }
-
-  if (typeof arg === 'object') {
-    return JSON.stringify(arg, (_key, value) => jsonReplacer(value), 2);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-base-to-string
-  return String(arg);
-}
-
-function jsonReplacer(value: unknown): unknown {
-  if (value === undefined) {
-    return 'undefined';
-  }
-  if (typeof value === 'function') {
-    return `function ${value.name || 'anonymous'}()`;
-  }
-
-  if (value instanceof Error) {
-    return errorToString(value);
-  }
-
-  return value;
+  return toJson(arg, {
+    functionHandlingMode: FunctionHandlingMode.NameOnly,
+    maxDepth: 0,
+    shouldHandleCircularReferences: true,
+    shouldHandleUndefined: true
+  });
 }
