@@ -15,14 +15,14 @@
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@babel/standalone": "^7.26.4",
-    "@babel/types": "^7.26.3",
+    "@babel/standalone": "^7.26.5",
+    "@babel/types": "^7.26.5",
     "@types/babel__standalone": "^7.1.9",
     "@types/node": "^22.10.5",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^12.0.0",
-    "obsidian-typings": "^2.11.1"
+    "obsidian-dev-utils": "^13.3.0",
+    "obsidian-typings": "^2.14.0"
   },
   "type": "module"
 }
