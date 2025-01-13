@@ -1,21 +1,23 @@
 export const EMPTY_MODULE_SYMBOL = Symbol('emptyModule');
 
+type ApplyTarget = (this: unknown, ...args: unknown[]) => unknown;
+type ConstructTarget = new (...args: unknown[]) => unknown;
+
 export class CachedModuleProxyHandler implements ProxyHandler<object> {
   public constructor(private readonly cachedModuleFn: () => unknown) { }
 
   public apply(_target: object, thisArg: unknown, argArray?: unknown[]): unknown {
     const cachedModule = this.cachedModuleFn();
     if (typeof cachedModule === 'function') {
-      return Reflect.apply(cachedModule, thisArg, argArray ?? []);
+      return Reflect.apply(cachedModule as ApplyTarget, thisArg, argArray ?? []);
     }
     return undefined;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  public construct(_target: object, argArray: unknown[], newTarget?: Function): object {
+  public construct(_target: object, argArray: unknown[], newTarget: unknown): object {
     const cachedModule = this.cachedModuleFn();
     if (typeof cachedModule === 'function') {
-      return Reflect.construct(cachedModule, argArray, newTarget);
+      return Reflect.construct(cachedModule as ConstructTarget, argArray, newTarget as ConstructTarget) as object;
     }
     return {};
   }

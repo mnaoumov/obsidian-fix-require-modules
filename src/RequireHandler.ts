@@ -101,7 +101,6 @@ export abstract class RequireHandler {
   protected originalRequire!: NodeRequire;
   protected plugin!: CodeScriptToolkitPlugin;
   protected requireEx!: RequireExFn;
-  protected requireWithCacheWithoutInvalidation!: RequireExFn;
   protected vaultAbsolutePath!: string;
   private pluginRequire!: PluginRequireFn;
 
@@ -127,12 +126,8 @@ export abstract class RequireHandler {
 
     this.requireEx = Object.assign(this.require.bind(this), {
       cache: {}
-    }, this.originalRequire);
+    }, this.originalRequire) as RequireExFn;
     this.modulesCache = this.requireEx.cache;
-
-    this.requireWithCacheWithoutInvalidation = Object.assign(this.requireWithoutInvalidation.bind(this), {
-      cache: {}
-    }, this.requireEx);
 
     const requireWindow = window as Partial<RequireWindow>;
 
@@ -791,21 +786,13 @@ ${this.getRequireAsyncAdvice(true)}`);
     return this.requireStringAsync(response.text, url);
   }
 
-  private requireWithoutInvalidation(id: string, options: Partial<RequireOptions> = {}): unknown {
-    const optionsWithoutInvalidation = {
-      ...options,
-      cacheInvalidationMode: CacheInvalidationMode.Never
-    };
-    return this.require(id, optionsWithoutInvalidation);
-  }
-
   private wrapRequire(options: WrapRequireOptions): RequireExFn {
     const fn = (id: string, requireOptions: Partial<RequireOptions> = {}): unknown => {
       options.beforeRequire?.(id);
       const newOptions = { ...options.optionsToPrepend, ...requireOptions, ...options.optionsToAppend };
       return options.require(id, newOptions);
     };
-    return Object.assign(fn, options.require, normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath }));
+    return Object.assign(fn, options.require, normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath })) as RequireExFn;
   }
 }
 

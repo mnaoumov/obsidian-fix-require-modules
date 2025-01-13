@@ -5,13 +5,13 @@ import type {
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import { Notice } from 'obsidian';
+import { printError } from 'obsidian-dev-utils/Error';
 import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
 import { basename } from 'obsidian-dev-utils/Path';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
 import { requireVaultScriptAsync } from './RequireHandlerUtils.ts';
-import { printError } from './util/Error.ts';
 
 interface CleanupScript extends Script {
   cleanup(app: App): MaybePromise<void>;
