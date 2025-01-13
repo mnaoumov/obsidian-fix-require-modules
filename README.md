@@ -398,15 +398,19 @@ export function invoke(app) { console.log('mjs sync'); };
 export async function invoke(app) { console.log('mjs async'); await Promise.resolve(); };
 
 // cts sync
+import type App = require('obsidian');
 exports.invoke = (app: App): void => { console.log('cts sync'); };
 
 // cts async
+import type App = require('obsidian');
 exports.invoke = async (app: App): Promise<void> => { console.log('cts async'); await Promise.resolve(); };
 
 // mts sync
+import type { App } from 'obsidian';
 export function invoke(app: App): void { console.log('mts sync'); };
 
 // mts async
+import type { App } from 'obsidian';
 export async function invoke(app: App): Promise<void> { console.log('mts async'); await Promise.resolve(); };
 ```
 
