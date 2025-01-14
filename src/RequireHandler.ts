@@ -30,7 +30,6 @@ import {
   EMPTY_MODULE_SYMBOL
 } from './CachedModuleProxyHandler.ts';
 import { CacheInvalidationMode } from './CacheInvalidationMode.ts';
-import { convertPathToObsidianUrl } from './util/obsidian.ts';
 
 export enum ResolvedType {
   Module = 'module',
@@ -781,6 +780,14 @@ ${this.getRequireAsyncAdvice(true)}`);
     };
     return Object.assign(fn, options.require, normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath })) as RequireExFn;
   }
+}
+
+export function convertPathToObsidianUrl(path: string): string {
+  if (!isAbsolute(path)) {
+    return path;
+  }
+
+  return Platform.resourcePathPrefix + path.replaceAll('\\', '/');
 }
 
 function splitQuery(str: string): SplitQueryResult {

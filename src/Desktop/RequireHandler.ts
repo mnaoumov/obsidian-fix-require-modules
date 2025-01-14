@@ -22,6 +22,7 @@ import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
 import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
+  convertPathToObsidianUrl,
   ENTRY_POINT,
   MODULE_NAME_SEPARATOR,
   NODE_MODULES_DIR,
@@ -33,7 +34,6 @@ import {
   SCOPED_MODULE_PREFIX
 
 } from '../RequireHandler.ts';
-import { convertPathToObsidianUrl } from '../util/obsidian.ts';
 
 type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => void;
 
