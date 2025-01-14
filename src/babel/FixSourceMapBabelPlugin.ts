@@ -1,8 +1,6 @@
 import type { PluginPass } from '@babel/core';
 import type { Visitor } from '@babel/traverse';
 
-import type { SourceMap } from '../util/types.js';
-
 import { BabelPluginBase } from './BabelPluginBase.ts';
 
 interface FixSourceMapData {
@@ -11,6 +9,10 @@ interface FixSourceMapData {
 
 interface InputMap {
   sourcemap: SourceMap;
+}
+
+interface SourceMap {
+  sources: string[];
 }
 
 export class FixSourceMapBabelPlugin extends BabelPluginBase<FixSourceMapData> {
