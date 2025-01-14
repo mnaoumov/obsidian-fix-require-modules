@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 8.7.0
+
+- Switch to plugin.consoleDebug
+- Add import.meta converters
+- Check all export conditions
+- Output error
+- Update imports in README
+- Better toJson
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/13.3.2
+- Switch to ES2024
+
 ## 8.6.0
 
 - Avoid confusing warnings
