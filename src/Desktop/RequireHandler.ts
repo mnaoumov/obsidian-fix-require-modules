@@ -259,13 +259,17 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       }
 
       const packageJson = this.readPackageJson(packageJsonPath);
-      const relativeModulePath = this.getRelativeModulePath(packageJson, relativeModuleName);
-      if (relativeModulePath == null) {
-        continue;
-      }
+      const relativeModulePaths = this.getRelativeModulePaths(packageJson, relativeModuleName);
 
-      const resolvedPath = join(packageDir, relativeModulePath);
-      return this.requirePath(resolvedPath, cacheInvalidationMode);
+      for (const relativeModulePath of relativeModulePaths) {
+        const fullModulePath = join(packageDir, relativeModulePath);
+        const existingPath = this.findExistingFilePath(fullModulePath);
+        if (!existingPath) {
+          continue;
+        }
+
+        return this.requirePath(existingPath, cacheInvalidationMode);
+      }
     }
 
     throw new Error(`Could not resolve module: ${moduleName}`);

@@ -89,7 +89,6 @@ export const PATH_SUFFIXES = ['', '.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', 
 export const PRIVATE_MODULE_PREFIX = '#';
 export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 export const SCOPED_MODULE_PREFIX = '@';
-const WILDCARD_MODULE_PLACEHOLDER = '*';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
 
@@ -246,24 +245,20 @@ export abstract class RequireHandler {
     return join(packageDir, PACKAGE_JSON);
   }
 
-  protected getRelativeModulePath(packageJson: PackageJson, relativeModuleName: string): null | string {
+  protected getRelativeModulePaths(packageJson: PackageJson, relativeModuleName: string): string[] {
     const isPrivateModule = relativeModuleName.startsWith(PRIVATE_MODULE_PREFIX);
     const importsExportsNode = isPrivateModule ? packageJson.imports : packageJson.exports;
-    const path = this.getExportsRelativeModulePath(importsExportsNode, relativeModuleName);
-
-    if (path) {
-      return path;
-    }
+    const paths = this.getExportsRelativeModulePaths(importsExportsNode, relativeModuleName);
 
     if (relativeModuleName === ENTRY_POINT) {
-      return packageJson.main ?? 'index.js';
+      paths.push(packageJson.main ?? ENTRY_POINT);
     }
 
     if (!importsExportsNode && !isPrivateModule) {
-      return relativeModuleName;
+      paths.push(relativeModuleName);
     }
 
-    return null;
+    return paths;
   }
 
   protected getRequireAsyncAdvice(isNewSentence?: boolean): string {
@@ -440,6 +435,33 @@ await requireAsyncWrapper((require) => {
     };
   }
 
+  private applyCondition(condition: string, exportsNodeChild: PackageJson.Exports, relativeModuleName: string): string[] {
+    if (condition === 'types') {
+      return [];
+    }
+
+    if (condition === relativeModuleName) {
+      return this.getExportsRelativeModulePaths(exportsNodeChild, ENTRY_POINT);
+    }
+
+    if (!condition.startsWith(ENTRY_POINT)) {
+      return this.getExportsRelativeModulePaths(exportsNodeChild, relativeModuleName);
+    }
+
+    if (condition.endsWith(WILDCARD_MODULE_CONDITION_SUFFIX)) {
+      const parentCondition = trimEnd(condition, WILDCARD_MODULE_CONDITION_SUFFIX);
+      const separatorIndex = relativeModuleName.lastIndexOf(RELATIVE_MODULE_PATH_SEPARATOR);
+      const parentRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(0, separatorIndex) : relativeModuleName;
+      const leafRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(separatorIndex + 1) : '';
+
+      if (parentCondition === parentRelativeModuleName && leafRelativeModuleName) {
+        return this.getExportsRelativeModulePaths(exportsNodeChild, join(ENTRY_POINT, leafRelativeModuleName));
+      }
+    }
+
+    return [];
+  }
+
   private createEmptyModule(id: string): EmptyModule {
     const loadingModule = {};
     const emptyModule = new Proxy({}, new CachedModuleProxyHandler(() => this.getCachedModule(id) ?? loadingModule));
@@ -518,63 +540,24 @@ await requireAsyncWrapper((require) => {
     return timestamp;
   }
 
-  private getExportsRelativeModulePath(importsExportsNode: PackageJson['exports'], relativeModuleName: string, isTopLevel = true): null | string {
-    if (!importsExportsNode) {
-      return null;
+  private getExportsRelativeModulePaths(exportsNode: PackageJson.Exports | undefined, relativeModuleName: string): string[] {
+    if (!exportsNode) {
+      return [];
     }
 
-    if (typeof importsExportsNode === 'string') {
-      return importsExportsNode + trimStart(relativeModuleName, ENTRY_POINT);
+    if (typeof exportsNode === 'string') {
+      const path = exportsNode;
+      return [join(path, relativeModuleName)];
     }
 
-    let conditions;
-
-    if (Array.isArray(importsExportsNode)) {
-      if (!importsExportsNode[0]) {
-        return null;
-      }
-
-      if (typeof importsExportsNode[0] === 'string') {
-        return importsExportsNode[0] + trimStart(relativeModuleName, ENTRY_POINT);
-      }
-
-      conditions = importsExportsNode[0];
-    } else {
-      conditions = importsExportsNode;
+    if (!Array.isArray(exportsNode)) {
+      const conditions = exportsNode;
+      return Object.entries(conditions)
+        .flatMap(([condition, exportsNodeChild]) => this.applyCondition(condition, exportsNodeChild, relativeModuleName));
     }
 
-    const path = conditions['require'] ?? conditions['node'] ?? conditions['import'] ?? conditions['default'];
-
-    if (typeof path === 'string') {
-      return path + trimStart(relativeModuleName, ENTRY_POINT);
-    }
-
-    if (!isTopLevel) {
-      return null;
-    }
-
-    const separatorIndex = relativeModuleName.lastIndexOf(RELATIVE_MODULE_PATH_SEPARATOR);
-    const parentRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(0, separatorIndex) : relativeModuleName;
-    const leafRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(separatorIndex + 1) : '';
-
-    for (const [condition, exportsNodeChild] of Object.entries(conditions)) {
-      if (condition === relativeModuleName) {
-        const modulePath = this.getExportsRelativeModulePath(exportsNodeChild, ENTRY_POINT, false);
-        if (modulePath) {
-          return modulePath;
-        }
-      } else if (condition.endsWith(WILDCARD_MODULE_CONDITION_SUFFIX)) {
-        const parentCondition = trimEnd(condition, WILDCARD_MODULE_CONDITION_SUFFIX);
-        if (parentCondition === parentRelativeModuleName && leafRelativeModuleName) {
-          const modulePath = this.getExportsRelativeModulePath(exportsNodeChild, ENTRY_POINT, false);
-          if (modulePath) {
-            return modulePath.replace(WILDCARD_MODULE_PLACEHOLDER, leafRelativeModuleName);
-          }
-        }
-      }
-    }
-
-    return null;
+    const arr = exportsNode;
+    return arr.flatMap((exportsNodeChild) => this.getExportsRelativeModulePaths(exportsNodeChild, relativeModuleName));
   }
 
   private getParentPathFromCallStack(): null | string {
@@ -737,13 +720,17 @@ ${this.getRequireAsyncAdvice(true)}`);
       }
 
       const packageJson = await this.readPackageJsonAsync(packageJsonPath);
-      const relativeModulePath = this.getRelativeModulePath(packageJson, relativeModuleName);
-      if (relativeModulePath == null) {
-        continue;
-      }
+      const relativeModulePaths = this.getRelativeModulePaths(packageJson, relativeModuleName);
 
-      const resolvedPath = join(packageDir, relativeModulePath);
-      return this.requirePathAsync(resolvedPath, cacheInvalidationMode);
+      for (const relativeModulePath of relativeModulePaths) {
+        const fullModulePath = join(packageDir, relativeModulePath);
+        const existingPath = await this.findExistingFilePathAsync(fullModulePath);
+        if (!existingPath) {
+          continue;
+        }
+
+        return this.requirePathAsync(existingPath, cacheInvalidationMode);
+      }
     }
 
     throw new Error(`Could not resolve module: ${moduleName}`);
