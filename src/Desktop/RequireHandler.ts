@@ -1,28 +1,15 @@
 import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
-import { debuggableEval } from 'debuggable-eval';
 import { FileSystemAdapter } from 'obsidian';
-import {
-  basename,
-  dirname,
-  join
-} from 'obsidian-dev-utils/Path';
+import { join } from 'obsidian-dev-utils/Path';
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
 import { trimStart } from 'obsidian-dev-utils/String';
 
 import type { CodeScriptToolkitPlugin } from '../CodeScriptToolkitPlugin.ts';
-import type {
-  PluginRequireFn,
-  RequireAsyncWrapperFn
-} from '../RequireHandler.ts';
+import type { PluginRequireFn } from '../RequireHandler.ts';
 
-import { SequentialBabelPlugin } from '../babel/CombineBabelPlugins.ts';
-import { ConvertToCommonJsBabelPlugin } from '../babel/ConvertToCommonJsBabelPlugin.ts';
-import { FixSourceMapBabelPlugin } from '../babel/FixSourceMapBabelPlugin.ts';
-import { WrapInRequireFunctionBabelPlugin } from '../babel/WrapInRequireFunctionBabelPlugin.ts';
 import { CacheInvalidationMode } from '../CacheInvalidationMode.ts';
 import {
-  convertPathToObsidianUrl,
   ENTRY_POINT,
   MODULE_NAME_SEPARATOR,
   NODE_MODULES_DIR,
@@ -32,10 +19,7 @@ import {
   RequireHandler,
   ResolvedType,
   SCOPED_MODULE_PREFIX
-
 } from '../RequireHandler.ts';
-
-type ModuleFn = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => void;
 
 class RequireHandlerImpl extends RequireHandler {
   private electronModules = new Map<string, unknown>();
@@ -85,6 +69,12 @@ class RequireHandlerImpl extends RequireHandler {
 
   protected override async getTimestampAsync(path: string): Promise<number> {
     return (await this.fileSystemAdapter.fsPromises.stat(path)).mtimeMs;
+  }
+
+  protected override handleCodeWithTopLevelAwait(path: string): void {
+    throw new Error(`Cannot load module: ${path}.
+Top-level await is not supported in sync require.
+Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
   }
 
   protected override async readFileAsync(path: string): Promise<string> {
@@ -303,39 +293,21 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
     return this.modulesCache[existingFilePath]?.exports;
   }
 
-  private requireString(content: string, path: string): unknown {
-    if (path.endsWith('.json')) {
-      return JSON.parse(content);
-    }
-
-    const filename = basename(path);
-
-    const result = new SequentialBabelPlugin([
-      new ConvertToCommonJsBabelPlugin(),
-      new WrapInRequireFunctionBabelPlugin(false),
-      new FixSourceMapBabelPlugin(convertPathToObsidianUrl(path))
-    ]).transform(content, filename, dirname(path));
-
-    if (result.error) {
-      throw new Error(`Failed to transform module to CommonJS: ${path}`, { cause: result.error });
-    }
-
-    if (result.data.hasTopLevelAwait) {
-      throw new Error(`Cannot load module: ${path}.
-Top-level await is not supported in sync require.
-Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
+  private requireString(code: string, path: string): unknown {
+    if (this.isJson(path)) {
+      return JSON.parse(code);
     }
 
     try {
-      const moduleFnWrapper = debuggableEval(result.transformedCode, `requireString/${path}`) as ModuleFn;
-      const module = { exports: {} };
-      const childRequire = this.makeChildRequire(path);
-
       return this.initModuleAndAddToCache(path, () => {
-        // eslint-disable-next-line import-x/no-commonjs
-        moduleFnWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
-        // eslint-disable-next-line import-x/no-commonjs
-        return module.exports;
+        const result = this.requireStringImpl({
+          code,
+          evalPrefix: 'requireString',
+          path,
+          shouldWrapInAsyncFunction: false,
+          urlSuffix: ''
+        });
+        return result.exportsFn();
       });
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });

@@ -49,7 +49,7 @@ interface EmptyModule {
   [EMPTY_MODULE_SYMBOL]: boolean;
 }
 
-type ModuleFnAsync = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => Promise<void>;
+type ModuleFnWrapper = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => MaybePromise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
 
@@ -90,6 +90,19 @@ export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 export const SCOPED_MODULE_PREFIX = '@';
 const WILDCARD_MODULE_CONDITION_SUFFIX = '/*';
 export const VAULT_ROOT_PREFIX = '//';
+
+interface RequireStringImplOptions {
+  code: string;
+  evalPrefix: string;
+  path: string;
+  shouldWrapInAsyncFunction: boolean;
+  urlSuffix: string;
+}
+
+interface RequireStringImplResult {
+  exportsFn: () => unknown;
+  maybePromise: MaybePromise<void>;
+}
 
 export abstract class RequireHandler {
   protected readonly currentModulesTimestampChain = new Set<string>();
@@ -194,36 +207,24 @@ export abstract class RequireHandler {
     return module;
   }
 
-  public async requireStringAsync(content: string, path: string, urlSuffix?: string): Promise<unknown> {
-    if (splitQuery(path).cleanStr.endsWith('.json')) {
-      return JSON.parse(content);
+  public async requireStringAsync(code: string, path: string, urlSuffix?: string): Promise<unknown> {
+    if (this.isJson(path)) {
+      return JSON.parse(code);
     }
 
-    const filename = isUrl(path) ? path : basename(path);
-    const dir = isUrl(path) ? '' : dirname(path);
     urlSuffix = urlSuffix ? `/${urlSuffix}` : '';
-    const url = convertPathToObsidianUrl(path) + urlSuffix;
-    const result = new SequentialBabelPlugin([
-      new ConvertToCommonJsBabelPlugin(),
-      new WrapInRequireFunctionBabelPlugin(true),
-      new FixSourceMapBabelPlugin(url)
-    ]).transform(content, filename, dir);
-
-    if (result.error) {
-      throw result.error;
-    }
 
     try {
-      const moduleFnAsyncWrapper = debuggableEval(result.transformedCode, `requireStringAsync/${path}${urlSuffix}`) as ModuleFnAsync;
-      const module = { exports: {} };
-
-      const childRequire = this.makeChildRequire(path);
-
       return await this.initModuleAndAddToCacheAsync(path, async () => {
-        // eslint-disable-next-line import-x/no-commonjs
-        await moduleFnAsyncWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
-        // eslint-disable-next-line import-x/no-commonjs
-        return module.exports;
+        const result = this.requireStringImpl({
+          code,
+          evalPrefix: 'requireStringAsync',
+          path,
+          shouldWrapInAsyncFunction: true,
+          urlSuffix
+        });
+        await result.maybePromise;
+        return result.exportsFn();
       });
     } catch (e) {
       throw new Error(`Failed to load module: ${path}`, { cause: e });
@@ -280,6 +281,11 @@ await requireAsyncWrapper((require) => {
 
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected handleCodeWithTopLevelAwait(_path: string): void {
+    return;
+  }
+
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
     if (!this.modulesCache[id] || this.modulesCache[id].loaded) {
       this.deleteCacheEntry(id);
@@ -321,6 +327,10 @@ await requireAsyncWrapper((require) => {
       this.deleteCacheEntry(id);
       throw e;
     }
+  }
+
+  protected isJson(path: string): boolean {
+    return splitQuery(path).cleanStr.endsWith('.json');
   }
 
   protected makeChildRequire(parentPath: string): RequireExFn {
@@ -370,6 +380,37 @@ await requireAsyncWrapper((require) => {
     }
 
     return null;
+  }
+
+  protected requireStringImpl(options: RequireStringImplOptions): RequireStringImplResult {
+    const dir = isUrl(options.path) ? '' : dirname(options.path);
+    const filename = isUrl(options.path) ? options.path : basename(options.path);
+    const url = convertPathToObsidianUrl(options.path) + options.urlSuffix;
+
+    const transformResult = new SequentialBabelPlugin([
+      new ConvertToCommonJsBabelPlugin(),
+      new WrapInRequireFunctionBabelPlugin(options.shouldWrapInAsyncFunction),
+      new FixSourceMapBabelPlugin(url)
+    ]).transform(options.code, filename, dir);
+
+    if (transformResult.error) {
+      throw new Error(`Failed to transform code from: ${options.path}`, { cause: transformResult.error });
+    }
+
+    if (transformResult.data.hasTopLevelAwait) {
+      this.handleCodeWithTopLevelAwait(options.path);
+    }
+
+    const moduleFnWrapper = debuggableEval(transformResult.transformedCode, `${options.evalPrefix}/${options.path}${options.urlSuffix}`) as ModuleFnWrapper;
+    const module = { exports: {} };
+    const childRequire = this.makeChildRequire(options.path);
+    // eslint-disable-next-line import-x/no-commonjs
+    const maybePromise = moduleFnWrapper(childRequire, module, module.exports, this.requireAsyncWrapper.bind(this));
+    return {
+      // eslint-disable-next-line import-x/no-commonjs
+      exportsFn: () => module.exports,
+      maybePromise
+    };
   }
 
   protected resolve(id: string, parentPath?: string): ResolveResult {
@@ -782,7 +823,7 @@ ${this.getRequireAsyncAdvice(true)}`);
   }
 }
 
-export function convertPathToObsidianUrl(path: string): string {
+function convertPathToObsidianUrl(path: string): string {
   if (!isAbsolute(path)) {
     return path;
   }
