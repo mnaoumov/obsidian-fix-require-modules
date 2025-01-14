@@ -612,7 +612,7 @@ await requireAsyncWrapper((require) => {
      */
     const CALLER_LINE_INDEX = 4;
     const callStackLines = new Error().stack?.split('\n') ?? [];
-    console.debug({ callStackLines });
+    this.plugin.consoleDebug('callStackLines', { callStackLines });
     const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
     const parentPath = callStackMatch?.[1] ?? null;
 

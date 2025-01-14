@@ -38,7 +38,7 @@ export async function invokeStartupScript(plugin: CodeScriptToolkitPlugin): Prom
     return;
   }
 
-  await invoke(plugin.app, plugin.settingsCopy.getStartupScriptPath(), true);
+  await invoke(plugin, plugin.settingsCopy.getStartupScriptPath(), true);
 }
 
 export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin): Promise<void> {
@@ -66,7 +66,7 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
       callback: async () => {
-        await invoke(plugin.app, `${invocableScriptsDirectory}/${scriptFile}`);
+        await invoke(plugin, `${invocableScriptsDirectory}/${scriptFile}`);
       },
       id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
       name: `Invoke Script: ${scriptFile}`
@@ -95,12 +95,12 @@ export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Pr
   });
 
   if (scriptFile === null) {
-    console.debug('No script selected');
+    plugin.consoleDebug('No script selected');
     return;
   }
 
   if (!scriptFile.startsWith('Error:')) {
-    await invoke(app, `${invocableScriptsDirectory}/${scriptFile}`);
+    await invoke(plugin, `${invocableScriptsDirectory}/${scriptFile}`);
   }
 }
 
@@ -125,9 +125,10 @@ function getSortedBaseNames(fullNames: string[]): string[] {
   return fullNames.map((file) => basename(file)).sort((a, b) => a.localeCompare(b));
 }
 
-async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promise<void> {
+async function invoke(plugin: CodeScriptToolkitPlugin, scriptPath: string, isStartup?: boolean): Promise<void> {
+  const app = plugin.app;
   const scriptString = isStartup ? 'startup script' : 'script';
-  console.debug(`Invoking ${scriptString}: ${scriptPath}`);
+  plugin.consoleDebug(`Invoking ${scriptString}: ${scriptPath}`);
   try {
     if (!await app.vault.adapter.exists(scriptPath)) {
       throw new Error(`Script not found: ${scriptPath}`);
@@ -138,7 +139,7 @@ async function invoke(app: App, scriptPath: string, isStartup?: boolean): Promis
       throw new Error(`${scriptPath} does not export a function`);
     }
     await invokeFn(app);
-    console.debug(`${scriptString} ${scriptPath} executed successfully`);
+    plugin.consoleDebug(`${scriptString} ${scriptPath} executed successfully`);
   } catch (error) {
     new Notice(`Error invoking ${scriptString} ${scriptPath}
 See console for details...`);
