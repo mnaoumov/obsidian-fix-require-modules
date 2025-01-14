@@ -1,4 +1,5 @@
 import { transform as babelTransform } from '@babel/standalone';
+import babelPluginTransformImportMeta from 'babel-plugin-transform-import-meta';
 
 import type { TransformResult } from './BabelPluginBase.ts';
 
@@ -19,7 +20,10 @@ export class ConvertToCommonJsBabelPlugin extends BabelPluginBase<TransformCodeT
         ast: true,
         cwd: dir,
         filename,
-        plugins: ['transform-modules-commonjs'],
+        plugins: [
+          'transform-modules-commonjs',
+          [babelPluginTransformImportMeta(), { module: 'ES6' }]
+        ],
         presets: ['typescript'],
         sourceMaps: 'inline'
       });

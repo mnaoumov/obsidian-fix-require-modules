@@ -19,6 +19,7 @@
     "@babel/types": "^7.26.5",
     "@types/babel__standalone": "^7.1.9",
     "@types/node": "^22.10.6",
+    "babel-plugin-transform-import-meta": "^2.3.2",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
     "obsidian-dev-utils": "^13.8.0",
