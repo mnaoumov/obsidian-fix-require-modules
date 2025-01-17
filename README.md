@@ -1,6 +1,6 @@
 # CodeScript Toolkit
 
-(formerly known as `Fix Require Modules`)
+(formerly known as `Fix Require Modules`, see [Rebranding](#rebranding) section for more details)
 
 This is a plugin for [`Obsidian`][Obsidian] that allows to do a lot of things with [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] scripts from inside the [`Obsidian`][Obsidian] itself.
 
@@ -668,6 +668,30 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 
 - `CodeScript Toolkit` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=fix-require-modules).
 - Beta releases can be installed through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+
+## Debugging
+
+By default, debug messages for this plugin are hidden.
+
+To show them, run the following command:
+
+```js
+window.DEBUG.enable('fix-require-modules');
+```
+
+For more details, refer to the [documentation](https://github.com/mnaoumov/obsidian-dev-utils?tab=readme-ov-file#debugging).
+
+## Rebranding
+
+This plugin was formerly known as `Fix Require Modules`.
+
+The plugin quickly overgrew its original purpose and got way more features than just fixing `require()` calls. That's why it got a new name.
+
+However, for the backward compatibility, the previous id `fix-require-modules` is still used internally and you might find it
+
+- in plugin folder name;
+- in plugin URL;
+- in [Debugging](#debugging) section;
 
 ## Support
 
