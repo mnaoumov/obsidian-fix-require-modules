@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 8.7.1
+
+- Remove outdated eslint
+- Add Debugging / Rebranding
+- Fix relative wildcard resolution
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/13.15.0
+
 ## 8.7.0
 
 - Switch to plugin.consoleDebug
