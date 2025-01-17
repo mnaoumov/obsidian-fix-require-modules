@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.7.2
+
+- Fix wrong const
+
 ## 8.7.1
 
 - Remove outdated eslint
