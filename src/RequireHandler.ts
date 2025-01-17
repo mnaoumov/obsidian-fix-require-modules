@@ -12,6 +12,7 @@ import {
   toPosixPath
 } from 'obsidian-dev-utils/Path';
 import {
+  replaceAll,
   trimEnd,
   trimStart
 } from 'obsidian-dev-utils/String';
@@ -586,8 +587,14 @@ await requireAsyncWrapper((require) => {
     }
 
     if (typeof exportsNode === 'string') {
-      const path = exportsNode;
-      return [join(path, relativeModuleName)];
+      let path = exportsNode;
+
+      if (!path.contains(WILDCARD_MODULE_CONDITION_SUFFIX)) {
+        path = join(path, WILDCARD_MODULE_CONDITION_SUFFIX);
+      }
+
+      const resolvedPath = replaceAll(path, WILDCARD_MODULE_CONDITION_SUFFIX, relativeModuleName);
+      return [resolvedPath];
     }
 
     if (!Array.isArray(exportsNode)) {
