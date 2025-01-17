@@ -24,17 +24,14 @@ export abstract class BabelPluginBase<Data = unknown> {
     return {};
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public manipulateOptions(_opts: unknown, _parserOpts: unknown): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public post(_state: PluginPass, _file: BabelFile): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public pre(_state: PluginPass, _file: BabelFile): void {
     return;
   }

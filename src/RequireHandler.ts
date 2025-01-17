@@ -282,7 +282,6 @@ await requireAsyncWrapper((require) => {
 
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected handleCodeWithTopLevelAwait(_path: string): void {
     return;
   }
