@@ -588,11 +588,11 @@ await requireAsyncWrapper((require) => {
     if (typeof exportsNode === 'string') {
       let path = exportsNode;
 
-      if (!path.contains(WILDCARD_MODULE_CONDITION_SUFFIX)) {
-        path = join(path, WILDCARD_MODULE_CONDITION_SUFFIX);
+      if (!path.contains(MODULE_NAME_SEPARATOR)) {
+        path = join(path, MODULE_NAME_SEPARATOR);
       }
 
-      const resolvedPath = replaceAll(path, WILDCARD_MODULE_CONDITION_SUFFIX, relativeModuleName);
+      const resolvedPath = replaceAll(path, MODULE_NAME_SEPARATOR, relativeModuleName);
       return [resolvedPath];
     }
 
