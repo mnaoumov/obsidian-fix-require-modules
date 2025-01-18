@@ -1,10 +1,11 @@
-import {
-  Notice,
-  Setting
-} from 'obsidian';
+import type { App } from 'obsidian';
+
+import { Setting } from 'obsidian';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
+import { join } from 'obsidian-dev-utils/Path';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 import type { CodeScriptToolkitPluginPluginSettings } from './CodeScriptToolkitPluginSettings.ts';
@@ -13,34 +14,52 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
   public override display(): void {
     this.containerEl.empty();
 
-    const pluginSettings = this.plugin.settingsCopy;
-
     new Setting(this.containerEl)
       .setName('Script modules root')
       .setDesc(createFragment((f) => {
-        f.appendText('Path to the directory that is considered as ');
+        f.appendText('Path to the folder that is considered as ');
         appendCodeBlock(f, '/');
         f.appendText(' in ');
         appendCodeBlock(f, 'require("/script.js")');
         f.createEl('br');
         f.appendText('Leave blank to use the root of the vault.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', { pluginSettings, shouldAutoSave: false })
+      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', {
+        onChanged: () => {
+          this.display();
+        },
+        valueValidator: async (uiValue) => {
+          if (!uiValue) {
+            return;
+          }
+
+          return await validatePath(this.plugin.app, uiValue, 'folder');
+        }
+      })
         .setPlaceholder('path/to/script/modules/root')
       );
 
     new Setting(this.containerEl)
-      .setName('Invocable scripts directory')
+      .setName('Invocable scripts folder')
       .setDesc(createFragment((f) => {
-        f.appendText('Path to the directory with invocable scripts.');
+        f.appendText('Path to the folder with invocable scripts.');
         f.createEl('br');
         f.appendText('Should be a relative path to the ');
         appendCodeBlock(f, 'Script modules root');
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', { pluginSettings, shouldAutoSave: false })
-        .setPlaceholder('path/to/invocable/scripts/directory')
+      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', {
+        valueValidator: async (uiValue) => {
+          if (!uiValue) {
+            return;
+          }
+
+          const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+          return await validatePath(this.plugin.app, path, 'folder');
+        }
+      })
+        .setPlaceholder('path/to/invocable/scripts/folder')
       );
 
     new Setting(this.containerEl)
@@ -53,18 +72,17 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use startup script.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', { pluginSettings, shouldAutoSave: false })
-        .setPlaceholder('path/to/startup.ts')
-      );
+      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', {
+        valueValidator: async (uiValue) => {
+          if (!uiValue) {
+            return;
+          }
 
-    new Setting(this.containerEl)
-      .addButton((button) =>
-        button
-          .setButtonText('Save settings')
-          .onClick(async () => {
-            await this.plugin.saveSettings(pluginSettings);
-            new Notice('Settings saved');
-          })
+          const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+          return await validatePath(this.plugin.app, path, 'file');
+        }
+      })
+        .setPlaceholder('path/to/startup.ts')
       );
 
     new Setting(this.containerEl)
@@ -83,7 +101,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
 
     new Setting(this.containerEl)
       .setName('Mobile changes checking interval')
-      .setDesc('Interval in seconds to check for changes in the invocable scripts directory (only on mobile)')
+      .setDesc('Interval in seconds to check for changes in the invocable scripts folder (only on mobile)')
       .addText((text) => {
         extend(text).bind(this.plugin, 'mobileChangesCheckingIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
@@ -93,7 +111,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
             if (isNaN(number) || number < 1) {
               return 'Interval must be greater than 0';
             }
-            return null;
+            return;
           }
         })
           .setPlaceholder('30');
@@ -102,4 +120,22 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         text.inputEl.min = '1';
       });
   }
+
+  public override hide(): void {
+    invokeAsyncSafely(this.plugin.applyNewSettings.bind(this.plugin));
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+async function validatePath(app: App, path: string, type: 'file' | 'folder'): Promise<string | void> {
+  if (!await app.vault.exists(path)) {
+    return 'Path does not exist';
+  }
+
+  const stat = await app.vault.adapter.stat(path);
+  if (stat?.type !== type) {
+    return `Path is not a ${type}`;
+  }
+
+  return;
 }

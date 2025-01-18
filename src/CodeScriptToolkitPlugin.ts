@@ -22,9 +22,13 @@ export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginP
   private requireHandler!: RequireHandler;
   private scriptDirectoryWatcher!: ScriptDirectoryWatcher;
 
-  public override async saveSettings(newSettings: CodeScriptToolkitPluginPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
+  public async applyNewSettings(): Promise<void> {
     await this.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
+  }
+
+  public override async onExternalSettingsChange(): Promise<void> {
+    await super.onExternalSettingsChange();
+    await this.applyNewSettings();
   }
 
   protected override createPluginSettings(data: unknown): CodeScriptToolkitPluginPluginSettings {
@@ -36,7 +40,7 @@ export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginP
   }
 
   protected override async onLayoutReady(): Promise<void> {
-    await this.saveSettings(this.settings);
+    await this.applyNewSettings();
     await invokeStartupScript(this);
     this.register(() => cleanupStartupScript(this));
   }
