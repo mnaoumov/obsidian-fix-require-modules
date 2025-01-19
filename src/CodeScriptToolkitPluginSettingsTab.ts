@@ -1,18 +1,34 @@
 import type { App } from 'obsidian';
 
-import { Setting } from 'obsidian';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
+import {
+  Events,
+  Setting
+} from 'obsidian';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from 'obsidian-dev-utils/Async';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
-import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
-import { join } from 'obsidian-dev-utils/Path';
+import {
+  extend,
+  revalidate
+} from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
+import {
+  extname,
+  join
+} from 'obsidian-dev-utils/Path';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 import type { CodeScriptToolkitPluginPluginSettings } from './CodeScriptToolkitPluginSettings.ts';
 
+import { addPathSuggest } from './PathSuggest.ts';
+import { EXTENSIONS } from './RequireHandler.ts';
+
 export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabBase<CodeScriptToolkitPlugin, CodeScriptToolkitPluginPluginSettings> {
   public override display(): void {
     this.containerEl.empty();
+    const events = new Events();
 
     new Setting(this.containerEl)
       .setName('Script modules root')
@@ -24,19 +40,23 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.createEl('br');
         f.appendText('Leave blank to use the root of the vault.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'modulesRoot', {
-        onChanged: () => {
-          this.display();
-        },
-        valueValidator: async (uiValue) => {
-          if (!uiValue) {
-            return;
-          }
+      .addText((text) => {
+        extend(text).bind(this.plugin, 'modulesRoot', {
+          onChanged: () => {
+            events.trigger('modulesRootChanged');
+          },
+          valueValidator: async (uiValue) => {
+            if (!uiValue) {
+              return;
+            }
 
-          return await validatePath(this.plugin.app, uiValue, 'folder');
-        }
-      })
-        .setPlaceholder('path/to/script/modules/root')
+            return await validatePath(this.plugin.app, uiValue, 'folder');
+          }
+        })
+          .setPlaceholder('path/to/script/modules/root');
+
+        addPathSuggest(this.plugin.app, text.inputEl, () => '', 'folder');
+      }
       );
 
     new Setting(this.containerEl)
@@ -49,17 +69,26 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'invocableScriptsDirectory', {
-        valueValidator: async (uiValue) => {
-          if (!uiValue) {
-            return;
-          }
+      .addText((text) => {
+        extend(text).bind(this.plugin, 'invocableScriptsDirectory', {
+          valueValidator: async (uiValue) => {
+            if (!uiValue) {
+              return;
+            }
 
-          const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
-          return await validatePath(this.plugin.app, path, 'folder');
-        }
-      })
-        .setPlaceholder('path/to/invocable/scripts/folder')
+            const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+            return await validatePath(this.plugin.app, path, 'folder');
+          }
+        })
+          .setPlaceholder('path/to/invocable/scripts/folder');
+
+        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'folder');
+
+        events.on('modulesRootChanged', convertAsyncToSync(async () => {
+          await revalidate(text);
+          suggest.refresh();
+        }));
+      }
       );
 
     new Setting(this.containerEl)
@@ -72,17 +101,35 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.createEl('br');
         f.appendText('Leave blank if you don\'t use startup script.');
       }))
-      .addText((text) => extend(text).bind(this.plugin, 'startupScriptPath', {
-        valueValidator: async (uiValue) => {
-          if (!uiValue) {
+      .addText((text) => {
+        extend(text).bind(this.plugin, 'startupScriptPath', {
+          valueValidator: async (uiValue) => {
+            if (!uiValue) {
+              return;
+            }
+
+            const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+            const ans = await validatePath(this.plugin.app, path, 'file');
+            if (ans) {
+              return ans;
+            }
+
+            const ext = extname(path);
+            if (!EXTENSIONS.includes(ext)) {
+              return `Only the following extensions are supported: ${EXTENSIONS.join(', ')}`;
+            }
+
             return;
           }
+        })
+          .setPlaceholder('path/to/startup.ts');
+        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'file');
 
-          const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
-          return await validatePath(this.plugin.app, path, 'file');
-        }
-      })
-        .setPlaceholder('path/to/startup.ts')
+        events.on('modulesRootChanged', convertAsyncToSync(async () => {
+          await revalidate(text);
+          suggest.refresh();
+        }));
+      }
       );
 
     new Setting(this.containerEl)

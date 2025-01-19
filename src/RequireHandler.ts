@@ -82,10 +82,11 @@ interface WrapRequireOptions {
 }
 
 export const ENTRY_POINT = '.';
+export const EXTENSIONS = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 export const MODULE_NAME_SEPARATOR = '*';
 export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
-export const PATH_SUFFIXES = ['', '.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', '/index.js', '/index.cjs', '/index.mjs', '/index.ts', '/index.cts', '/index.mts'];
+export const PATH_SUFFIXES = ['', ...EXTENSIONS, ...EXTENSIONS.map((ext) => `/index${ext}`)];
 export const PRIVATE_MODULE_PREFIX = '#';
 export const RELATIVE_MODULE_PATH_SEPARATOR = '/';
 export const SCOPED_MODULE_PREFIX = '@';

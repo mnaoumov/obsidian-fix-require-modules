@@ -22,7 +22,7 @@
     "babel-plugin-transform-import-meta": "^2.3.2",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^13.15.1-beta.4",
+    "obsidian-dev-utils": "^13.15.1-beta.13",
     "obsidian-typings": "^2.14.3"
   },
   "type": "module"
