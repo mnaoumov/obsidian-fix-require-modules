@@ -27,13 +27,6 @@ class PathSuggest extends AbstractInputSuggest<PathEntry> {
   private refreshTimeoutId: null | number = null;
   public constructor(app: App, private textInputEl: HTMLInputElement, private rootFn: () => string, private type: PathEntryType) {
     super(app, textInputEl);
-
-    this.textInputEl.addEventListener('invalid', () => {
-      if (this.textInputEl.isActiveElement()) {
-        this.textInputEl.setCustomValidity('');
-        this.textInputEl.reportValidity();
-      }
-    });
   }
 
   public override async getSuggestions(input: string): Promise<PathEntry[]> {

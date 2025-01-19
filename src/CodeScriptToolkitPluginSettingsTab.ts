@@ -45,6 +45,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
           onChanged: () => {
             events.trigger('modulesRootChanged');
           },
+          shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {
               return;
@@ -71,6 +72,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
       }))
       .addText((text) => {
         extend(text).bind(this.plugin, 'invocableScriptsDirectory', {
+          shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {
               return;
@@ -103,6 +105,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
       }))
       .addText((text) => {
         extend(text).bind(this.plugin, 'startupScriptPath', {
+          shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {
               return;
