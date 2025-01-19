@@ -24,7 +24,7 @@ type PathEntryType = 'file' | 'folder';
 
 class PathSuggest extends AbstractInputSuggest<PathEntry> {
   private pathEntries: null | PathEntry[] = null;
-
+  private refreshTimeoutId: null | number = null;
   public constructor(app: App, private textInputEl: HTMLInputElement, private rootFn: () => string, private type: PathEntryType) {
     super(app, textInputEl);
 
@@ -47,6 +47,9 @@ class PathSuggest extends AbstractInputSuggest<PathEntry> {
   }
 
   public refresh(): void {
+    if (this.refreshTimeoutId) {
+      window.clearTimeout(this.refreshTimeoutId);
+    }
     this.pathEntries = null;
   }
 
@@ -107,9 +110,7 @@ class PathSuggest extends AbstractInputSuggest<PathEntry> {
       await this.fillPathEntries(app, this.rootFn(), 'folder');
     }
 
-    setTimeout(() => {
-      this.pathEntries = null;
-    }, CACHE_DURATION_IN_MILLISECONDS);
+    this.refreshTimeoutId = window.setTimeout(this.refresh.bind(this), CACHE_DURATION_IN_MILLISECONDS);
     return this.pathEntries;
   }
 }
