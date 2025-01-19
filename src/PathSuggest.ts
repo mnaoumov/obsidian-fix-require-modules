@@ -53,7 +53,10 @@ class PathSuggest extends AbstractInputSuggest<PathEntry> {
   public override selectSuggestion(value: PathEntry): void {
     this.setValue(value.path);
     this.textInputEl.dispatchEvent(new Event('input'));
-    setTimeout(this.close.bind(this), 0);
+    setTimeout(() => {
+      this.close();
+      this.textInputEl.blur();
+    }, 0);
   }
 
   private async fillPathEntries(app: App, path: string, type: PathEntryType): Promise<void> {
