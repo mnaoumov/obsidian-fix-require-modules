@@ -55,7 +55,7 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
   }
 
   if (!await plugin.app.vault.adapter.exists(invocableScriptsDirectory)) {
-    const message = `Invocable scripts directory not found: ${invocableScriptsDirectory}`;
+    const message = `Invocable scripts folder not found: ${invocableScriptsDirectory}`;
     new Notice(message);
     console.error(message);
     return;

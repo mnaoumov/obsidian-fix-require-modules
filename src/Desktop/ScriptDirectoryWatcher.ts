@@ -14,20 +14,30 @@ import { ScriptDirectoryWatcher } from '../ScriptDirectoryWatcher.ts';
 class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
   private watcher: FSWatcher | null = null;
 
-  protected startWatcher(onChange: () => Promise<void>): void {
-    if (!this.plugin.settingsCopy.getInvocableScriptsDirectory()) {
-      return;
+  protected override async startWatcher(onChange: () => Promise<void>): Promise<boolean> {
+    const invocableScriptsDirectory = this.plugin.settingsCopy.getInvocableScriptsDirectory();
+    if (!invocableScriptsDirectory) {
+      return false;
     }
 
-    const invocableScriptsDirectoryFullPath = join(this.plugin.app.vault.adapter.basePath, this.plugin.settingsCopy.getInvocableScriptsDirectory());
+    if (!(await this.plugin.app.vault.exists(invocableScriptsDirectory))) {
+      const message = `Invocable scripts folder not found: ${invocableScriptsDirectory}`;
+      new Notice(message);
+      console.error(message);
+      return false;
+    }
+
+    const invocableScriptsDirectoryFullPath = join(this.plugin.app.vault.adapter.basePath, invocableScriptsDirectory);
     this.watcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
       if (eventType === 'rename') {
         invokeAsyncSafely(() => onChange());
       }
     });
+
+    return true;
   }
 
-  protected stopWatcher(): void {
+  protected override stopWatcher(): void {
     if (this.watcher) {
       this.watcher.close();
       this.watcher = null;

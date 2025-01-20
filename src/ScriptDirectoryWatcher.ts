@@ -14,10 +14,13 @@ export abstract class ScriptDirectoryWatcher {
     }
 
     this.stopWatcher();
-    await onChange();
-    await this.startWatcher(onChange);
+    if (await this.startWatcher(onChange)) {
+      await onChange();
+    }
+
+    this.plugin.register(this.stopWatcher.bind(this));
   }
 
-  protected abstract startWatcher(onChange: () => Promise<void>): MaybePromise<void>;
+  protected abstract startWatcher(onChange: () => Promise<void>): MaybePromise<boolean>;
   protected abstract stopWatcher(): void;
 }
