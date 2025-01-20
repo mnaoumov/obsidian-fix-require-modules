@@ -8,7 +8,7 @@ This is a plugin for [`Obsidian`][Obsidian] that allows to do a lot of things wi
 
 This plugin is for you if you want to:
 
-- Write in any flavor of `JavaScript`/`TypeScript` in:
+- Write in any flavor of [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] in:
   - [DevTools Console](https://developer.chrome.com/docs/devtools/console) within [`Obsidian`][Obsidian];
   - [CustomJS](https://github.com/saml-dev/obsidian-custom-js) scripts;
   - [dataviewjs](https://blacksmithgu.github.io/obsidian-dataview/api/intro/) scripts;
@@ -16,20 +16,20 @@ This plugin is for you if you want to:
   - [QuickAdd](https://quickadd.obsidian.guide/) scripts;
   - [Templater](https://silentvoid13.github.io/Templater/) scripts;
   - etc.
-- Write modular scripts using modern `JavaScript`/`TypeScript` syntax and patterns.
+- Write modular scripts using modern [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] syntax and patterns.
 - Prototype [`Obsidian`][Obsidian] plugins.
 - Explore [`Obsidian`][Obsidian] API (public and internal) in runtime easier.
-- Invoke any `JavaScript`/`TypeScript` script via command or hotkey.
+- Invoke any [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] script via command or hotkey.
 
 ## Why this plugin?
 
-There are several very good plugins that allow to write `JavaScript`/`TypeScript` scripts for [`Obsidian`][Obsidian], but they all have their own limitations and quirks.
+There are several very good plugins that allow to write [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] scripts for [`Obsidian`][Obsidian], but they all have their own limitations and quirks.
 
 Most of those plugins support writing scripts in [`CommonJS` (`cjs`)][cjs] only, which is not so used nowadays.
 
-None of those plugins provide you the developer experience as you would have in any other modern `JavaScript`/`TypeScript` development environment.
+None of those plugins provide you the developer experience as you would have in any other modern [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] development environment.
 
-This plugin aims to erase the line between the `Obsidian` world and the `JavaScript`/`TypeScript` development world.
+This plugin aims to erase the line between the [`Obsidian`][Obsidian] world and the [`JavaScript`][JavaScript]/[`TypeScript`][TypeScript] development world.
 
 ## New functions
 
@@ -102,7 +102,7 @@ All of the examples below will be shown using `require()`, but you can use them 
 | **`require()`**      | ✔      | ✔     |
 | **`requireAsync()`** | ✔      | ✔     |
 
-Certain Obsidian built-in modules are available for import during plugin development but show `Uncaught Error: Cannot find module` if you try to [`require()`][require] them manually. This plugin fixes that problem, allowing the following [`require()`][require] calls to work properly:
+Certain [`Obsidian`][Obsidian] built-in modules are available for import during plugin development but show `Uncaught Error: Cannot find module` if you try to [`require()`][require] them manually. This plugin fixes that problem, allowing the following [`require()`][require] calls to work properly:
 
 ```js
 require('obsidian');
@@ -137,11 +137,11 @@ new Notice('My notice');
 | **`require()`**      | ✔      | ✔     |
 | **`requireAsync()`** | ✔      | ✔     |
 
-There is a global variable `app` that gives access to obsidian `App` instance.
+There is a global variable `app` that gives access to [`Obsidian`][Obsidian] `App` instance.
 
-However, starting from Obsidian [`v1.3.5`](https://github.com/obsidianmd/obsidian-api/commit/7646586acccf76f877b64111b2398938acc1d53e#diff-0eaea5db2513fdc5fe65d534d3591db5b577fe376925187c8a624124632b7466R4708) this global variable is deprecated in the public API.
+However, starting from [`Obsidian`][Obsidian] [`v1.3.5`](https://github.com/obsidianmd/obsidian-api/commit/7646586acccf76f877b64111b2398938acc1d53e#diff-0eaea5db2513fdc5fe65d534d3591db5b577fe376925187c8a624124632b7466R4708) this global variable is deprecated in the public API.
 
-Starting from Obsidian [`v1.6.6`](https://github.com/obsidianmd/obsidian-api/commit/f20b17e38ccf12a8d7f62231255cb0608436dfbf#diff-0eaea5db2513fdc5fe65d534d3591db5b577fe376925187c8a624124632b7466L4950-L4959) this global variable was completely removed from the public API.
+Starting from [`Obsidian`][Obsidian] [`v1.6.6`](https://github.com/obsidianmd/obsidian-api/commit/f20b17e38ccf12a8d7f62231255cb0608436dfbf#diff-0eaea5db2513fdc5fe65d534d3591db5b577fe376925187c8a624124632b7466L4950-L4959) this global variable was completely removed from the public API.
 
 Currently this global variable is still available, but it's better not rely on it, as it is not guaranteed to be maintained.
 
@@ -158,7 +158,7 @@ require('obsidian/app');
 | **`require()`**      | ✔      | ✔     |
 | **`requireAsync()`** | ✔      | ✔     |
 
-You can access the list of built-in Obsidian module names that are made available by this plugin.
+You can access the list of built-in [`Obsidian`][Obsidian] module names that are made available by this plugin.
 
 ```js
 require('obsidian/builtInModuleNames');
@@ -624,7 +624,7 @@ await renderMarkdown('**Hello, world!**');
 
 This plugin allows you to create temporary plugins.
 
-This is useful for quick plugin prototyping from inside the Obsidian itself.
+This is useful for quick plugin prototyping from inside the [`Obsidian`][Obsidian] itself.
 
 The key here is the function `registerTempPlugin()`, which is available in the script scope.
 
