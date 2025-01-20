@@ -48,25 +48,25 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
     plugin.app.commands.removeCommand(command.id);
   }
 
-  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
+  const invocableScriptsFolder = plugin.settingsCopy.getInvocableScriptsFolder();
 
-  if (!invocableScriptsDirectory) {
+  if (!invocableScriptsFolder) {
     return;
   }
 
-  if (!await plugin.app.vault.adapter.exists(invocableScriptsDirectory)) {
-    const message = `Invocable scripts folder not found: ${invocableScriptsDirectory}`;
+  if (!await plugin.app.vault.adapter.exists(invocableScriptsFolder)) {
+    const message = `Invocable scripts folder not found: ${invocableScriptsFolder}`;
     new Notice(message);
     console.error(message);
     return;
   }
 
-  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsDirectory(), '');
+  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsFolder(), '');
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
       callback: async () => {
-        await invoke(plugin, `${invocableScriptsDirectory}/${scriptFile}`);
+        await invoke(plugin, `${invocableScriptsFolder}/${scriptFile}`);
       },
       id: `${COMMAND_NAME_PREFIX}${scriptFile}`,
       name: `Invoke Script: ${scriptFile}`
@@ -76,15 +76,15 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
 
 export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   const app = plugin.app;
-  const invocableScriptsDirectory = plugin.settingsCopy.getInvocableScriptsDirectory();
+  const invocableScriptsFolder = plugin.settingsCopy.getInvocableScriptsFolder();
   let scriptFiles: string[];
 
-  if (!invocableScriptsDirectory) {
-    scriptFiles = ['Error: No Invocable scripts directory specified in the settings'];
-  } else if (!await app.vault.adapter.exists(invocableScriptsDirectory)) {
-    scriptFiles = [`Error: Invocable scripts directory not found: ${invocableScriptsDirectory}`];
+  if (!invocableScriptsFolder) {
+    scriptFiles = ['Error: No Invocable scripts folder specified in the settings'];
+  } else if (!await app.vault.adapter.exists(invocableScriptsFolder)) {
+    scriptFiles = [`Error: Invocable scripts folder not found: ${invocableScriptsFolder}`];
   } else {
-    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsDirectory, '');
+    scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsFolder, '');
   }
 
   const scriptFile = await selectItem({
@@ -100,21 +100,21 @@ export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Pr
   }
 
   if (!scriptFile.startsWith('Error:')) {
-    await invoke(plugin, `${invocableScriptsDirectory}/${scriptFile}`);
+    await invoke(plugin, `${invocableScriptsFolder}/${scriptFile}`);
   }
 }
 
-async function getAllScriptFiles(adapter: DataAdapter, scriptsDirectory: string, directory: string): Promise<string[]> {
+async function getAllScriptFiles(adapter: DataAdapter, scriptsFolder: string, folder: string): Promise<string[]> {
   const files: string[] = [];
-  const listedFiles = await adapter.list(`${scriptsDirectory}/${directory}`);
+  const listedFiles = await adapter.list(`${scriptsFolder}/${folder}`);
   for (const fileName of getSortedBaseNames(listedFiles.files)) {
     const lowerCasedFileName = fileName.toLowerCase();
     if (extensions.some((ext) => lowerCasedFileName.endsWith(ext))) {
-      files.push(directory ? `${directory}/${fileName}` : fileName);
+      files.push(folder ? `${folder}/${fileName}` : fileName);
     }
   }
-  for (const directoryName of getSortedBaseNames(listedFiles.folders)) {
-    const subFiles = await getAllScriptFiles(adapter, scriptsDirectory, directory ? `${directory}/${directoryName}` : directoryName);
+  for (const folderName of getSortedBaseNames(listedFiles.folders)) {
+    const subFiles = await getAllScriptFiles(adapter, scriptsFolder, folder ? `${folder}/${folderName}` : folderName);
     files.push(...subFiles);
   }
 

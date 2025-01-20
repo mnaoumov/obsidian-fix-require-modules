@@ -1,11 +1,11 @@
 import { Platform } from 'obsidian';
 
 import type { RequireHandler } from './RequireHandler.ts';
-import type { ScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
+import type { ScriptFolderWatcher } from './ScriptFolderWatcher.ts';
 
 export interface PlatformDependencies {
   requireHandler: RequireHandler;
-  scriptDirectoryWatcher: ScriptDirectoryWatcher;
+  scriptFolderWatcher: ScriptFolderWatcher;
 }
 
 export async function getPlatformDependencies(): Promise<PlatformDependencies> {

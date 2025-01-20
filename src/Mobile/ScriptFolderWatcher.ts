@@ -2,7 +2,7 @@ import type { App } from 'obsidian';
 
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 
-import { ScriptDirectoryWatcher } from '../ScriptDirectoryWatcher.ts';
+import { ScriptFolderWatcher } from '../ScriptFolderWatcher.ts';
 
 interface ModificationEntry {
   isChanged: boolean;
@@ -11,18 +11,18 @@ interface ModificationEntry {
 
 const MILLISECONDS_IN_SECOND = 1000;
 
-class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
+class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
   private modificationTimes = new Map<string, number>();
   private timeoutId: null | number = null;
 
   protected override async startWatcher(onChange: () => Promise<void>): Promise<boolean> {
-    const invocableScriptsDirectory = this.plugin.settingsCopy.getInvocableScriptsDirectory();
-    if (!invocableScriptsDirectory) {
+    const invocableScriptsFolder = this.plugin.settingsCopy.getInvocableScriptsFolder();
+    if (!invocableScriptsFolder) {
       return false;
     }
 
-    if (!(await this.plugin.app.vault.exists(invocableScriptsDirectory))) {
-      const message = `Invocable scripts folder not found: ${invocableScriptsDirectory}`;
+    if (!(await this.plugin.app.vault.exists(invocableScriptsFolder))) {
+      const message = `Invocable scripts folder not found: ${invocableScriptsFolder}`;
       new Notice(message);
       console.error(message);
       return false;
@@ -65,7 +65,7 @@ class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
   }
 
   private async watch(onChange: () => Promise<void>): Promise<void> {
-    const modificationEntry = await this.checkFile(this.plugin.app, this.plugin.settingsCopy.getInvocableScriptsDirectory());
+    const modificationEntry = await this.checkFile(this.plugin.app, this.plugin.settingsCopy.getInvocableScriptsFolder());
     if (modificationEntry.isChanged) {
       await onChange();
     }
@@ -77,4 +77,4 @@ class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
   }
 }
 
-export const scriptDirectoryWatcher = new ScriptDirectoryWatcherImpl();
+export const scriptFolderWatcher = new ScriptFolderWatcherImpl();

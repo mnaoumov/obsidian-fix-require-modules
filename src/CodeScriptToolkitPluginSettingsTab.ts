@@ -71,7 +71,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
       .addText((text) => {
-        extend(text).bind(this.plugin, 'invocableScriptsDirectory', {
+        extend(text).bind(this.plugin, 'invocableScriptsFolder', {
           shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {

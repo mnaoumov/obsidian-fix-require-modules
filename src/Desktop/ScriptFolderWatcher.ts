@@ -9,26 +9,26 @@ import { watch } from 'node:fs';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { join } from 'obsidian-dev-utils/Path';
 
-import { ScriptDirectoryWatcher } from '../ScriptDirectoryWatcher.ts';
+import { ScriptFolderWatcher } from '../ScriptFolderWatcher.ts';
 
-class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
+class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
   private watcher: FSWatcher | null = null;
 
   protected override async startWatcher(onChange: () => Promise<void>): Promise<boolean> {
-    const invocableScriptsDirectory = this.plugin.settingsCopy.getInvocableScriptsDirectory();
-    if (!invocableScriptsDirectory) {
+    const invocableScriptsFolder = this.plugin.settingsCopy.getInvocableScriptsFolder();
+    if (!invocableScriptsFolder) {
       return false;
     }
 
-    if (!(await this.plugin.app.vault.exists(invocableScriptsDirectory))) {
-      const message = `Invocable scripts folder not found: ${invocableScriptsDirectory}`;
+    if (!(await this.plugin.app.vault.exists(invocableScriptsFolder))) {
+      const message = `Invocable scripts folder not found: ${invocableScriptsFolder}`;
       new Notice(message);
       console.error(message);
       return false;
     }
 
-    const invocableScriptsDirectoryFullPath = join(this.plugin.app.vault.adapter.basePath, invocableScriptsDirectory);
-    this.watcher = watch(invocableScriptsDirectoryFullPath, { recursive: true }, (eventType: WatchEventType): void => {
+    const invocableScriptsFolderFullPath = join(this.plugin.app.vault.adapter.basePath, invocableScriptsFolder);
+    this.watcher = watch(invocableScriptsFolderFullPath, { recursive: true }, (eventType: WatchEventType): void => {
       if (eventType === 'rename') {
         invokeAsyncSafely(() => onChange());
       }
@@ -45,4 +45,4 @@ class ScriptDirectoryWatcherImpl extends ScriptDirectoryWatcher {
   }
 }
 
-export const scriptDirectoryWatcher: ScriptDirectoryWatcher = new ScriptDirectoryWatcherImpl();
+export const scriptFolderWatcher: ScriptFolderWatcher = new ScriptFolderWatcherImpl();

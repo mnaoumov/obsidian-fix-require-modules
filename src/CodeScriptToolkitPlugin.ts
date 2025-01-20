@@ -2,7 +2,7 @@ import { PluginSettingTab } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 import type { RequireHandler } from './RequireHandler.ts';
-import type { ScriptDirectoryWatcher } from './ScriptDirectoryWatcher.ts';
+import type { ScriptFolderWatcher } from './ScriptFolderWatcher.ts';
 
 import {
   registerCodeButtonBlock,
@@ -20,10 +20,10 @@ import {
 
 export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginPluginSettings> {
   private requireHandler!: RequireHandler;
-  private scriptDirectoryWatcher!: ScriptDirectoryWatcher;
+  private scriptFolderWatcher!: ScriptFolderWatcher;
 
   public async applyNewSettings(): Promise<void> {
-    await this.scriptDirectoryWatcher.register(this, () => registerInvocableScripts(this));
+    await this.scriptFolderWatcher.register(this, () => registerInvocableScripts(this));
   }
 
   public override async onExternalSettingsChange(): Promise<void> {
@@ -47,7 +47,7 @@ export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginP
 
   protected override async onloadComplete(): Promise<void> {
     const platformDependencies = await getPlatformDependencies();
-    this.scriptDirectoryWatcher = platformDependencies.scriptDirectoryWatcher;
+    this.scriptFolderWatcher = platformDependencies.scriptFolderWatcher;
     this.requireHandler = platformDependencies.requireHandler;
     this.requireHandler.register(this, require);
 

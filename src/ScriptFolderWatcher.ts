@@ -2,7 +2,7 @@ import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
 
-export abstract class ScriptDirectoryWatcher {
+export abstract class ScriptFolderWatcher {
   protected plugin!: CodeScriptToolkitPlugin;
   private wasRegisteredInPlugin = false;
 

@@ -1,23 +1,45 @@
 import { PluginSettingsBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsBase';
 import { join } from 'obsidian-dev-utils/Path';
 
+interface LegacySettings {
+  invocableScriptsDirectory: string;
+}
+
 export class CodeScriptToolkitPluginPluginSettings extends PluginSettingsBase {
-  public invocableScriptsDirectory = '';
+  public invocableScriptsFolder = '';
   public mobileChangesCheckingIntervalInSeconds = 30;
   public modulesRoot = '';
   public startupScriptPath = '';
+  #shouldSaveAfterLoad = false;
 
   public constructor(data: unknown) {
     super();
     this.init(data);
   }
 
-  public getInvocableScriptsDirectory(): string {
-    return this.getPathRelativeToModulesRoot(this.invocableScriptsDirectory);
+  public getInvocableScriptsFolder(): string {
+    return this.getPathRelativeToModulesRoot(this.invocableScriptsFolder);
   }
 
   public getStartupScriptPath(): string {
     return this.getPathRelativeToModulesRoot(this.startupScriptPath);
+  }
+
+  public override shouldSaveAfterLoad(): boolean {
+    return this.#shouldSaveAfterLoad;
+  }
+
+  protected override initFromRecord(record: Record<string, unknown>): void {
+    const legacySettings = record as Partial<CodeScriptToolkitPluginPluginSettings> & Partial<LegacySettings>;
+    if (legacySettings.invocableScriptsDirectory) {
+      if (legacySettings.invocableScriptsDirectory) {
+        legacySettings.invocableScriptsFolder = legacySettings.invocableScriptsDirectory;
+        delete legacySettings.invocableScriptsDirectory;
+        this.#shouldSaveAfterLoad = true;
+      }
+    }
+
+    super.initFromRecord(legacySettings);
   }
 
   private getPathRelativeToModulesRoot(path: string): string {
