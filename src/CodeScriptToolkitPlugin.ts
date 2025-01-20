@@ -1,4 +1,5 @@
 import { PluginSettingTab } from 'obsidian';
+import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 import type { RequireHandler } from './RequireHandler.ts';
@@ -15,6 +16,7 @@ import {
   cleanupStartupScript,
   invokeStartupScript,
   registerInvocableScripts,
+  reloadStartupScript,
   selectAndInvokeScript
 } from './Script.ts';
 
@@ -68,6 +70,12 @@ export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginP
       callback: unloadTempPlugins,
       id: 'unload-temp-plugins',
       name: 'Unload Temp Plugins'
+    });
+
+    this.addCommand({
+      callback: convertAsyncToSync(() => reloadStartupScript(this)),
+      id: 'reload-startup-script',
+      name: 'Reload Startup Script'
     });
   }
 }

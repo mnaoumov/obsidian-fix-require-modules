@@ -24,25 +24,18 @@ interface Script {
 const extensions = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 
 export async function cleanupStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
-  if (!plugin.settingsCopy.startupScriptPath) {
+  const startupScriptPath = await validateStartupScript(plugin);
+  if (!startupScriptPath) {
     return;
   }
 
-  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
   const script = await requireVaultScriptAsync(startupScriptPath) as Partial<CleanupScript>;
   await script.cleanup?.(plugin.app);
 }
 
 export async function invokeStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
-  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
+  const startupScriptPath = await validateStartupScript(plugin);
   if (!startupScriptPath) {
-    return;
-  }
-
-  if (!await plugin.app.vault.exists(startupScriptPath)) {
-    const message = `Startup script not found: ${startupScriptPath}`;
-    new Notice(message);
-    console.error(message);
     return;
   }
 
@@ -80,6 +73,16 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
       name: `Invoke Script: ${scriptFile}`
     });
   }
+}
+
+export async function reloadStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
+  const startupScriptPath = await validateStartupScript(plugin, true);
+  if (!startupScriptPath) {
+    return;
+  }
+
+  await cleanupStartupScript(plugin);
+  await invokeStartupScript(plugin);
 }
 
 export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
@@ -153,4 +156,25 @@ async function invoke(plugin: CodeScriptToolkitPlugin, scriptPath: string, isSta
 See console for details...`);
     printError(new Error(`Error invoking ${scriptString} ${scriptPath}`, { cause: error }));
   }
+}
+
+async function validateStartupScript(plugin: CodeScriptToolkitPlugin, shouldWarnOnNotConfigured = false): Promise<null | string> {
+  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
+  if (!startupScriptPath) {
+    if (shouldWarnOnNotConfigured) {
+      const message = 'Startup script is not configured';
+      new Notice(message);
+      console.warn(message);
+    }
+    return null;
+  }
+
+  if (!await plugin.app.vault.exists(startupScriptPath)) {
+    const message = `Startup script not found: ${startupScriptPath}`;
+    new Notice(message);
+    console.error(message);
+    return null;
+  }
+
+  return startupScriptPath;
 }
