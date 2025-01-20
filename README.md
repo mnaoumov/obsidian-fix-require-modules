@@ -489,6 +489,8 @@ export async function invoke(app: App): Promise<void> {
 }
 ```
 
+You can reload the startup script using the `CodeScript Toolkit: Reload Startup Script` command.
+
 ### Hotkeys
 
 | Desktop | Mobile |
