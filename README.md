@@ -442,11 +442,11 @@ The function has the same signature as [`invoke()`](#invocable-scripts) function
 import type { App } from 'obsidian';
 
 export async function cleanup(app: App): Promise<void> {
-  // cleanup code
+  // executes when the plugin is unloaded
 }
 
 export async function invoke(app: App): Promise<void> {
-  // startup code
+  // executes when the plugin is loaded, including when the app is started
 }
 ```
 
