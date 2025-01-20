@@ -137,7 +137,7 @@ new Notice('My notice');
 | **`require()`**      | ✔      | ✔     |
 | **`requireAsync()`** | ✔      | ✔     |
 
-There is a global variable `app` that gives access to [`Obsidian`][Obsidian] `App` instance.
+There is a global variable `app` that gives access to [`Obsidian`][Obsidian] [`App`][App] instance.
 
 However, starting from [`Obsidian`][Obsidian] [`v1.3.5`](https://github.com/obsidianmd/obsidian-api/commit/7646586acccf76f877b64111b2398938acc1d53e#diff-0eaea5db2513fdc5fe65d534d3591db5b577fe376925187c8a624124632b7466R4708) this global variable is deprecated in the public API.
 
@@ -382,7 +382,7 @@ Manages source maps for compiled code, allowing seamless debugging in [`Obsidian
 | ------- | ------ |
 | ✔      | ✔     |
 
-Make any script invocable by defining a module that exports a function named `invoke` (sync or async) that accepts `app` argument
+Make any script invocable by defining a module that exports a function named `invoke` (sync or async) that accepts `app` argument of [`App`][App] type.
 
 ```ts
 // cjs sync
@@ -700,6 +700,8 @@ However, for the backward compatibility, the previous id `fix-require-modules` i
 ## License
 
 © [Michael Naumov](https://github.com/mnaoumov/)
+
+[App]: https://docs.obsidian.md/Reference/TypeScript+API/App
 
 [cjs]: https://nodejs.org/api/modules.html#modules-commonjs-modules
 
