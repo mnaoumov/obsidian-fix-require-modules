@@ -14,7 +14,7 @@
   --console-log-container-background-color: #ffffff;
 }
 
-.console-log-container {
+.fix-require-modules.console-log-container {
   font-family: "Courier New", monospace;
   line-height: 1.5;
   border: 1px solid var(--console-log-container-border-color);
@@ -26,7 +26,7 @@
   white-space: pre-wrap;
 }
 
-.console-log-container .system-message {
+.fix-require-modules.console-log-container .system-message {
   background-color: var(--console-log-entry-system-background-color);
   color: var(--console-log-entry-system-color);
   padding: 8px 12px;
@@ -36,37 +36,37 @@
   margin-bottom: 10px;
 }
 
-.console-log-container .console-log-entry::before {
+.fix-require-modules.console-log-container .console-log-entry::before {
   display: inline-block;
   vertical-align: middle;
   margin-right: 5px;
 }
 
-.console-log-container .console-log-entry {
+.fix-require-modules.console-log-container .console-log-entry {
   padding: 5px 10px;
   margin: 5px 0;
   border-radius: 3px;
 }
 
-.console-log-container .console-log-entry-log {
+.fix-require-modules.console-log-container .console-log-entry-log {
   color: var(--console-log-entry-log-color);
 }
 
-.console-log-container .console-log-entry-debug {
+.fix-require-modules.console-log-container .console-log-entry-debug {
   color: var(--console-log-entry-debug-color);
   background-color: var(--console-log-entry-debug-background-color);
   padding: 2px 4px;
   border-radius: 3px;
 }
 
-.console-log-container .console-log-entry-info {
+.fix-require-modules.console-log-container .console-log-entry-info {
   color: var(--console-log-entry-info-color);
   background-color: var(--console-log-entry-info-background-color);
   padding: 2px 4px;
   border-radius: 3px;
 }
 
-.console-log-container .console-log-entry-warn {
+.fix-require-modules.console-log-container .console-log-entry-warn {
   color: var(--console-log-entry-warn-color);
   background-color: var(--console-log-entry-warn-background-color);
   font-weight: bold;
@@ -74,7 +74,7 @@
   border-radius: 3px;
 }
 
-.console-log-container .console-log-entry-error {
+.fix-require-modules.console-log-container .console-log-entry-error {
   color: var(--console-log-entry-error-color);
   background-color: var(--console-log-entry-error-background-color);
   font-weight: bold;
@@ -82,18 +82,18 @@
   border-radius: 3px;
 }
 
-.console-log-container .console-log-entry-error::before {
+.fix-require-modules.console-log-container .console-log-entry-error::before {
   content: "✖ ";
 }
 
-.console-log-container .console-log-entry-warn::before {
+.fix-require-modules.console-log-container .console-log-entry-warn::before {
   content: "⚠ ";
 }
 
-.console-log-container .console-log-entry-info::before {
+.fix-require-modules.console-log-container .console-log-entry-info::before {
   content: "ℹ ";
 }
 
-.console-log-container .console-log-entry-debug::before {
+.fix-require-modules.console-log-container .console-log-entry-debug::before {
   content: "🐞 ";
 }

@@ -107,7 +107,7 @@ function makeWrapperScript(source: string, sourceFileName: string, sourceDir: st
 
 function processCodeButtonBlock(plugin: Plugin, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
   const sectionInfo = ctx.getSectionInfo(el);
-  const resultEl = el.createDiv({ cls: 'console-log-container' });
+  const resultEl = el.createDiv({ cls: 'fix-require-modules console-log-container' });
 
   if (sectionInfo) {
     const [
