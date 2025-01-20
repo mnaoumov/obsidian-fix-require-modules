@@ -34,11 +34,19 @@ export async function cleanupStartupScript(plugin: CodeScriptToolkitPlugin): Pro
 }
 
 export async function invokeStartupScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
-  if (!plugin.settingsCopy.startupScriptPath) {
+  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
+  if (!startupScriptPath) {
     return;
   }
 
-  await invoke(plugin, plugin.settingsCopy.getStartupScriptPath(), true);
+  if (!await plugin.app.vault.exists(startupScriptPath)) {
+    const message = `Startup script not found: ${startupScriptPath}`;
+    new Notice(message);
+    console.error(message);
+    return;
+  }
+
+  await invoke(plugin, startupScriptPath, true);
 }
 
 export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin): Promise<void> {
