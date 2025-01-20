@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 8.8.0
+
+- Add `Reload Startup Script` command
+- Blur after selection
+- Skip validation messages
+- Fix refresh timeout
+- Add PathSuggest
+- Validate paths
+- Auto Save settings
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/14.3.0
+
 ## 8.7.2
 
 - Fix wrong const
