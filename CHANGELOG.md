@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.8.1
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/15.0.0
+
 ## 8.8.0
 
 - Add `Reload Startup Script` command
