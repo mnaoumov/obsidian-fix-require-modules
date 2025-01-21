@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.8.3
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.1.0
+
 ## 8.8.2
 
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.0.3
