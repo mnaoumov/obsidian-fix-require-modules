@@ -11,10 +11,6 @@ import {
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import {
-  extend,
-  revalidate
-} from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
-import {
   extname,
   join
 } from 'obsidian-dev-utils/Path';
@@ -41,7 +37,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.appendText('Leave blank to use the root of the vault.');
       }))
       .addText((text) => {
-        extend(text).bind(this.plugin, 'modulesRoot', {
+        this.bind(text, 'modulesRoot', {
           onChanged: () => {
             events.trigger('modulesRootChanged');
           },
@@ -71,7 +67,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.appendText('Leave blank if you don\'t use invocable scripts.');
       }))
       .addText((text) => {
-        extend(text).bind(this.plugin, 'invocableScriptsFolder', {
+        this.bind(text, 'invocableScriptsFolder', {
           shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {
@@ -87,7 +83,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'folder');
 
         events.on('modulesRootChanged', convertAsyncToSync(async () => {
-          await revalidate(text);
+          await this.revalidate(text);
           suggest.refresh();
         }));
       }
@@ -104,7 +100,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         f.appendText('Leave blank if you don\'t use startup script.');
       }))
       .addText((text) => {
-        extend(text).bind(this.plugin, 'startupScriptPath', {
+        this.bind(text, 'startupScriptPath', {
           shouldShowValidationMessage: false,
           valueValidator: async (uiValue) => {
             if (!uiValue) {
@@ -129,7 +125,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'file');
 
         events.on('modulesRootChanged', convertAsyncToSync(async () => {
-          await revalidate(text);
+          await this.revalidate(text);
           suggest.refresh();
         }));
       }
@@ -153,7 +149,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
       .setName('Mobile changes checking interval')
       .setDesc('Interval in seconds to check for changes in the invocable scripts folder (only on mobile)')
       .addText((text) => {
-        extend(text).bind(this.plugin, 'mobileChangesCheckingIntervalInSeconds', {
+        this.bind(text, 'mobileChangesCheckingIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
           pluginSettingsToComponentValueConverter: (value: number) => value.toString(),
           valueValidator(value: string) {
