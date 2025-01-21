@@ -10,7 +10,6 @@ export class CodeScriptToolkitPluginPluginSettings extends PluginSettingsBase {
   public mobileChangesCheckingIntervalInSeconds = 30;
   public modulesRoot = '';
   public startupScriptPath = '';
-  #shouldSaveAfterLoad = false;
 
   public constructor(data: unknown) {
     super();
@@ -25,17 +24,13 @@ export class CodeScriptToolkitPluginPluginSettings extends PluginSettingsBase {
     return this.getPathRelativeToModulesRoot(this.startupScriptPath);
   }
 
-  public override shouldSaveAfterLoad(): boolean {
-    return this.#shouldSaveAfterLoad;
-  }
-
   protected override initFromRecord(record: Record<string, unknown>): void {
     const legacySettings = record as Partial<CodeScriptToolkitPluginPluginSettings> & Partial<LegacySettings>;
     if (legacySettings.invocableScriptsDirectory) {
       if (legacySettings.invocableScriptsDirectory) {
         legacySettings.invocableScriptsFolder = legacySettings.invocableScriptsDirectory;
         delete legacySettings.invocableScriptsDirectory;
-        this.#shouldSaveAfterLoad = true;
+        this._shouldSaveAfterLoad = true;
       }
     }
 

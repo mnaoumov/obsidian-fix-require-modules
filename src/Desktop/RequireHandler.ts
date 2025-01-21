@@ -179,7 +179,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
   }
 
   private getRootDirs(dir: string): string[] {
-    const modulesRootDir = this.plugin.settingsCopy.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot) : null;
+    const modulesRootDir = this.plugin.settings.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settings.modulesRoot) : null;
 
     const ans: string[] = [];
     for (const possibleDir of new Set([dir, modulesRootDir])) {

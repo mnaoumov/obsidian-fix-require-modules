@@ -49,7 +49,7 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
     plugin.app.commands.removeCommand(command.id);
   }
 
-  const invocableScriptsFolder = plugin.settingsCopy.getInvocableScriptsFolder();
+  const invocableScriptsFolder = plugin.settings.getInvocableScriptsFolder();
 
   if (!invocableScriptsFolder) {
     return;
@@ -62,7 +62,7 @@ export async function registerInvocableScripts(plugin: CodeScriptToolkitPlugin):
     return;
   }
 
-  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settingsCopy.getInvocableScriptsFolder(), '');
+  const scriptFiles = await getAllScriptFiles(plugin.app.vault.adapter, plugin.settings.getInvocableScriptsFolder(), '');
 
   for (const scriptFile of scriptFiles) {
     plugin.addCommand({
@@ -87,7 +87,7 @@ export async function reloadStartupScript(plugin: CodeScriptToolkitPlugin): Prom
 
 export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Promise<void> {
   const app = plugin.app;
-  const invocableScriptsFolder = plugin.settingsCopy.getInvocableScriptsFolder();
+  const invocableScriptsFolder = plugin.settings.getInvocableScriptsFolder();
   let scriptFiles: string[];
 
   if (!invocableScriptsFolder) {
@@ -159,7 +159,7 @@ See console for details...`);
 }
 
 async function validateStartupScript(plugin: CodeScriptToolkitPlugin, shouldWarnOnNotConfigured = false): Promise<null | string> {
-  const startupScriptPath = plugin.settingsCopy.getStartupScriptPath();
+  const startupScriptPath = plugin.settings.getStartupScriptPath();
   if (!startupScriptPath) {
     if (shouldWarnOnNotConfigured) {
       const message = 'Startup script is not configured';

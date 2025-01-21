@@ -16,7 +16,7 @@ class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
   private timeoutId: null | number = null;
 
   protected override async startWatcher(onChange: () => Promise<void>): Promise<boolean> {
-    const invocableScriptsFolder = this.plugin.settingsCopy.getInvocableScriptsFolder();
+    const invocableScriptsFolder = this.plugin.settings.getInvocableScriptsFolder();
     if (!invocableScriptsFolder) {
       return false;
     }
@@ -65,14 +65,14 @@ class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
   }
 
   private async watch(onChange: () => Promise<void>): Promise<void> {
-    const modificationEntry = await this.checkFile(this.plugin.app, this.plugin.settingsCopy.getInvocableScriptsFolder());
+    const modificationEntry = await this.checkFile(this.plugin.app, this.plugin.settings.getInvocableScriptsFolder());
     if (modificationEntry.isChanged) {
       await onChange();
     }
 
     this.timeoutId = window.setTimeout(
       () => { invokeAsyncSafely(() => this.watch(onChange)); },
-      this.plugin.settingsCopy.mobileChangesCheckingIntervalInSeconds * MILLISECONDS_IN_SECOND
+      this.plugin.settings.mobileChangesCheckingIntervalInSeconds * MILLISECONDS_IN_SECOND
     );
   }
 }

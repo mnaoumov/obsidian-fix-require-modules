@@ -441,7 +441,7 @@ await requireAsyncWrapper((require) => {
 
     const MODULES_ROOT_PATH_PREFIX = '/';
     if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
-      return { resolvedId: join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), resolvedType: ResolvedType.Path };
+      return { resolvedId: join(this.vaultAbsolutePath, this.plugin.settings.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), resolvedType: ResolvedType.Path };
     }
 
     if (isAbsolute(id)) {
@@ -642,7 +642,7 @@ await requireAsyncWrapper((require) => {
   }
 
   private async getRootDirsAsync(dir: string): Promise<string[]> {
-    const modulesRootDir = this.plugin.settingsCopy.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settingsCopy.modulesRoot) : null;
+    const modulesRootDir = this.plugin.settings.modulesRoot ? join(this.vaultAbsolutePath, this.plugin.settings.modulesRoot) : null;
 
     const ans: string[] = [];
     for (const possibleDir of new Set([dir, modulesRootDir])) {

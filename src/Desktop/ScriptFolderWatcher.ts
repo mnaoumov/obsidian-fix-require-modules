@@ -15,7 +15,7 @@ class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
   private watcher: FSWatcher | null = null;
 
   protected override async startWatcher(onChange: () => Promise<void>): Promise<boolean> {
-    const invocableScriptsFolder = this.plugin.settingsCopy.getInvocableScriptsFolder();
+    const invocableScriptsFolder = this.plugin.settings.getInvocableScriptsFolder();
     if (!invocableScriptsFolder) {
       return false;
     }

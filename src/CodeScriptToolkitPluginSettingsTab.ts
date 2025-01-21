@@ -16,12 +16,11 @@ import {
 } from 'obsidian-dev-utils/Path';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';
-import type { CodeScriptToolkitPluginPluginSettings } from './CodeScriptToolkitPluginSettings.ts';
 
 import { addPathSuggest } from './PathSuggest.ts';
 import { EXTENSIONS } from './RequireHandler.ts';
 
-export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabBase<CodeScriptToolkitPlugin, CodeScriptToolkitPluginPluginSettings> {
+export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabBase<CodeScriptToolkitPlugin> {
   public override display(): void {
     this.containerEl.empty();
     const events = new Events();
@@ -74,13 +73,13 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
               return;
             }
 
-            const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+            const path = join(this.plugin.settings.modulesRoot, uiValue);
             return await validatePath(this.plugin.app, path, 'folder');
           }
         })
           .setPlaceholder('path/to/invocable/scripts/folder');
 
-        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'folder');
+        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settings.modulesRoot, 'folder');
 
         events.on('modulesRootChanged', convertAsyncToSync(async () => {
           await this.revalidate(text);
@@ -107,7 +106,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
               return;
             }
 
-            const path = join(this.plugin.settingsCopy.modulesRoot, uiValue);
+            const path = join(this.plugin.settings.modulesRoot, uiValue);
             const ans = await validatePath(this.plugin.app, path, 'file');
             if (ans) {
               return ans;
@@ -122,7 +121,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
           }
         })
           .setPlaceholder('path/to/startup.ts');
-        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settingsCopy.modulesRoot, 'file');
+        const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settings.modulesRoot, 'file');
 
         events.on('modulesRootChanged', convertAsyncToSync(async () => {
           await this.revalidate(text);
