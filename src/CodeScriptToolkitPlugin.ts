@@ -61,7 +61,9 @@ export class CodeScriptToolkitPlugin extends PluginBase<CodeScriptToolkitPluginP
     });
 
     this.addCommand({
-      callback: () => { this.requireHandler.clearCache(); },
+      callback: () => {
+        this.requireHandler.clearCache();
+      },
       id: 'clearCache',
       name: 'Clear Cache'
     });

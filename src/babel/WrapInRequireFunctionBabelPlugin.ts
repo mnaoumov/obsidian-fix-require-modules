@@ -9,7 +9,6 @@ import {
   functionExpression,
   identifier,
   returnStatement
-
 } from '@babel/types';
 
 import { BabelPluginBase } from './BabelPluginBase.ts';

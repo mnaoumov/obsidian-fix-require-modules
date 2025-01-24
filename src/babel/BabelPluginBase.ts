@@ -14,7 +14,7 @@ export interface TransformResult<Data> {
 }
 
 export abstract class BabelPluginBase<Data = unknown> {
-  protected constructor(public readonly data: Data) { }
+  protected constructor(public readonly data: Data) {}
 
   public getInherits(): unknown {
     return undefined;

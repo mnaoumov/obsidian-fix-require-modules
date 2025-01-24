@@ -23,7 +23,12 @@ import { WrapForCodeBlockBabelPlugin } from './babel/WrapForCodeBlockBabelPlugin
 import { ConsoleWrapper } from './ConsoleWrapper.ts';
 import { requireStringAsync } from './RequireHandlerUtils.ts';
 
-type CodeButtonBlockScriptWrapper = (registerTempPlugin: RegisterTempPluginFn, console: Console, container: HTMLElement, renderMarkdown: (markdown: string) => Promise<void>) => MaybePromise<void>;
+type CodeButtonBlockScriptWrapper = (
+  registerTempPlugin: RegisterTempPluginFn,
+  console: Console,
+  container: HTMLElement,
+  renderMarkdown: (markdown: string) => Promise<void>
+) => MaybePromise<void>;
 type RegisterTempPluginFn = (tempPluginClass: TempPluginClass) => void;
 
 type TempPluginClass = new (app: App, manifest: PluginManifest) => Plugin;
@@ -46,9 +51,9 @@ interface HandleClickOptions {
 export function registerCodeButtonBlock(plugin: Plugin): void {
   registerCodeHighlighting();
   plugin.register(unregisterCodeHighlighting);
-  plugin.registerMarkdownCodeBlockProcessor(CODE_BUTTON_BLOCK_LANGUAGE,
-    (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => { processCodeButtonBlock(plugin, source, el, ctx); }
-  );
+  plugin.registerMarkdownCodeBlockProcessor(CODE_BUTTON_BLOCK_LANGUAGE, (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
+    processCodeButtonBlock(plugin, source, el, ctx);
+  });
 }
 
 export function unloadTempPlugins(): void {
@@ -65,9 +70,23 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
   }
 
   try {
-    const script = makeWrapperScript(options.source, `${basename(options.sourcePath)}.code-button.${options.buttonIndex.toString()}.${options.caption}.ts`, dirname(options.sourcePath), options.shouldAutoOutput);
-    const codeButtonBlockScriptWrapper = await requireStringAsync(script, options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'), `code-button:${options.buttonIndex.toString()}:${options.caption}`) as CodeButtonBlockScriptWrapper;
-    await codeButtonBlockScriptWrapper(makeRegisterTempPluginFn(options.plugin), wrappedConsole.getConsoleInstance(options.shouldWrapConsole), options.resultEl, makeRenderMarkdownFn(options.plugin, options.resultEl, options.sourcePath));
+    const script = makeWrapperScript(
+      options.source,
+      `${basename(options.sourcePath)}.code-button.${options.buttonIndex.toString()}.${options.caption}.ts`,
+      dirname(options.sourcePath),
+      options.shouldAutoOutput
+    );
+    const codeButtonBlockScriptWrapper = await requireStringAsync(
+      script,
+      options.plugin.app.vault.adapter.getFullPath(options.sourcePath).replaceAll('\\', '/'),
+      `code-button:${options.buttonIndex.toString()}:${options.caption}`
+    ) as CodeButtonBlockScriptWrapper;
+    await codeButtonBlockScriptWrapper(
+      makeRegisterTempPluginFn(options.plugin),
+      wrappedConsole.getConsoleInstance(options.shouldWrapConsole),
+      options.resultEl,
+      makeRenderMarkdownFn(options.plugin, options.resultEl, options.sourcePath)
+    );
     if (options.shouldShowSystemMessages) {
       wrappedConsole.writeSystemMessage('✔ Executed successfully');
     }

@@ -52,8 +52,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
           .setPlaceholder('path/to/script/modules/root');
 
         addPathSuggest(this.plugin.app, text.inputEl, () => '', 'folder');
-      }
-      );
+      });
 
     new Setting(this.containerEl)
       .setName('Invocable scripts folder')
@@ -81,12 +80,14 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
 
         const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settings.modulesRoot, 'folder');
 
-        events.on('modulesRootChanged', convertAsyncToSync(async () => {
-          await this.revalidate(text);
-          suggest.refresh();
-        }));
-      }
-      );
+        events.on(
+          'modulesRootChanged',
+          convertAsyncToSync(async () => {
+            await this.revalidate(text);
+            suggest.refresh();
+          })
+        );
+      });
 
     new Setting(this.containerEl)
       .setName('Startup script path')
@@ -123,12 +124,14 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
           .setPlaceholder('path/to/startup.ts');
         const suggest = addPathSuggest(this.plugin.app, text.inputEl, () => this.plugin.settings.modulesRoot, 'file');
 
-        events.on('modulesRootChanged', convertAsyncToSync(async () => {
-          await this.revalidate(text);
-          suggest.refresh();
-        }));
-      }
-      );
+        events.on(
+          'modulesRootChanged',
+          convertAsyncToSync(async () => {
+            await this.revalidate(text);
+            suggest.refresh();
+          })
+        );
+      });
 
     new Setting(this.containerEl)
       .setName('Hotkeys')

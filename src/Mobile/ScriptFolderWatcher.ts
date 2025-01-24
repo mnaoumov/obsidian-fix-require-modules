@@ -71,7 +71,9 @@ class ScriptFolderWatcherImpl extends ScriptFolderWatcher {
     }
 
     this.timeoutId = window.setTimeout(
-      () => { invokeAsyncSafely(() => this.watch(onChange)); },
+      () => {
+        invokeAsyncSafely(() => this.watch(onChange));
+      },
       this.plugin.settings.mobileChangesCheckingIntervalInSeconds * MILLISECONDS_IN_SECOND
     );
   }

@@ -50,11 +50,16 @@ interface EmptyModule {
   [EMPTY_MODULE_SYMBOL]: boolean;
 }
 
-type ModuleFnWrapper = (require: NodeRequire, module: { exports: unknown }, exports: unknown, requireAsyncWrapper: RequireAsyncWrapperFn) => MaybePromise<void>;
+type ModuleFnWrapper = (
+  require: NodeJS.Require,
+  module: { exports: unknown },
+  exports: unknown,
+  requireAsyncWrapper: RequireAsyncWrapperFn
+) => MaybePromise<void>;
 type RequireAsyncFn = (id: string, options?: Partial<RequireOptions>) => Promise<unknown>;
 type RequireAsyncWrapperArg = (require: RequireExFn) => MaybePromise<unknown>;
 
-type RequireExFn = { parentPath?: string } & NodeRequire & RequireFn;
+type RequireExFn = { parentPath?: string } & NodeJS.Require & RequireFn;
 
 type RequireFn = (id: string, options: Partial<RequireOptions>) => unknown;
 
@@ -109,9 +114,9 @@ interface RequireStringImplResult {
 export abstract class RequireHandler {
   protected readonly currentModulesTimestampChain = new Set<string>();
   protected readonly moduleDependencies = new Map<string, Set<string>>();
-  protected modulesCache!: NodeJS.Dict<NodeModule>;
+  protected modulesCache!: NodeJS.Dict<NodeJS.Module>;
   protected readonly moduleTimestamps = new Map<string, number>();
-  protected originalRequire!: NodeRequire;
+  protected originalRequire!: NodeJS.Require;
   protected plugin!: CodeScriptToolkitPlugin;
   protected requireEx!: RequireExFn;
   protected vaultAbsolutePath!: string;
@@ -202,7 +207,10 @@ export abstract class RequireHandler {
       }
     }
 
-    const module = await this.initModuleAndAddToCacheAsync(cleanResolvedId, () => this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode));
+    const module = await this.initModuleAndAddToCacheAsync(
+      cleanResolvedId,
+      () => this.requireNonCachedAsync(cleanResolvedId, resolvedType, fullOptions.cacheInvalidationMode)
+    );
     if (resolvedId !== cleanResolvedId) {
       this.initModuleAndAddToCache(resolvedId, () => module);
     }
@@ -441,7 +449,10 @@ await requireAsyncWrapper((require) => {
 
     const MODULES_ROOT_PATH_PREFIX = '/';
     if (id.startsWith(MODULES_ROOT_PATH_PREFIX)) {
-      return { resolvedId: join(this.vaultAbsolutePath, this.plugin.settings.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)), resolvedType: ResolvedType.Path };
+      return {
+        resolvedId: join(this.vaultAbsolutePath, this.plugin.settings.modulesRoot, trimStart(id, MODULES_ROOT_PATH_PREFIX)),
+        resolvedType: ResolvedType.Path
+      };
     }
 
     if (isAbsolute(id)) {
@@ -461,7 +472,7 @@ await requireAsyncWrapper((require) => {
     return { resolvedId: `${parentDir}${MODULE_NAME_SEPARATOR}${id}`, resolvedType: ResolvedType.Module };
   }
 
-  private addToModuleCache(id: string, module: unknown, isLoaded = true): NodeModule {
+  private addToModuleCache(id: string, module: unknown, isLoaded = true): NodeJS.Module {
     return this.modulesCache[id] = {
       children: [],
       exports: module,
@@ -557,7 +568,7 @@ await requireAsyncWrapper((require) => {
           break;
         case ResolvedType.Path: {
           const existingFilePath = await this.findExistingFilePathAsync(resolvedId);
-          if (existingFilePath == null) {
+          if (existingFilePath === null) {
             throw new Error(`File not found: ${resolvedId}`);
           }
 
@@ -651,7 +662,7 @@ await requireAsyncWrapper((require) => {
       }
 
       const rootDir = await this.getRootDirAsync(possibleDir);
-      if (rootDir == null) {
+      if (rootDir === null) {
         continue;
       }
 
@@ -826,7 +837,11 @@ ${this.getRequireAsyncAdvice(true)}`);
       const newOptions = { ...options.optionsToPrepend, ...requireOptions, ...options.optionsToAppend };
       return options.require(id, newOptions);
     };
-    return Object.assign(fn, options.require, normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath })) as RequireExFn;
+    return Object.assign(
+      fn,
+      options.require,
+      normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath })
+    ) as RequireExFn;
   }
 }
 

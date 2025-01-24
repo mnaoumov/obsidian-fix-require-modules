@@ -3,13 +3,11 @@ import type { TransformResult } from './BabelPluginBase.ts';
 import { BabelPluginBase } from './BabelPluginBase.ts';
 
 type MapDataListToPlugins<DataList extends unknown[]> = {
-  [Data in keyof DataList]: BabelPluginBase<DataList[Data]>
+  [Data in keyof DataList]: BabelPluginBase<DataList[Data]>;
 };
 
-type TupleToIntersection<T extends readonly unknown[]> =
-  T extends [infer Head, ...infer Tail]
-    ? Head & TupleToIntersection<Tail>
-    : unknown;
+type TupleToIntersection<T extends readonly unknown[]> = T extends [infer Head, ...infer Tail] ? Head & TupleToIntersection<Tail>
+  : unknown;
 
 abstract class CombineBabelPlugins<DataList extends unknown[]> extends BabelPluginBase<TupleToIntersection<DataList>> {
   public constructor(protected readonly plugins: [...MapDataListToPlugins<DataList>]) {

@@ -4,7 +4,7 @@ type ApplyTarget = (this: unknown, ...args: unknown[]) => unknown;
 type ConstructTarget = new (...args: unknown[]) => unknown;
 
 export class CachedModuleProxyHandler implements ProxyHandler<object> {
-  public constructor(private readonly cachedModuleFn: () => unknown) { }
+  public constructor(private readonly cachedModuleFn: () => unknown) {}
 
   public apply(_target: object, thisArg: unknown, argArray?: unknown[]): unknown {
     const cachedModule = this.cachedModuleFn();

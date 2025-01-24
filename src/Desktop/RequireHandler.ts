@@ -24,7 +24,7 @@ import {
 class RequireHandlerImpl extends RequireHandler {
   private electronModules = new Map<string, unknown>();
   private nodeBuiltinModules = new Set<string>();
-  private originalProtoRequire!: NodeRequire;
+  private originalProtoRequire!: NodeJS.Require;
   private get fileSystemAdapter(): FileSystemAdapter {
     const adapter = this.plugin.app.vault.adapter;
     if (!(adapter instanceof FileSystemAdapter)) {
@@ -38,6 +38,7 @@ class RequireHandlerImpl extends RequireHandler {
     super.register(plugin, pluginRequire);
 
     const Module = this.originalRequire('node:module') as typeof import('node:module');
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     this.originalProtoRequire = Module.prototype.require;
 
     plugin.register(() => {
@@ -149,7 +150,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
           break;
         case ResolvedType.Path: {
           const existingFilePath = this.findExistingFilePath(resolvedId);
-          if (existingFilePath == null) {
+          if (existingFilePath === null) {
             throw new Error(`File not found: ${resolvedId}`);
           }
 
@@ -188,7 +189,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
       }
 
       const rootDir = getRootDir(possibleDir);
-      if (rootDir == null) {
+      if (rootDir === null) {
         continue;
       }
 
@@ -277,7 +278,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
 
   private requirePath(path: string, cacheInvalidationMode: CacheInvalidationMode): unknown {
     const existingFilePath = this.findExistingFilePath(path);
-    if (existingFilePath == null) {
+    if (existingFilePath === null) {
       throw new Error(`File not found: ${path}`);
     }
 
