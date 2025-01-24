@@ -1,6 +1,6 @@
 {
   "name": "fix-require-modules",
-  "version": "8.8.3",
+  "version": "8.8.4",
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
     "build": "obsidian-dev-utils build",
