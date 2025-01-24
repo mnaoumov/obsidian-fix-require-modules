@@ -39,7 +39,7 @@ class RequireHandlerImpl extends RequireHandler {
 
     const Module = this.originalRequire('node:module') as typeof import('node:module');
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    this.originalProtoRequire = Module.prototype.require;
+    this.originalProtoRequire = Module.prototype.require as NodeJS.Require;
 
     plugin.register(() => {
       Module.prototype.require = this.originalProtoRequire;
