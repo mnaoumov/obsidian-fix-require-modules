@@ -809,7 +809,7 @@ ${this.getRequireAsyncAdvice(true)}`);
 
   private async requirePathAsync(path: string, cacheInvalidationMode: CacheInvalidationMode): Promise<unknown> {
     const existingFilePath = await this.findExistingFilePathAsync(path);
-    if (existingFilePath == null) {
+    if (existingFilePath === null) {
       throw new Error(`File not found: ${path}`);
     }
 
