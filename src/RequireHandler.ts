@@ -89,6 +89,7 @@ interface WrapRequireOptions {
 export const ENTRY_POINT = '.';
 export const EXTENSIONS = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 export const MODULE_NAME_SEPARATOR = '*';
+export const MODULE_TO_SKIP = Symbol();
 export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
 export const PATH_SUFFIXES = ['', ...EXTENSIONS, ...EXTENSIONS.map((ext) => `/index${ext}`)];
@@ -170,6 +171,9 @@ export abstract class RequireHandler {
     const cleanId = splitQuery(id).cleanStr;
     const specialModule = this.requireSpecialModule(cleanId);
     if (specialModule) {
+      if (specialModule === MODULE_TO_SKIP) {
+        return null;
+      }
       return specialModule;
     }
 
@@ -843,6 +847,11 @@ ${this.getRequireAsyncAdvice(true)}`);
       normalizeOptionalProperties<{ parentPath?: string }>({ parentPath: options.optionsToPrepend?.parentPath })
     ) as RequireExFn;
   }
+}
+
+export function trimNodePrefix(id: string): string {
+  const NODE_BUILTIN_MODULE_PREFIX = 'node:';
+  return trimStart(id, NODE_BUILTIN_MODULE_PREFIX);
 }
 
 function convertPathToObsidianUrl(path: string): string {

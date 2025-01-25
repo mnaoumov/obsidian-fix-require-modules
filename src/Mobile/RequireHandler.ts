@@ -1,6 +1,10 @@
 import { CapacitorAdapter } from 'obsidian';
 
-import { RequireHandler } from '../RequireHandler.ts';
+import {
+  MODULE_TO_SKIP,
+  RequireHandler,
+  trimNodePrefix
+} from '../RequireHandler.ts';
 
 class RequireHandlerImpl extends RequireHandler {
   private get capacitorAdapter(): CapacitorAdapter {
@@ -45,6 +49,20 @@ class RequireHandlerImpl extends RequireHandler {
 
   protected override requireNonCached(): unknown {
     throw new Error('Cannot require synchronously on mobile');
+  }
+
+  protected override requireSpecialModule(id: string): unknown {
+    const module = super.requireSpecialModule(id);
+    if (module) {
+      return module;
+    }
+
+    if (trimNodePrefix(id) === 'crypto') {
+      console.warn('Crypto module is not available on mobile. Consider using window.scrypt instead');
+      return MODULE_TO_SKIP;
+    }
+
+    return null;
   }
 }
 

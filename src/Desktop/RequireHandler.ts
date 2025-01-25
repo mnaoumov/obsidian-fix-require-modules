@@ -3,7 +3,6 @@ import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 import { FileSystemAdapter } from 'obsidian';
 import { join } from 'obsidian-dev-utils/Path';
 import { getRootDir } from 'obsidian-dev-utils/scripts/Root';
-import { trimStart } from 'obsidian-dev-utils/String';
 
 import type { CodeScriptToolkitPlugin } from '../CodeScriptToolkitPlugin.ts';
 import type { PluginRequireFn } from '../RequireHandler.ts';
@@ -18,7 +17,8 @@ import {
   RELATIVE_MODULE_PATH_SEPARATOR,
   RequireHandler,
   ResolvedType,
-  SCOPED_MODULE_PREFIX
+  SCOPED_MODULE_PREFIX,
+  trimNodePrefix
 } from '../RequireHandler.ts';
 
 class RequireHandlerImpl extends RequireHandler {
@@ -267,8 +267,7 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
   }
 
   private requireNodeBuiltinModule(id: string): unknown {
-    const NODE_BUILTIN_MODULE_PREFIX = 'node:';
-    id = trimStart(id, NODE_BUILTIN_MODULE_PREFIX);
+    id = trimNodePrefix(id);
     if (this.nodeBuiltinModules.has(id)) {
       return this.originalProtoRequire(id);
     }
