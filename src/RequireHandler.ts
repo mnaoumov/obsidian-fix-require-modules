@@ -696,6 +696,9 @@ await requireAsyncWrapper((require) => {
     const cleanId = splitQuery(id).cleanStr;
     const specialModule = this.requireSpecialModule(cleanId);
     if (specialModule) {
+      if (specialModule === MODULE_TO_SKIP) {
+        return null;
+      }
       return specialModule;
     }
 
