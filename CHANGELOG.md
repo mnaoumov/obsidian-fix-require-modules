@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.1
+
+- Add special module check in require()
+
 ## 8.9.0
 
 - Add special case for crypto on mobile
