@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.0
+
+- Add special case for crypto on mobile
+
 ## 8.8.4
 
 - Format
