@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.2
+
+- Refactor to SASS
+
 ## 8.9.1
 
 - Add special module check in require()
