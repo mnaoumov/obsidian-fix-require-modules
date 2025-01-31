@@ -4,7 +4,7 @@
   "description": "Fixes require() calls, supporting JavaScript and TypeScript modules, enabling easy invocation, and adding code buttons for enhanced scripting capabilities",
   "scripts": {
     "build": "obsidian-dev-utils build",
-    "build:validate": "obsidian-dev-utils build:validate",
+    "build:compile": "obsidian-dev-utils build:compile",
     "dev": "obsidian-dev-utils dev",
     "format": "obsidian-dev-utils format",
     "format:check": "obsidian-dev-utils format:check",
@@ -24,7 +24,7 @@
     "babel-plugin-transform-import-meta": "^2.3.2",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^17.1.1",
+    "obsidian-dev-utils": "^17.2.2",
     "obsidian-typings": "^2.15.0"
   },
   "type": "module"
