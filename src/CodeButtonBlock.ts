@@ -101,7 +101,7 @@ async function handleClick(options: HandleClickOptions): Promise<void> {
 
 function makeRegisterTempPluginFn(plugin: Plugin): RegisterTempPluginFn {
   return (tempPluginClass) => {
-    registerTempPlugin(plugin, tempPluginClass);
+    registerTempPluginImpl(plugin, tempPluginClass);
   };
 }
 
@@ -179,7 +179,7 @@ function registerCodeHighlighting(): void {
   window.CodeMirror.defineMode(CODE_BUTTON_BLOCK_LANGUAGE, (config) => window.CodeMirror.getMode(config, 'text/typescript'));
 }
 
-function registerTempPlugin(plugin: Plugin, tempPluginClass: TempPluginClass): void {
+function registerTempPluginImpl(plugin: Plugin, tempPluginClass: TempPluginClass): void {
   const app = plugin.app;
   const id = `__temp-plugin-${tempPluginClass.name}`;
 
@@ -193,7 +193,7 @@ function registerTempPlugin(plugin: Plugin, tempPluginClass: TempPluginClass): v
     description: '__Temp Plugin created by Fix Require Modules',
     id,
     minAppVersion: '0.0.1',
-    name: '__Temp Plugin ${name}',
+    name: `__Temp Plugin ${tempPluginClass.name}`,
     version: '0.0.0'
   });
 

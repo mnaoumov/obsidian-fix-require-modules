@@ -79,7 +79,7 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
   }
 
   protected override async readFileAsync(path: string): Promise<string> {
-    return this.fileSystemAdapter.fsPromises.readFile(path, 'utf8');
+    return await this.fileSystemAdapter.fsPromises.readFile(path, 'utf8');
   }
 
   protected override requireNonCached(id: string, type: ResolvedType, cacheInvalidationMode: CacheInvalidationMode): unknown {
@@ -92,6 +92,8 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
         return this.requirePath(id, cacheInvalidationMode);
       case ResolvedType.Url:
         throw new Error(`Cannot require synchronously from URL. ${this.getRequireAsyncAdvice(true)}`);
+      default:
+        throw new Error('Unknown type');
     }
   }
 
@@ -166,9 +168,13 @@ Put them inside an async function or ${this.getRequireAsyncAdvice()}`);
             case CacheInvalidationMode.WhenPossible:
               console.warn(errorMessage);
               break;
+            default:
+              throw new Error('Unknown cacheInvalidationMode');
           }
           break;
         }
+        default:
+          throw new Error('Unknown type');
       }
     }
 
@@ -228,8 +234,8 @@ Consider using cacheInvalidationMode=${CacheInvalidationMode.Never} or ${this.ge
       separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR, separatorIndex + 1);
     }
 
-    const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
-    let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+    const baseModuleName = separatorIndex === -1 ? moduleName : moduleName.slice(0, separatorIndex);
+    let relativeModuleName = ENTRY_POINT + (separatorIndex === -1 ? '' : moduleName.slice(separatorIndex));
 
     for (const rootDir of this.getRootDirs(parentDir)) {
       let packageDir: string;

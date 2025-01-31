@@ -1,10 +1,14 @@
+import { noop } from 'obsidian-dev-utils/Function';
+
 export const EMPTY_MODULE_SYMBOL = Symbol('emptyModule');
 
 type ApplyTarget = (this: unknown, ...args: unknown[]) => unknown;
 type ConstructTarget = new (...args: unknown[]) => unknown;
 
 export class CachedModuleProxyHandler implements ProxyHandler<object> {
-  public constructor(private readonly cachedModuleFn: () => unknown) {}
+  public constructor(private readonly cachedModuleFn: () => unknown) {
+    noop();
+  }
 
   public apply(_target: object, thisArg: unknown, argArray?: unknown[]): unknown {
     const cachedModule = this.cachedModuleFn();

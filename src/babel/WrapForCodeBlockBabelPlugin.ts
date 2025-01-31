@@ -32,11 +32,7 @@ export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
           const lastStatement = programBody.pop();
           const lastStatementExpression = convertToExpression(lastStatement);
 
-          if (!lastStatementExpression) {
-            if (lastStatement) {
-              programBody.push(lastStatement);
-            }
-          } else {
+          if (lastStatementExpression) {
             const newLastStatement = expressionStatement(callExpression(
               memberExpression(
                 identifier('console'),
@@ -48,6 +44,8 @@ export class WrapForCodeBlockBabelPlugin extends BabelPluginBase {
             ));
 
             programBody.push(newLastStatement);
+          } else if (lastStatement) {
+            programBody.push(lastStatement);
           }
         }
 

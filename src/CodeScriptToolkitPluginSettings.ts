@@ -7,6 +7,7 @@ interface LegacySettings {
 
 export class CodeScriptToolkitPluginPluginSettings extends PluginSettingsBase {
   public invocableScriptsFolder = '';
+  // eslint-disable-next-line no-magic-numbers
   public mobileChangesCheckingIntervalInSeconds = 30;
   public modulesRoot = '';
   public startupScriptPath = '';

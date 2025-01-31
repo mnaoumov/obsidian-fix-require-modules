@@ -102,7 +102,8 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
       .addText((text) => {
         this.bind(text, 'startupScriptPath', {
           shouldShowValidationMessage: false,
-          valueValidator: async (uiValue) => {
+          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+          valueValidator: async (uiValue): Promise<string | void> => {
             if (!uiValue) {
               return;
             }
@@ -117,8 +118,6 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
             if (!EXTENSIONS.includes(ext)) {
               return `Only the following extensions are supported: ${EXTENSIONS.join(', ')}`;
             }
-
-            return;
           }
         })
           .setPlaceholder('path/to/startup.ts');
@@ -154,12 +153,12 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         this.bind(text, 'mobileChangesCheckingIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
           pluginSettingsToComponentValueConverter: (value: number) => value.toString(),
-          valueValidator(value: string) {
+          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+          valueValidator(value: string): string | void {
             const number = parseInt(value, 10);
             if (isNaN(number) || number < 1) {
               return 'Interval must be greater than 0';
             }
-            return;
           }
         })
           .setPlaceholder('30');
@@ -184,6 +183,4 @@ async function validatePath(app: App, path: string, type: 'file' | 'folder'): Pr
   if (stat?.type !== type) {
     return `Path is not a ${type}`;
   }
-
-  return;
 }

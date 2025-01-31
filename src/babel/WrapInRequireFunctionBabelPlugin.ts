@@ -23,7 +23,7 @@ export class WrapInRequireFunctionBabelPlugin extends BabelPluginBase {
       Program: (path): void => {
         const programBody = path.node.body;
 
-        let wrapperBody: Statement[] = [];
+        let wrapperBody: Statement[];
 
         if (this.isAsync) {
           wrapperBody = [

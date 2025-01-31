@@ -14,6 +14,7 @@ abstract class CombineBabelPlugins<DataList extends unknown[]> extends BabelPlug
     super(CombineBabelPlugins.combineData(plugins));
   }
 
+  // eslint-disable-next-line no-shadow
   private static combineData<DataList extends unknown[]>(plugins: [...MapDataListToPlugins<DataList>]): TupleToIntersection<DataList> {
     return Object.assign({}, ...plugins.map((plugin) => plugin.data)) as TupleToIntersection<DataList>;
   }
@@ -24,10 +25,6 @@ abstract class CombineBabelPlugins<DataList extends unknown[]> extends BabelPlug
 }
 
 export class SequentialBabelPlugin<DataList extends unknown[]> extends CombineBabelPlugins<DataList> {
-  public constructor(plugins: [...MapDataListToPlugins<DataList>]) {
-    super(plugins);
-  }
-
   public override transform(code: string, filename: string, dir?: string): TransformResult<TupleToIntersection<DataList>> {
     for (const plugin of this.plugins) {
       try {

@@ -3,6 +3,7 @@ import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
 
 import { debuggableEval } from 'debuggable-eval';
 import { Platform } from 'obsidian';
+import { noop } from 'obsidian-dev-utils/Function';
 import { normalizeOptionalProperties } from 'obsidian-dev-utils/Object';
 import {
   basename,
@@ -89,7 +90,7 @@ interface WrapRequireOptions {
 export const ENTRY_POINT = '.';
 export const EXTENSIONS = ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts'];
 export const MODULE_NAME_SEPARATOR = '*';
-export const MODULE_TO_SKIP = Symbol();
+export const MODULE_TO_SKIP = Symbol('MODULE_TO_SKIP');
 export const NODE_MODULES_DIR = 'node_modules';
 const PACKAGE_JSON = 'package.json';
 export const PATH_SUFFIXES = ['', ...EXTENSIONS, ...EXTENSIONS.map((ext) => `/index${ext}`)];
@@ -151,7 +152,9 @@ export abstract class RequireHandler {
     const requireWindow = window as Partial<RequireWindow>;
 
     requireWindow.require = this.requireEx;
-    plugin.register(() => requireWindow.require = this.originalRequire);
+    plugin.register(() => {
+      requireWindow.require = this.originalRequire;
+    });
 
     requireWindow.requireAsync = this.requireAsync.bind(this);
     plugin.register(() => delete requireWindow.requireAsync);
@@ -182,11 +185,11 @@ export abstract class RequireHandler {
     let cleanResolvedId: string;
     let query: string;
 
-    if (resolvedType !== ResolvedType.Url) {
-      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
-    } else {
+    if (resolvedType === ResolvedType.Url) {
       cleanResolvedId = resolvedId;
       query = '';
+    } else {
+      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
     }
 
     const cachedModuleEntry = this.modulesCache[resolvedId];
@@ -208,6 +211,9 @@ export abstract class RequireHandler {
           if (query) {
             return cachedModuleEntry.exports;
           }
+          break;
+        default:
+          throw new Error('Unknown cacheInvalidationMode');
       }
     }
 
@@ -296,7 +302,7 @@ await requireAsyncWrapper((require) => {
   protected abstract getTimestampAsync(path: string): Promise<number>;
 
   protected handleCodeWithTopLevelAwait(_path: string): void {
-    return;
+    noop();
   }
 
   protected initModuleAndAddToCache(id: string, moduleInitializer: () => unknown): unknown {
@@ -448,7 +454,7 @@ await requireAsyncWrapper((require) => {
 
     const SYSTEM_ROOT_PATH_PREFIX = '~/';
     if (id.startsWith(SYSTEM_ROOT_PATH_PREFIX)) {
-      return { resolvedId: '/' + trimStart(id, SYSTEM_ROOT_PATH_PREFIX), resolvedType: ResolvedType.Path };
+      return { resolvedId: `/${trimStart(id, SYSTEM_ROOT_PATH_PREFIX)}`, resolvedType: ResolvedType.Path };
     }
 
     const MODULES_ROOT_PATH_PREFIX = '/';
@@ -477,7 +483,7 @@ await requireAsyncWrapper((require) => {
   }
 
   private addToModuleCache(id: string, module: unknown, isLoaded = true): NodeJS.Module {
-    return this.modulesCache[id] = {
+    this.modulesCache[id] = {
       children: [],
       exports: module,
       filename: '',
@@ -489,6 +495,7 @@ await requireAsyncWrapper((require) => {
       paths: [],
       require: this.requireEx
     };
+    return this.modulesCache[id];
   }
 
   private applyCondition(condition: string, exportsNodeChild: PackageJson.Exports, relativeModuleName: string): string[] {
@@ -507,8 +514,8 @@ await requireAsyncWrapper((require) => {
     if (condition.endsWith(WILDCARD_MODULE_CONDITION_SUFFIX)) {
       const parentCondition = trimEnd(condition, WILDCARD_MODULE_CONDITION_SUFFIX);
       const separatorIndex = relativeModuleName.lastIndexOf(RELATIVE_MODULE_PATH_SEPARATOR);
-      const parentRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(0, separatorIndex) : relativeModuleName;
-      const leafRelativeModuleName = separatorIndex !== -1 ? relativeModuleName.slice(separatorIndex + 1) : '';
+      const parentRelativeModuleName = separatorIndex === -1 ? relativeModuleName : relativeModuleName.slice(0, separatorIndex);
+      const leafRelativeModuleName = separatorIndex === -1 ? '' : relativeModuleName.slice(separatorIndex + 1);
 
       if (parentCondition === parentRelativeModuleName && leafRelativeModuleName) {
         return this.getExportsRelativeModulePaths(exportsNodeChild, join(ENTRY_POINT, leafRelativeModuleName));
@@ -586,6 +593,8 @@ await requireAsyncWrapper((require) => {
           }
           break;
         }
+        default:
+          throw new Error('Unknown resolvedType');
       }
     }
 
@@ -635,8 +644,8 @@ await requireAsyncWrapper((require) => {
     const CALLER_LINE_INDEX = 4;
     const callStackLines = new Error().stack?.split('\n') ?? [];
     this.plugin.consoleDebug('callStackLines', { callStackLines });
-    const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((.+?):\d+:\d+\)$/);
-    const parentPath = callStackMatch?.[1] ?? null;
+    const callStackMatch = callStackLines.at(CALLER_LINE_INDEX)?.match(/^ {4}at .+? \((?<ParentPath>.+?):\d+:\d+\)$/);
+    const parentPath = callStackMatch?.groups?.['ParentPath'] ?? null;
 
     if (parentPath?.includes('<anonymous>')) {
       return null;
@@ -707,11 +716,11 @@ await requireAsyncWrapper((require) => {
     let cleanResolvedId: string;
     let query: string;
 
-    if (resolvedType !== ResolvedType.Url) {
-      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
-    } else {
+    if (resolvedType === ResolvedType.Url) {
       cleanResolvedId = resolvedId;
       query = '';
+    } else {
+      ({ cleanStr: cleanResolvedId, query } = splitQuery(resolvedId));
     }
 
     const cachedModuleEntry = this.modulesCache[resolvedId];
@@ -738,6 +747,9 @@ await requireAsyncWrapper((require) => {
             console.warn(`Cached module ${resolvedId} cannot be invalidated synchronously. The cached version will be used. `);
             return cachedModuleEntry.exports;
           }
+          break;
+        default:
+          throw new Error('Unknown cacheInvalidationMode');
       }
     }
 
@@ -763,8 +775,8 @@ ${this.getRequireAsyncAdvice(true)}`);
       separatorIndex = moduleName.indexOf(RELATIVE_MODULE_PATH_SEPARATOR, separatorIndex + 1);
     }
 
-    const baseModuleName = separatorIndex !== -1 ? moduleName.slice(0, separatorIndex) : moduleName;
-    let relativeModuleName = ENTRY_POINT + (separatorIndex !== -1 ? moduleName.slice(separatorIndex) : '');
+    const baseModuleName = separatorIndex === -1 ? moduleName : moduleName.slice(0, separatorIndex);
+    let relativeModuleName = ENTRY_POINT + (separatorIndex === -1 ? '' : moduleName.slice(separatorIndex));
 
     for (const rootDir of await this.getRootDirsAsync(parentDir)) {
       let packageDir: string;
@@ -805,12 +817,14 @@ ${this.getRequireAsyncAdvice(true)}`);
     switch (type) {
       case ResolvedType.Module: {
         const [parentDir = '', moduleName = ''] = id.split(MODULE_NAME_SEPARATOR);
-        return this.requireModuleAsync(moduleName, parentDir, cacheInvalidationMode);
+        return await this.requireModuleAsync(moduleName, parentDir, cacheInvalidationMode);
       }
       case ResolvedType.Path:
-        return this.requirePathAsync(id, cacheInvalidationMode);
+        return await this.requirePathAsync(id, cacheInvalidationMode);
       case ResolvedType.Url:
-        return this.requireUrlAsync(id);
+        return await this.requireUrlAsync(id);
+      default:
+        throw new Error('Unknown resolvedType');
     }
   }
 
@@ -868,7 +882,7 @@ function convertPathToObsidianUrl(path: string): string {
 function splitQuery(str: string): SplitQueryResult {
   const queryIndex = str.indexOf('?');
   return {
-    cleanStr: queryIndex !== -1 ? str.slice(0, queryIndex) : str,
-    query: queryIndex !== -1 ? str.slice(queryIndex) : ''
+    cleanStr: queryIndex === -1 ? str : str.slice(0, queryIndex),
+    query: queryIndex === -1 ? '' : str.slice(queryIndex)
   };
 }

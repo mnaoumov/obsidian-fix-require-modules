@@ -92,14 +92,14 @@ export async function selectAndInvokeScript(plugin: CodeScriptToolkitPlugin): Pr
 
   if (!invocableScriptsFolder) {
     scriptFiles = ['Error: No Invocable scripts folder specified in the settings'];
-  } else if (!await app.vault.adapter.exists(invocableScriptsFolder)) {
-    scriptFiles = [`Error: Invocable scripts folder not found: ${invocableScriptsFolder}`];
-  } else {
+  } else if (await app.vault.adapter.exists(invocableScriptsFolder)) {
     scriptFiles = await getAllScriptFiles(app.vault.adapter, invocableScriptsFolder, '');
+  } else {
+    scriptFiles = [`Error: Invocable scripts folder not found: ${invocableScriptsFolder}`];
   }
 
   const scriptFile = await selectItem({
-    app: app,
+    app,
     items: scriptFiles,
     itemTextFunc: (script) => script,
     placeholder: 'Choose a script to invoke'

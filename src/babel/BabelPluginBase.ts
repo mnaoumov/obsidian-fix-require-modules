@@ -6,6 +6,7 @@ import type {
 import type { Visitor } from '@babel/traverse';
 
 import { transform as babelTransform } from '@babel/standalone';
+import { noop } from 'obsidian-dev-utils/Function';
 
 export interface TransformResult<Data> {
   data: Data;
@@ -14,26 +15,29 @@ export interface TransformResult<Data> {
 }
 
 export abstract class BabelPluginBase<Data = unknown> {
-  protected constructor(public readonly data: Data) {}
+  protected constructor(public readonly data: Data) {
+    noop();
+  }
 
   public getInherits(): unknown {
     return undefined;
   }
 
   public getVisitor(): Visitor<PluginPass> {
+    noop();
     return {};
   }
 
   public manipulateOptions(_opts: unknown, _parserOpts: unknown): void {
-    return;
+    noop();
   }
 
   public post(_state: PluginPass, _file: BabelFile): void {
-    return;
+    noop();
   }
 
   public pre(_state: PluginPass, _file: BabelFile): void {
-    return;
+    noop();
   }
 
   public transform(code: string, filename: string, dir?: string): TransformResult<Data> {
@@ -67,20 +71,20 @@ export abstract class BabelPluginBase<Data = unknown> {
 
   private getPluginObj(): PluginObj {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
+    const that = this;
     const visitor = this.getVisitor();
     const inherits = this.getInherits();
 
     function manipulateOptions(opts: unknown, parserOpts: unknown): void {
-      self.manipulateOptions(opts, parserOpts);
+      that.manipulateOptions(opts, parserOpts);
     }
 
     function pre(this: PluginPass, file: BabelFile): void {
-      self.pre(this, file);
+      that.pre(this, file);
     }
 
     function post(this: PluginPass, file: BabelFile): void {
-      self.post(this, file);
+      that.post(this, file);
     }
 
     return {
