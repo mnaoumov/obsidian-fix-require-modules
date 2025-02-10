@@ -6,7 +6,7 @@ import type { MaybePromise } from 'obsidian-dev-utils/Async';
 
 import { Notice } from 'obsidian';
 import { printError } from 'obsidian-dev-utils/Error';
-import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
+import { selectItem } from 'obsidian-dev-utils/obsidian/Modals/SelectItem';
 import { basename } from 'obsidian-dev-utils/Path';
 
 import type { CodeScriptToolkitPlugin } from './CodeScriptToolkitPlugin.ts';

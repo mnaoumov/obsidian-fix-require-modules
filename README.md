@@ -725,8 +725,8 @@ Extending dynamic [`import()`][import] expressions to support `const obsidian = 
 
 ## Installation
 
-- `CodeScript Toolkit` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=fix-require-modules).
-- Beta releases can be installed through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+- The plugin is available in [the official Community Plugins repository](https://obsidian.md/plugins?id=fix-require-modules).
+- [Beta releases](obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-codescript-toolkit) can be installed via [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
 ## Debugging
 

@@ -1,15 +1,13 @@
 import type { App } from 'obsidian';
 
-import {
-  Events,
-  Setting
-} from 'obsidian';
+import { Events } from 'obsidian';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from 'obsidian-dev-utils/Async';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 import {
   extname,
   join
@@ -25,7 +23,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
     this.containerEl.empty();
     const events = new Events();
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Script modules root')
       .setDesc(createFragment((f) => {
         f.appendText('Path to the folder that is considered as ');
@@ -54,7 +52,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         addPathSuggest(this.plugin.app, text.inputEl, () => '', 'folder');
       });
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Invocable scripts folder')
       .setDesc(createFragment((f) => {
         f.appendText('Path to the folder with invocable scripts.');
@@ -89,7 +87,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         );
       });
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Startup script path')
       .setDesc(createFragment((f) => {
         f.appendText('Path to the invocable script executed on startup.');
@@ -132,7 +130,7 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
         );
       });
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Hotkeys')
       .setDesc('Hotkeys to invoke scripts')
       .addButton((button) =>
@@ -146,25 +144,13 @@ export class CodeScriptToolkitPluginPluginSettingsTab extends PluginSettingsTabB
           })
       );
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Mobile changes checking interval')
       .setDesc('Interval in seconds to check for changes in the invocable scripts folder (only on mobile)')
-      .addText((text) => {
-        this.bind(text, 'mobileChangesCheckingIntervalInSeconds', {
-          componentToPluginSettingsValueConverter: (value: string) => parseInt(value, 10),
-          pluginSettingsToComponentValueConverter: (value: number) => value.toString(),
-          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-          valueValidator(value: string): string | void {
-            const number = parseInt(value, 10);
-            if (isNaN(number) || number < 1) {
-              return 'Interval must be greater than 0';
-            }
-          }
-        })
-          .setPlaceholder('30');
-
-        text.inputEl.type = 'number';
-        text.inputEl.min = '1';
+      .addNumber((text) => {
+        this.bind(text, 'mobileChangesCheckingIntervalInSeconds')
+          .setPlaceholder('30')
+          .setMin(1);
       });
   }
 
