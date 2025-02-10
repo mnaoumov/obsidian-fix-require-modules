@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 8.9.4
+
+- Update template
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/18.4.2
+
 ## 8.9.3
 
 - Lint
