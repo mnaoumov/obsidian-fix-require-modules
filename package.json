@@ -17,15 +17,15 @@
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@babel/standalone": "^7.26.7",
-    "@babel/types": "^7.26.7",
+    "@babel/standalone": "^7.26.8",
+    "@babel/types": "^7.26.8",
     "@types/babel__standalone": "^7.1.9",
-    "@types/node": "^22.12.0",
+    "@types/node": "^22.13.1",
     "babel-plugin-transform-import-meta": "^2.3.2",
     "debuggable-eval": "^2.1.1",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^17.2.2",
-    "obsidian-typings": "^2.15.0"
+    "obsidian-dev-utils": "^18.4.2",
+    "obsidian-typings": "^2.17.0"
   },
   "type": "module"
 }
