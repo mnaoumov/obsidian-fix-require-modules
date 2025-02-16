@@ -1,5 +1,5 @@
 import type { MaybePromise } from 'obsidian-dev-utils/Async';
-import type { PackageJson } from 'obsidian-dev-utils/scripts/Npm';
+import type { PackageJson } from 'obsidian-dev-utils/ScriptUtils/Npm';
 
 import { debuggableEval } from 'debuggable-eval';
 import { Platform } from 'obsidian';
