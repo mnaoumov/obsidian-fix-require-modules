@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 8.9.5
+
+- Fix settings binding
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.1.1
+
 ## 8.9.4
 
 - Update template
