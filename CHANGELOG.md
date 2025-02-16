@@ -2,7 +2,7 @@
 
 ## 8.9.5
 
-- Fix settings binding
+- Fix settings binding (thanks to @claremacrae)
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.1.1
 
 ## 8.9.4
